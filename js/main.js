@@ -16,6 +16,7 @@ import { Audio, STAGE_SONG } from './audio/audio.js';
 import { Hud } from './ui/hud.js';
 import { Avatar } from './ui/avatar.js';
 import * as Screens from './ui/screens.js';
+import { Achievements } from './ui/achievements.js';
 
 const SKEY = 'vertical-vantage.settings', PKEY = 'vertical-vantage.progress';
 const DEFAULTS = {
@@ -41,9 +42,11 @@ const avatar = new Avatar($('avatar'));
 
 const G = {
   mode: 'boot', stageIdx: 0, world: null, main: null, acc: 0, t: 0, timer: 0, next: null,
-  runScore: 0, settings: migrate(load(SKEY, DEFAULTS)), progress: load(PKEY, { unlocked: 1, best: {}, bestTotal: 0 }),
+  runScore: 0, settings: migrate(load(SKEY, DEFAULTS)), progress: load(PKEY, { unlocked: 1, best: {}, bestTotal: 0, bestTime: {}, bonusBest: {}, ach: {}, portals: {} }),
   optionsBack: 'back', touch: false, muted: false,
 };
+
+const ach = new Achievements(G.progress.ach, STAGES.filter((s) => s.portal).map((s) => s.id));
 
 // ------------------------------------------------------------------ settings
 // Older saves had music / sound on-off switches: they become volume 0.
@@ -101,6 +104,7 @@ function toTitle() {
 
 function startStage(i, keepScore = false) {
   G.stageIdx = i;
+  ach.resetStage();
   if (!keepScore) G.runScore = G.runScore || 0;
   G.main = null;
   const stage = STAGES[i];
@@ -171,6 +175,11 @@ function stageCleared() {
   const w = G.world, stage = STAGES[G.stageIdx];
   G.stageTotal = G.runScore + w.score; // banked into runScore when you leave the card (the HUD adds w.score until then)
   const P = G.progress;
+  const prev = P.bestTime[stage.id], record = !prev || w.clear.time < prev;
+  if (record) P.bestTime[stage.id] = Math.round(w.clear.time * 100) / 100;
+  const got = ach.onClear(w, stage, P.portals);
+  if (G.stageIdx === STAGES.length - 1) ach.onEnding(got);
+  if (record && prev) avatar.react('record', true); else if (got.length) avatar.react('achieve', true);
   P.best[stage.id] = Math.max(P.best[stage.id] || 0, w.score);
   P.unlocked = Math.max(P.unlocked, Math.min(STAGES.length, G.stageIdx + 2));
   P.bestTotal = Math.max(P.bestTotal || 0, G.stageTotal);
@@ -178,13 +187,26 @@ function stageCleared() {
   G.mode = 'result';
   input.enabled = false; input.reset(); input.releaseLock();
   showControls();
-  Screens.clear(stage, G.stageIdx, w, G.stageTotal, G.stageIdx === STAGES.length - 1);
+  Screens.clear(stage, G.stageIdx, w, G.stageTotal, G.stageIdx === STAGES.length - 1, { best: P.bestTime[stage.id], record: record && !!prev, par: stage.par, got });
+}
+// Bonus round over: best result per bonus arena (most servers, then most time left), achievements.
+function bonusDone(ok) {
+  const w = G.world, P = G.progress, id = w.level.id, b = P.bonusBest[id];
+  const mine = { down: w.bonus.down, total: w.bonus.total, left: ok ? w.clear.secs : 0 };
+  const record = !b || mine.down > b.down || (mine.down === b.down && mine.left > b.left);
+  if (record) P.bonusBest[id] = mine;
+  const got = ach.onBonus(w, ok);
+  if (got.length) avatar.react('achieve', true);
+  save(PKEY, P);
+  G.mode = 'result'; input.releaseLock(); showControls();
+  Screens.bonusResult(w, ok, { best: P.bonusBest[id], record: record && !!b, got });
 }
 
 // ------------------------------------------------------------------ menu actions
 const ACTIONS = {
   play: () => { audio.unlock(); G.runScore = 0; startStage(Math.max(0, G.progress.unlocked - 1)); fullscreen(); },
   stages: () => Screens.stages(G.progress),
+  records: () => Screens.records(G.progress),
   options: () => { G.optionsBack = 'back'; Screens.options(G.settings, 'back'); },
   pauseOptions: () => { G.optionsBack = 'pause'; Screens.options(G.settings, 'toPause'); },
   toPause: () => Screens.pause(),
@@ -249,6 +271,7 @@ function handleEvents(w) {
   const P = w.player, wpx = innerWidth, hpx = innerHeight;
   audio.events(ev, (e, r) => e.x === undefined || (e.x - P.x) ** 2 + (e.y - P.y) ** 2 + (e.z - P.z) ** 2 < r * r);
   renderer.onEvents(ev, w);
+  for (const a of ach.onEvents(ev, w)) { hud.toast(`★ ${a.name}`, 'gold'); avatar.react('achieve', true); save(PKEY, G.progress); }
   for (const e of ev) {
     switch (e.type) {
       case 'hit': hud.hitmark(); break;
@@ -272,7 +295,7 @@ function handleEvents(w) {
       case 'zap': avatar.react('zap'); break;
       case 'fall': hud.toast(e.penalty ? `FELL! −${e.penalty}s` : 'FELL! −2', 'red'); avatar.react('fall'); input.rumble(0.5, 0.5, 200); break;
       case 'empty': hud.toast(`${WEAPONS[e.weapon].name} EMPTY`, 'red'); break;
-      case 'portal': hud.toast('BONUS PORTAL!', 'mag'); avatar.react('portal', true); break;
+      case 'portal': hud.toast('BONUS PORTAL!', 'mag'); avatar.react('portal', true); G.progress.portals[STAGES[G.stageIdx].id] = true; save(PKEY, G.progress); break;
       case 'explode': input.rumble(0.6, 0.4, 160); break;
       case 'land': if (e.impact > 18) input.rumble(0.25, 0.1, 80); break;
       case 'fire': if (e.weapon === 'rocket') input.rumble(0.3, 0.2, 90); break;
@@ -327,7 +350,7 @@ function frame(now) {
       const ph = w.phase;
       G.timer = ph === 'dead' ? 1.6 : 1.3;
       input.enabled = false; input.reset();
-      G.next = ph === 'clear' ? stageCleared : ph === 'dead' ? () => { G.mode = 'over'; input.releaseLock(); showControls(); Screens.over(STAGES[G.stageIdx]); } : () => { G.mode = 'result'; input.releaseLock(); showControls(); Screens.bonusResult(G.world, ph === 'bonusClear'); };
+      G.next = ph === 'clear' ? stageCleared : ph === 'dead' ? () => { G.mode = 'over'; input.releaseLock(); showControls(); Screens.over(STAGES[G.stageIdx]); } : () => bonusDone(ph === 'bonusClear');
     }
   } else if (G.mode !== 'paused') {
     // the world keeps moving behind cards (cars bob, the result sky spins), the player stays put

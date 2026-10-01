@@ -133,7 +133,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .opt-h { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(43, 232, 255, 0.25); font-size: 11px; letter-spacing: 0.2em; color: var(--mag); }
 .opt .val { color: var(--gold); font-variant-numeric: tabular-nums; }
 /* comfort options: calm = no pulsing / scaling motion; low-flash = gentler full-screen colour */
-body.calm .cells.crit i, body.calm #vignette.crit, body.calm .objective.open, body.calm .bonus-time.low { animation: none; }
+body.calm .cells.crit i, body.calm #vignette.crit, body.calm .objective.open, body.calm .bonus-time.low, body.calm .rec { animation: none; }
 body.calm .toast { animation-name: toast-calm; }
 @keyframes toast-calm { 0% { opacity: 0; } 12% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
 body.low-flash #vignette.hurt { opacity: 0.4; }
@@ -149,6 +149,16 @@ body.low-flash .boss-hud.hurt #boss-fill { background: linear-gradient(90deg, #f
 .big.red { color: var(--red); text-shadow: 0 0 14px var(--red), 0 4px 0 #000; }
 .big.mag { color: var(--mag); text-shadow: 0 0 14px var(--mag), 0 4px 0 #000; }
 .small-print { font-size: 10px; opacity: 0.65; margin-top: 10px; }
+.par { opacity: 0.7; }
+.rec { font-style: normal; color: var(--mag); margin-left: 6px; animation: pulse 0.5s infinite alternate; }
+.got { margin: 6px 0; padding: 8px 10px; border: 2px solid var(--gold); background: rgba(255, 210, 58, 0.1); text-align: left; font-size: 13px; font-weight: 700; color: var(--gold); }
+.got small { display: block; font-weight: 400; color: #cfe9ff; font-size: 11px; margin-bottom: 4px; }
+.achs { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px; margin-top: 8px; text-align: left; }
+.ach { padding: 6px 8px; border: 1px solid var(--line); background: rgba(0, 0, 0, 0.3); opacity: 0.55; }
+.ach b { display: block; font-size: 11px; letter-spacing: 0.06em; }
+.ach small { display: block; font-size: 10px; opacity: 0.85; margin-top: 2px; }
+.ach.on { opacity: 1; border-color: var(--gold); color: var(--gold); }
+.ach.on small { color: #cfe9ff; }
 .intro { text-align: center; pointer-events: none; }
 .intro .sub { font-size: 13px; letter-spacing: 0.3em; color: var(--cyan); }
 .intro .big { font-size: clamp(40px, 10vw, 72px); }

@@ -28,6 +28,8 @@ const LINES = {
   clear: ['Stage clear! You’re a natural!', 'Extraction complete! Snack time?'],
   dead: ['Signal lost…', 'Shell offline… again?'],
   exitHint: ['The exit’s the big beam. Can’t miss it!'],
+  achieve: ['Achievement unlocked! I’m framing it.', 'Ooh, a badge! A BADGE!', 'Logged in the hall of fame!'],
+  record: ['NEW RECORD! Faster than the 4:15 maglev!', 'Personal best! I’m telling everyone.'],
   bossStart: ['Big spider. Big, BIG spider.', 'Mission mode. Take it apart.'],
   bossTele: ['It’s gonna jump! MOVE!', 'Incoming!'],
   bossCharge: ['Laser! Get behind something!', 'Eyes glowing. Bad sign.'],
@@ -60,6 +62,7 @@ const REACT = {
   idle: [['idle', 'derp', 'happy', 'smug'], 'idle', 0], guard: ['smug', 'guard', 1], exitHint: ['idle', 'exitHint', 1],
   bossStart: ['serious', 'bossStart', 5], bossTele: ['shock', 'bossTele', 3], bossCharge: ['worried', 'bossCharge', 3], bossPhase: ['angry', 'bossPhase', 4],
   bossDown: [['sparkle', 'manic'], 'bossDown', 7], spiked: ['hurt', 'spiked', 3], slow: ['sparkle', 'slow', 3],
+  achieve: [['sparkle', 'love'], 'achieve', 4], record: ['manic', 'record', 6],
 };
 
 const COL = { plate: '#0a0d1c', rim: '#2a3450', eye: '#5ff0ff', red: '#ff2a3a', gold: '#ffd23a', pink: '#ff7ab8', white: '#ffffff', tear: '#7fd8ff', mouth: '#1a0f20', tongue: '#ff5a8a', vein: '#ff3b5c' };

@@ -1,6 +1,7 @@
 // Menu and result cards, rendered into #screen. Buttons carry data-go="action"; main.js handles them.
 // #screen has data-touch-allow, so normal clicks work there with the touch-zoom guard on.
 import { STAGES } from '../levels/index.js';
+import { ACHIEVEMENTS } from './achievements.js';
 
 const el = () => document.getElementById('screen');
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -31,6 +32,7 @@ export function title(progress, padName) {
     <div class="btns">
       <button class="btn primary" data-go="play" data-pad-first>${progress.unlocked > 1 ? 'CONTINUE' : 'START'}</button>
       <button class="btn" data-go="stages">STAGE SELECT</button>
+      <button class="btn" data-go="records">RECORDS</button>
       <button class="btn" data-go="options">OPTIONS</button>
     </div>
     ${HOW}
@@ -41,10 +43,23 @@ export function title(progress, padName) {
 
 export function stages(progress) {
   const tiles = STAGES.map((s, i) => `<button class="stage" data-go="stage:${i}" ${i < progress.unlocked ? '' : 'disabled'}>
-      <b>${i + 1}. ${esc(s.name)}</b><small>${esc(s.sub)}</small><small>BEST ${String(progress.best?.[s.id] || 0).padStart(6, '0')}</small></button>`).join('');
+      <b>${i + 1}. ${esc(s.name)}</b><small>${esc(s.sub)}</small><small>BEST ${String(progress.best?.[s.id] || 0).padStart(6, '0')} · ${progress.bestTime?.[s.id] ? fmtTime(progress.bestTime[s.id]) : '-:--'} <span class="par">(PAR ${fmtTime(s.par)})</span></small></button>`).join('');
   show(`<div class="card"><div class="big" style="font-size:30px">STAGE SELECT</div>
     <div class="stages">${tiles}</div>
     <div class="btns"><button class="btn" data-go="back">◀ BACK</button></div></div>`);
+}
+
+// Records: best time / score per stage, best bonus rounds, and the achievement wall.
+export function records(progress) {
+  const rows = STAGES.map((s) => `<div class="row"><span>${esc(s.name)}</span><b>${progress.bestTime?.[s.id] ? fmtTime(progress.bestTime[s.id]) : '-:--'} <small class="par">par ${fmtTime(s.par)}</small> · ${String(progress.best?.[s.id] || 0).padStart(6, '0')}</b></div>`).join('');
+  const bonus = Object.entries(progress.bonusBest || {}).map(([id, b]) => `<div class="row"><span>${esc(id.replace('bonus-', 'SERVER CORE · ').toUpperCase())}</span><b>${b.down}/${b.total}${b.left ? ` · ${b.left}s left` : ''}</b></div>`).join('');
+  const got = progress.ach || {}, n = ACHIEVEMENTS.filter((a) => got[a.id]).length;
+  const wall = ACHIEVEMENTS.map((a) => `<div class="ach ${got[a.id] ? 'on' : ''}"><b>${got[a.id] ? '★' : '☆'} ${esc(a.name)}</b><small>${esc(a.desc)}</small></div>`).join('');
+  show(`<div class="card"><div class="big" style="font-size:30px">RECORDS</div>
+    <div class="result">${rows}${bonus}<div class="row"><span>BEST RUN</span><b>${String(progress.bestTotal || 0).padStart(6, '0')}</b></div></div>
+    <div class="opt-h">ACHIEVEMENTS ${n}/${ACHIEVEMENTS.length}</div>
+    <div class="achs">${wall}</div>
+    <div class="btns"><button class="btn" data-go="back" data-pad-first>◀ BACK</button></div></div>`);
 }
 
 export function options(S, back = 'back') {
@@ -96,30 +111,36 @@ export function intro(stage, i, bonus = false) {
   </div>`, { dim: false });
 }
 
-export function clear(stage, i, w, total, last) {
+const gotList = (got) => (got?.length ? `<div class="got">${got.map((a) => `<div>★ ${esc(a.name)} <small>${esc(a.desc)}</small></div>`).join('')}</div>` : '');
+
+export function clear(stage, i, w, total, last, rec = {}) {
   const c = w.clear;
   show(`<div class="card"><div class="sub" style="letter-spacing:.3em;color:#2be8ff">STAGE ${i + 1} · ${esc(stage.name)}</div>
     <div class="big">STAGE CLEAR!</div>
     <div class="result">
-      <div class="row"><span>TIME</span><b>${fmtTime(c.time)}</b></div>
+      <div class="row"><span>TIME${rec.record ? ' <i class="rec">NEW RECORD!</i>' : ''}</span><b>${fmtTime(c.time)}</b></div>
+      <div class="row"><span>BEST · PAR</span><b>${rec.best ? fmtTime(rec.best) : '-:--'} · ${fmtTime(rec.par || stage.par)}</b></div>
       <div class="row"><span>TIME BONUS</span><b>+${c.timeBonus}</b></div>
       <div class="row"><span>INTEGRITY BONUS</span><b>+${c.hpBonus}</b></div>
       <div class="row"><span>ENEMIES</span><b>${w.stats.kills} (${w.stats.stomps} stomped)</b></div>
       <div class="row"><span>SCORE</span><b>${String(total).padStart(6, '0')}</b></div>
     </div>
+    ${gotList(rec.got)}
     <div class="btns">
       <button class="btn primary" data-go="${last ? 'ending' : 'next'}" data-pad-first>${last ? 'FINISH' : 'NEXT STAGE ▶'}</button>
       <button class="btn" data-go="title">TITLE</button>
     </div></div>`);
 }
 
-export function bonusResult(w, ok) {
+export function bonusResult(w, ok, rec = {}) {
   show(`<div class="card"><div class="big mag">${ok ? 'ALL SERVERS DOWN!' : 'TIME UP!'}</div>
     <div class="result">
       <div class="row"><span>SERVERS</span><b>${w.bonus.down}/${w.bonus.total}</b></div>
       ${ok ? `<div class="row"><span>CLEAR BONUS</span><b>+${w.clear.bonus}</b></div><div class="row"><span>REWARD</span><b>FULL INTEGRITY</b></div>` : ''}
       <div class="row"><span>BONUS SCORE</span><b>+${w.score}</b></div>
+      ${rec.best ? `<div class="row"><span>BEST${rec.record ? ' <i class="rec">NEW RECORD!</i>' : ''}</span><b>${rec.best.down}/${rec.best.total}${rec.best.left ? ` · ${rec.best.left}s left` : ''}</b></div>` : ''}
     </div>
+    ${gotList(rec.got)}
     <div class="btns"><button class="btn primary" data-go="bonusBack" data-pad-first>BACK TO THE CITY ▶</button></div></div>`);
 }
 

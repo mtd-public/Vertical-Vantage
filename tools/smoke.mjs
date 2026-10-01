@@ -144,6 +144,11 @@ await run('flow', { viewport: { width: 1280, height: 720 } }, async (page) => {
   await page.waitForTimeout(2000);
   check(await page.evaluate(() => !!document.querySelector('[data-go="next"]')), 'stage clear card');
   await page.screenshot({ path: `${OUT}/flow-clear.png` });
+  check(await page.evaluate(() => /BEST/.test(document.getElementById('screen').textContent) && !!JSON.parse(localStorage.getItem('vertical-vantage.progress')).bestTime.skyway), 'best time recorded and shown');
+  await page.click('[data-go="title"]'); await page.waitForTimeout(250);
+  await page.click('[data-go="records"]'); await page.waitForTimeout(250);
+  check(await page.evaluate(() => document.querySelectorAll('.ach').length >= 10 && document.querySelectorAll('.ach.on').length >= 1), 'records screen lists achievements (some unlocked)');
+  await page.screenshot({ path: `${OUT}/flow-records.png` });
 });
 
 await run('boss', { viewport: { width: 1280, height: 720 } }, async (page) => {

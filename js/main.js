@@ -344,7 +344,7 @@ function handleEvents(w) {
       case 'bossTele': avatar.react('bossTele'); break;
       case 'bossCharge': avatar.react('bossCharge'); break;
       case 'bossSlam': input.rumble(1, 0.6, 350); break;
-      case 'bossPhase': hud.toast(e.phase === 2 ? 'IT’S CLIMBING THE WALLS!' : 'ENRAGED!', 'red'); avatar.react('bossPhase', true); input.rumble(0.8, 0.5, 300); break;
+      case 'bossPhase': hud.toast(e.phase === 2 ? ((w.boss?.kind || 'arachne') === 'arachne' ? 'IT’S CLIMBING THE WALLS!' : 'IT’S ADAPTING!') : 'ENRAGED!', 'red'); avatar.react('bossPhase', true); input.rumble(0.8, 0.5, 300); break;
       case 'bossDying': hud.toast(`${w.level.bossName || 'BOSS'} DOWN!`, 'gold'); avatar.react('bossDown', true); input.rumble(1, 1, 700); break;
       case 'spiked': hud.toast('SPIKES!', 'red'); avatar.react('spiked'); input.rumble(0.5, 0.6, 150); break;
       case 'slowStart': hud.toast('SLOW-MO', ''); avatar.react('slow'); break;

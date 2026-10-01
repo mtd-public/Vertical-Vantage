@@ -24,7 +24,8 @@ No build step and no npm dependencies. It uses three.js r160 (vendored) through 
 | **Stages** | **1 HARBOR 9**: future docks by day, with container stairs, a hover barge and a crane boom. **2 SKYWAY**: Neo-Tokyo rooftops by day, with a shuttle-bus lane and an arcology. **3 NEON RAIN**: night and rain, live traffic lanes, a police cruiser, a pagoda, and a 92 m megatower. **4 WAREHOUSE 13**: the boss stage. |
 | **Goal** | Collect 3 hard drives. The exit (a neon torii gate with a beam you can see from anywhere) goes from red to cyan. Walk in to finish. In stage 4, the exit opens when the boss dies. |
 | **Boss** | **ARACHNE-9** is a red industrial spider mech in the middle of OmniCorp's warehouse: armour plates over a gunmetal chassis, hydraulic rams on every leg, an amber sensor head with mandibles, and a heat-vented rear section. It chases you, working round crates and racks rather than through them. It telegraphs a pounce, then lands with a slam shockwave that you jump over. It charges, then sweeps a laser that cover blocks. It climbs the long walls, crawls the ceiling and drops onto you. A turret on its back fires bursts at you. It gets more aggressive at 60 % and 30 % health, and it is stunned (taking 1.5× damage) after each slam. The warehouse has catwalks, racks, hover-pallet lifts, and respawning health, weapons, slow-mo and OVERDRIVE. |
-| **Movement** | Triple jump (+2.9 m, +4.3 m, +6.1 m). Auto look-down while falling, with a landing ring under you. Hover cars bob and move, and you ride them. Air control. Coyote time and jump buffering. |
+| **Movement** | Triple jump (+2.9 m, +4.3 m, +6.1 m). The auto look-down starts mid-rise on every jump. Hover cars bob and move, and you ride them. Air control. Coyote time and jump buffering. The camera punches out a little on each jump (a roll wobble on the third) and widens as a fall speeds up, with wind streaks. Your heel jets fire on air jumps. |
+| **Where am I, where will I land** | A soft shadow sits straight under you. A landing reticle sits where your current arc will come down (the look-ahead follows your stick and stops at walls), and a ring closes on it as touchdown nears. Dots trace the arc. Under the crosshair, **▼ 8.2 m** shows how far down the landing is: gold over a long drop. **NO GROUND · JUMP!** appears when the arc ends in the void and you still have air jumps; **⚠ NO GROUND**, with a red ring, when you don't. |
 | **Stomp bounce** | Landing on a smooth head or back is a free bounce, and it refunds your air jumps. Drones and crawlers die from the bounce alone. Guards and the boss survive it: the view then snaps down onto them and fires a short volley (bounce → aim down → shoot). Spiked crawlers hurt you if you land on them, so shoot those. |
 | **Hazards** | Laser walls that cycle on and off with a flicker warning: jump the short ones, time the tall ones. Falling costs 2 integrity and respawns you. |
 | **Enemies** | Hover drones that telegraph, then fire slow bolts. Crawler bots that patrol their deck and ride it. Security officers in long coats with a laser-sight telegraph and a 3-round burst. Stomp any of them. |
@@ -72,6 +73,7 @@ js/sim/        PURE game rules: no three.js, no DOM (ports translate these line 
   hazards.js     laser walls
   world.js       createWorld(level) · step(world, control) · events · snapshot
 js/sim/boss.js  ARACHNE-9: a state machine on the inside surfaces of the warehouse (floor / walls / ceiling)
+js/sim/predict.js  predictLanding(): the pure landing look-ahead the HUD and reticle use (ports reuse it)
 js/levels/     PURE level data built with kit.js (dr-mow's rect/disc/mv vocabulary + cars, chains, billboards, lasers)
 js/render/     three.js view: retro.js (PS1 patch), sky.js (arcade sky + city skyline), level-view.js,
                models.js (cars, robots, officers, gate…), fx.js, ads.js (the satirical ad atlas), renderer.js
@@ -89,6 +91,7 @@ GAME_DESIGN.md   pillars, numbers, cast, art, budget, delta log
 
 ```
 node tools/sim-check.mjs              # every drive/exit/portal/server reachable inside the jump envelope; movement numbers; scripted play;
+                                      # the look-down starts mid-rise; the landing look-ahead matches 160 random jumps;
                                       # the boss's full move set (and it never walks through racks or crates), stomp-bounce lock-on,
                                       # spikes, slow-mo, respawns
 node tools/export-levels.mjs --check  # data/ matches the JS levels

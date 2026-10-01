@@ -46,7 +46,8 @@ The verb count is move, look, jump, fire and swap, which means a stick plus a bu
 | Gravity | 21 m/s² | Floaty: hang time to look down and line up a landing. |
 | Jump launch speeds | 11, 13.5, 16 m/s | +2.9, +4.3, +6.1 m: each air jump is stronger (Jumping Flash). |
 | Coyote / buffer | 0.10 s / 0.14 s | Edge-forgiving. |
-| Auto look-down | to −66° once vy < 2.5 m/s, blend 2.4/s in, 6/s out | Puts the landing ring in view; a deliberate look (> 0.06 rad) takes over until you land. |
+| Auto look-down | to −66° once you've lost half of this jump's launch speed (mid-rise on every jump), blend 3.2/s in, 6/s out | The landing reticle is already in view at the apex. A deliberate look (> 0.06 rad) takes over until you land. |
+| Landing look-ahead | `predictLanding`: 1/30 s steps for up to 5 s, following the stick (AIR_ACCEL) or drag, stopping at walls | Matches the real touchdown on 156 of 160 random jumps (sim-check). It drives the reticle, the arc dots and the ▼ readout. |
 | Integrity | 8 cells; bolt −1, fall −2, laser −1 | Careless fights cost half a bar, not the run. |
 | Invulnerability | 1.1 s blink | Doc 10. |
 | Stomp | Free 12 m/s bounce that refunds the air jumps. Drones and walkers die (they're small); guards take 2; the boss takes 4 (× 1.5 when stunned). | Stomp chains feel great. |
@@ -78,11 +79,18 @@ reachable from each drive and from the portal.
 ## 5. Cast
 
 - **The player:** a small white-and-blue robot.
-  - **Legs:** you see them when you look down. They run, tuck on every jump (deeper on the 2nd and
-    3rd), dangle as you fall, reach for the deck just before landing, and point straight down
-    during a stomp.
-  - **Arm cannon:** in the corner, with a different muzzle per weapon. It sways with your look,
-    recoils per weapon, and dips on a swap.
+  - **Legs:** white armour with blue guards, orange knee axles, cyan light strips, and boots with
+    orange toe caps and heel jets. They are set wide and a touch behind the eye, so the middle of
+    the down view stays clear. Poses:
+    - a run cycle with flat feet
+    - a push-off on takeoff, and a kick with the jets firing on air jumps
+    - a tuck that folds back (deeper on the 2nd and 3rd jump)
+    - a dangle and splay as you fall
+    - a reach for the deck just before landing, then a squash
+    - toes pointed during a stomp
+  - **Arm cannon:** a rounded forearm running in from off-screen, with a blue plate and an orange
+    band, plus a different muzzle per weapon. It sways with your look, recoils per weapon, and dips
+    on a swap.
 - **ECHO:** the onboard AI, a face on a little CRT plate. It has 15 expressions (idle glance, ^ ^,
   manic grin with tongue out, sparkle eyes, heart eyes, > <, angry with an anger mark, red-slit
   mission mode, half-lidded smug, shock, spirals, worried with a sweat drop, T T crying, derp, x x).
@@ -235,3 +243,22 @@ mstr-gme-dsgn-tmpt `kits/`:
   - a limiter on the mix
   - shape-coded markers and an X crosshair on targets
 - Best times, bonus bests, 12 achievements and a RECORDS screen (issue 11).
+
+### claude/wizardly-hopper-ftczx9 (landing readability pass)
+
+- The auto look-down starts mid-rise on every jump (AUTO_RISE 0.5 of the launch speed) and blends
+  in faster.
+- New where-am-I and where-will-I-land aids:
+  - a soft shadow straight under you
+  - a landing reticle at the predicted touchdown, with a ring closing on it
+  - arc dots along the predicted path
+  - a ▼ drop readout under the crosshair
+  - NO GROUND warnings: gold while you have air jumps, red when you're out
+- Jump and fall feel:
+  - takeoff FOV punch and dip; a roll wobble on the third jump
+  - fall-speed FOV and wind streaks
+  - heel jets on air jumps
+  - push-off, kick, tuck, dangle and reach poses
+  - a soft ring on hard landings
+  - all camera effects scale with the comfort option
+- Player art: new legs (tapered thighs, guards, boots, jets) and a rounded forearm cannon.

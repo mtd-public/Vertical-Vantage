@@ -48,6 +48,11 @@ circle (`BOSS.bodyR`) out of these, and aims chases, pounces and drops at the ne
 (`freeSpot`). Wall climbs stay inside `arena.climbX`. All of it is plain loops over `w.plats`, with no
 generators or closures over engine state.
 
+**Landing look-ahead:** `sim/predict.js` `predictLanding(plats, player, out, { step, maxT, killY, path })` is
+pure, and the sim never calls it. The adapter calls it once a frame for the reticle, the arc dots and
+the ▼ readout. It reads the player fields `steer`, `tvx` and `tvz` (what the stick asked for this
+step). Port it with the core.
+
 **Slow-mo** runs a second clock, `world.pt`, at `T.SLOW_K`. Platforms, lasers, enemies and bolts step
 with it; the player and the player's shots step with `DT`. Without slow-mo, `pt === t` exactly.
 
@@ -93,7 +98,7 @@ numbers.
 
 | JS | Godot | Unity |
 |---|---|---|
-| `sim/*.js` | `core/*.gd` (RefCounted classes) or a C# library | `VerticalVantage.Core` (netstandard2.1, `noEngineReferences`) |
+| `sim/*.js` (incl. `predict.js`) | `core/*.gd` (RefCounted classes) or a C# library | `VerticalVantage.Core` (netstandard2.1, `noEngineReferences`) |
 | `levels/*.js` | read `data/levels/*.json` | same (TextAsset / StreamingAssets) |
 | `render/level-view.js` | build `MeshInstance3D`s per style; `MultiMeshInstance3D` per car kind | build `Mesh`es in code; `Graphics.RenderMeshInstanced` per car kind |
 | `render/retro.js` | a spatial shader: vertex snap in `vertex()`, 15-bit dither in `fragment()`, viewport at 240 lines with nearest filtering | a URP Renderer Feature, or a low-res RenderTexture plus a vertex-snap shader |

@@ -57,6 +57,8 @@ await run('desktop', { viewport: { width: 1280, height: 800 } }, async (page) =>
   await page.screenshot({ path: `${OUT}/desktop-air.png` });
   const s1 = await state(page);
   check(s1.z < s0.z - 4 && s1.y > s0.y + 6, `WASD + triple jump moves and climbs (z ${s0.z}→${s1.z}, y ${s0.y}→${s1.y})`);
+  const aid = await page.evaluate(() => ({ txt: document.getElementById('drop').textContent, shown: !document.getElementById('drop').classList.contains('hidden'), reticle: GAME.renderer.fx.marker.visible || GAME.renderer.voidAhead, look: GAME.G.world.player.auto }));
+  check(aid.shown && /m|GROUND/.test(aid.txt) && aid.reticle && aid.look > 0.3, `in the air: drop readout "${aid.txt}", landing reticle or void warning, auto look-down ${aid.look.toFixed(2)}`);
   await page.keyboard.up('w');
   await page.keyboard.down('j'); await page.waitForTimeout(500); await page.keyboard.up('j');
   check(await page.evaluate(() => GAME.G.world.stats.shots) > 2, 'J fires');

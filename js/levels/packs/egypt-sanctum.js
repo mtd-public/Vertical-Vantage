@@ -152,7 +152,6 @@ export default {
     { type: 'guard', x: 8, y: AF, z: -118 },
     { type: 'spiker', x: 46, y: -8, z: 30 },
     { type: 'drone', x: 0, y: gf(4) + 9, z: gzm(4) },
-    { type: 'drone', x: 0, y: 42, z: -122 },
     { type: 'drone', x: 4, y: STAR + 4, z: -156 },
   ],
   pickups: [

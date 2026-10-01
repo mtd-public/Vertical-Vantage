@@ -36,24 +36,63 @@ export const tuning = {
   keep: 7, // it stops closing in here: the sweep's reach is 8.5, so standing your ground is a choice.
   stalk: [[2.2, 3.0], [1.7, 2.4], [1.3, 1.9]], // seconds between attacks, by phase.
   vulnOpen: 1.5, // damage × in the punish windows (recover, stuck, vent, shake, reel).
-  sweep: { tele: [0.9, 0.8, 0.7], r: 8.5, height: 1.3, swing: 0.35, back: [0, 0.9, 0.9], backY: 2.6, backH: 7.5, recover: [1.4, 1.2, 1.0] },
-  //       the low ring hits below 1.3 m (a hop clears it); from phase 2 a high ring 2.6 m up lands 0.9 s later and hits anyone
-  //       0.4–10 m off the floor (on a jar, still in the air): a single hop has come down by then. Hop, land, stay down.
-  slam: { tele: [1.0, 0.9, 0.8], reach: 4.6, crushR: 3.4, crushDmg: 2, waves: [1, 2, 3], gap: 1.2, speed: 13, band: 0.9, height: 0.9, maxR: 44, stuck: [1.8, 1.5, 1.25] },
-  //       the sceptre comes down 4.6 m in front (the crush ring shows the spot); rings run out at 13 m/s, 1.8 m thick and
-  //       0.9 m tall, 1.2 s apart (15.6 m): hop each as it reaches you (a single hop is 1.05 s in the air, so you're down
-  //       again for the next). The sceptre sticks in the floor while the aftershocks run on.
-  beam: { charge: [1.1, 0.95, 0.85], time: [2.2, 2.6, 3.0], rate: [0.42, 0.5, 0.58], vent: [2.0, 1.7, 1.4], len: 90 },
-  //       the sight line shows ≥ 0.85 s; the beam turns at most 0.42–0.58 rad/s (at 15 m that's 6–9 m/s: run across it,
-  //       or put a column between you); it vents afterwards.
-  bolts: { tele: [0.7, 0.6, 0.55], n: [3, 5, 5], arc: [0.5, 0.7, 0.8], speed: [16, 17.5, 19], volleys: [1, 2, 2], gap: 0.5 },
-  //       ankh bolts (1 damage, blocked by geometry) fanned at you: slower than a turret round (20), the gaps move.
-  summon: { tele: 1.0, n: [2, 2, 3], cap: [3, 4, 5], cd: [15, 12, 10], out: 2.6 },
-  //       the jars glow for 1 s, then scarabs crawl out of the two nearest you (never more than `cap` alive).
-  sink: { tele: 0.6, down: 0.7, swirl: [1.25, 1.15, 1.05], rise: 0.55, r: 4.2, dmg: 2, knock: 14, shake: [1.4, 1.2, 1.0], cd: [9, 8, 7], depth: 10 },
-  //       crouch 0.6 s, sink 0.7 s (invulnerable), then a swirl ring where you stand: ≥ 1.05 s to step out of 4.2 m before it
-  //       bursts up through it (2 damage). It shakes off the sand afterwards (the punish window). depth: how far it sinks
-  //       (more than its height: nothing shows above the floor).
+  sweep: { // the staff sweep: a ring round it at ankle height, then (phase 2+) the backswing at head height
+    tele: [0.9, 0.8, 0.7], // it crouches with the staff held low: the ring fills in for this long, by phase.
+    r: 8.5, // the staff's reach: step back past it, or hop.
+    height: 1.3, // the low ring hits below 1.3 m: a single hop (2.9 m) clears it.
+    swing: 0.35, // the swing itself (the pose; the ring has landed).
+    back: [0, 0.9, 0.9], // the backswing lands this long after the low ring (none in phase 1): a single hop is down again by then.
+    backY: 2.6, // the high ring floats 2.6 m up…
+    backH: 7.5, // …and reaches 7.5 m above that: it hits anyone 0.4–10 m off the floor (on a jar, still in the air). Stay down.
+    recover: [1.4, 1.2, 1.0], // off balance afterwards: the punish window.
+  },
+  slam: { // the sceptre slam: a crush under its head, then shockwave rings across the floor
+    tele: [1.0, 0.9, 0.8], // it raises the sceptre overhead; the crush ring fills in.
+    reach: 4.6, // the sceptre comes down 4.6 m in front of it.
+    crushR: 3.4, // the crush ring's radius…
+    crushDmg: 2, // …and what it costs you.
+    waves: [1, 2, 3], // shockwave rings by phase…
+    gap: 1.2, // …1.2 s apart (15.6 m): a single hop is 1.05 s in the air, so you're down again for the next.
+    speed: 13, // rings run out at 13 m/s: you see each one coming.
+    band: 0.9, // half-thickness of a ring: 1.8 m (plus your radius) to clear.
+    height: 0.9, // a ring reaches 0.9 m up: any hop clears it, and so does a jar, a column or a pan.
+    maxR: 44, // rings fade out beyond the hall's walls.
+    stuck: [1.8, 1.5, 1.25], // the sceptre sticks in the floor: the punish window (the aftershocks run on).
+  },
+  beam: { // the eye beam: a sight line, then a beam that turns after you; cover blocks it
+    charge: [1.1, 0.95, 0.85], // the sight line shows this long (≥ 0.85 s) before the beam lights.
+    time: [2.2, 2.6, 3.0], // how long it burns.
+    rate: [0.42, 0.5, 0.58], // rad/s it turns after you: at 14 m that's 5.9–8.1 m/s, under your 8.5. Or hide behind a column.
+    vent: [2.0, 1.7, 1.4], // its eyes cool afterwards: the punish window.
+    len: 90, // the beam's reach (the hall is 72 m across).
+  },
+  bolts: { // ankh bolts (1 damage, blocked by geometry), mostly for players up on a perch
+    tele: [0.7, 0.6, 0.55], // it raises the sceptre and its eyes flare.
+    n: [3, 5, 5], // bolts per fan (plus one on odd volleys: the gaps move).
+    arc: [0.5, 0.7, 0.8], // the fan's spread (radians).
+    speed: [16, 17.5, 19], // slower than a turret round (20): strafe through the gaps.
+    volleys: [1, 2, 2], // fans per attack…
+    gap: 0.5, // …this far apart.
+  },
+  summon: { // scarabs from the canopic jars (walkers; spikers from phase 2)
+    tele: 1.0, // the two jars nearest you glow this long first.
+    n: [2, 2, 3], // scarabs per call.
+    cap: [3, 4, 5], // never more than this many alive at once.
+    cd: [15, 12, 10], // seconds before it can call them again.
+    out: 2.6, // they crawl out this far in front of the jar (toward the hall's middle).
+  },
+  sink: { // the sand-sink teleport
+    tele: 0.6, // it crouches and the sand starts to turn at its feet.
+    down: 0.7, // it sinks (invulnerable, no contact) …
+    swirl: [1.25, 1.15, 1.05], // … then a swirl ring opens where you stand: this long (≥ 1 s) to get out of it.
+    rise: 0.55, // it bursts up through the swirl (still invulnerable) …
+    r: 4.2, // the swirl's radius: 4.7 m to run, 0.55 s at 8.5 m/s.
+    dmg: 2, // the burst's damage …
+    knock: 14, // … and it throws you clear.
+    shake: [1.4, 1.2, 1.0], // it shakes off the sand: the punish window.
+    cd: [9, 8, 7], // seconds before it sinks again.
+    depth: 10, // how far it goes down: more than its height, so nothing shows above the floor.
+  },
   reel: 1.4, // a head stomp staggers it (vuln 1.5), then it sinks away.
   headBonus: 8, // extra damage for a head stomp (the stomp itself does 4): about 4 % of its health.
   headCD: 3.5, // the bonus comes once per this long.

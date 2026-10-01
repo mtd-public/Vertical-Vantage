@@ -47,7 +47,7 @@ P(DISH, fanous(13.5, -62.2, 18.4, { tint: 3 }));
 // ---- the SOUK: al-Muizz street (x 34–42) between rows of shops, awnings over it, a covered section
 // (DRIVE 2 inside, a laser at each end) and Bab Zuweila's twin minarets at its south end
 const shops = [];
-for (const [x0, x1, s] of [[26, 34, 811], [42, 50, 812]]) {
+for (const [x0, x1, s] of [[26, 34, 8106], [42, 50, 8107]]) { // (a hash of the seed picks each shop's depth and height)
   let z = 38, k = s;
   while (z > -86) {
     const d = 6 + ((k * 7919) % 30) / 10, top = 5.5 + ((k * 104729) % 21) / 10;

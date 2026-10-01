@@ -9,17 +9,136 @@
     "neon",
     "warehouse"
    ]
+  },
+  {
+   "id": "ocean",
+   "name": "OCEAN CORE",
+   "stages": [
+    "ocean-intake",
+    "ocean-coldaisle",
+    "ocean-storm",
+    "ocean-boss"
+   ]
+  },
+  {
+   "id": "chicago",
+   "name": "NEO CHICAGO",
+   "stages": [
+    "chicago-loop",
+    "chicago-lakeshore",
+    "chicago-skydeck",
+    "chicago-boss"
+   ]
+  },
+  {
+   "id": "sanfran",
+   "name": "NEW SAN FRANCISCO",
+   "stages": [
+    "sanfran-gate",
+    "sanfran-hills",
+    "sanfran-peaks",
+    "sanfran-boss"
+   ]
+  },
+  {
+   "id": "seattle",
+   "name": "SEATTLE",
+   "stages": [
+    "seattle-needle",
+    "seattle-pike",
+    "seattle-rainier",
+    "seattle-boss"
+   ]
+  },
+  {
+   "id": "shanghai",
+   "name": "SHANGHAI",
+   "stages": [
+    "shanghai-bund",
+    "shanghai-pudong",
+    "shanghai-lanterns",
+    "shanghai-boss"
+   ]
+  },
+  {
+   "id": "euro",
+   "name": "NEO EURO",
+   "stages": [
+    "euro-pisa",
+    "euro-amalfi",
+    "euro-venice",
+    "euro-boss"
+   ]
+  },
+  {
+   "id": "fortress",
+   "name": "AIR FORTRESS",
+   "stages": [
+    "fortress-deck",
+    "fortress-hull",
+    "fortress-bay",
+    "fortress-boss"
+   ]
   }
  ],
  "stages": [
   "docks",
   "skyway",
   "neon",
-  "warehouse"
+  "warehouse",
+  "ocean-intake",
+  "ocean-coldaisle",
+  "ocean-storm",
+  "ocean-boss",
+  "chicago-loop",
+  "chicago-lakeshore",
+  "chicago-skydeck",
+  "chicago-boss",
+  "sanfran-gate",
+  "sanfran-hills",
+  "sanfran-peaks",
+  "sanfran-boss",
+  "seattle-needle",
+  "seattle-pike",
+  "seattle-rainier",
+  "seattle-boss",
+  "shanghai-bund",
+  "shanghai-pudong",
+  "shanghai-lanterns",
+  "shanghai-boss",
+  "euro-pisa",
+  "euro-amalfi",
+  "euro-venice",
+  "euro-boss",
+  "fortress-deck",
+  "fortress-hull",
+  "fortress-bay",
+  "fortress-boss"
  ],
  "bonus": {
   "docks": "bonus-docks",
   "skyway": "bonus-skyway",
-  "neon": "bonus-neon"
+  "neon": "bonus-neon",
+  "ocean-intake": "bonus-ocean-intake",
+  "ocean-coldaisle": "bonus-ocean-coldaisle",
+  "ocean-storm": "bonus-ocean-storm",
+  "chicago-loop": "bonus-chicago-loop",
+  "chicago-lakeshore": "bonus-chicago-lakeshore",
+  "chicago-skydeck": "bonus-chicago-skydeck",
+  "sanfran-gate": "bonus-sanfran-gate",
+  "sanfran-hills": "bonus-sanfran-hills",
+  "sanfran-peaks": "bonus-sanfran-peaks",
+  "seattle-needle": "bonus-seattle-needle",
+  "seattle-pike": "bonus-seattle-pike",
+  "seattle-rainier": "bonus-seattle-rainier",
+  "shanghai-bund": "bonus-shanghai-bund",
+  "shanghai-pudong": "bonus-shanghai-pudong",
+  "shanghai-lanterns": "bonus-shanghai-lanterns",
+  "euro-pisa": "bonus-euro-pisa",
+  "euro-amalfi": "bonus-euro-amalfi",
+  "euro-venice": "bonus-euro-venice",
+  "fortress-deck": "bonus-fortress-deck",
+  "fortress-hull": "bonus-fortress-hull",
+  "fortress-bay": "bonus-fortress-bay"
  }
 }

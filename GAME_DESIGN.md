@@ -145,7 +145,7 @@ on touch). Bonus stages add a big timer and a server count.
 
 ## 8. Progression
 
-Three stages, then the boss stage, unlock in order (Stage Select remembers them). Score carries
+The game is 8 level packs (`js/levels/packs/`), each three stages and a boss stage around one theme: NEO-TOKYO, OCEAN CORE, NEO CHICAGO, NEW SAN FRANCISCO, SEATTLE, SHANGHAI, NEO EURO and AIR FORTRESS. Stages unlock in order and Stage Select groups them by pack; a pack's boss clear leads on to the next pack, and the last one leads to the ending. For testing, `TESTING_UNLOCK_ALL` in `js/main.js` unlocks everything (turn it off before a real release). `docs/PACK_GUIDE.md` is the contract for building a pack. Score carries
 across a run. Each stage has a hidden bonus portal. localStorage stores the following (wrapped in
 try/catch):
 
@@ -154,7 +154,7 @@ try/catch):
 - best result per bonus arena
 - best run
 - portals found
-- 12 achievements, read from the sim's events by `js/ui/achievements.js`
+- 13 achievements, read from the sim's events by `js/ui/achievements.js`
 
 The RECORDS screen shows all of them.
 
@@ -267,3 +267,26 @@ mstr-gme-dsgn-tmpt `kits/`:
   - a soft ring on hard landings
   - all camera effects scale with the comfort option
 - Player art: new legs (tapered thighs, guards, boots, jets) and a rounded forearm cannon.
+
+### claude/level-packs (level packs)
+
+- Pack framework: `PACKS` → `STAGES`, a bonus arena per portal stage, a boss registry
+  (`js/sim/bosses/`) with a shared toolkit, danger zones, a `turret` enemy and orbit movers; render
+  registries for pack themes, platform styles, backdrops and boss views; per-pack songs; generic
+  boss checks in sim-check plus one check file per boss; grouped stage select; all stages unlocked
+  for testing.
+- Seven new packs, built in parallel:
+  - OCEAN CORE (KRAKEN-OS)
+  - NEO CHICAGO (TAURUS-312)
+  - NEW SAN FRANCISCO (TREMOR)
+  - SEATTLE (STORMCROW)
+  - SHANGHAI (JADE DRAGON)
+  - NEO EURO (CENTURION)
+  - AIR FORTRESS (DREADNOUGHT)
+- ARACHNE-9 is wired like it runs on raw power: a Tesla coil, capacitors, insulators, copper and
+  live arcs.
+- New arm cannon: an iris of four petals round a glowing core. Each weapon has its own muzzle,
+  plus heat fins and an ammo screen.
+- New achievements: PEST CONTROL (beat a boss) and BOSS RUSH (beat every boss).
+- Not yet done: songs for NEW SAN FRANCISCO and SEATTLE (they fall back to the stock tracks), and
+  playtesting and balance of the new packs. These are tracked as GitHub issues.

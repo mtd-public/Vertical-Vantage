@@ -235,7 +235,797 @@
   "turretSpeed": 19,
   "dyingTime": 2.2
  },
- "BOSSES": {},
+ "BOSSES": {
+  "kraken": {
+   "hp": 280,
+   "r": 2.6,
+   "top": 4.4,
+   "headUp": 5.6,
+   "sink": 9,
+   "intro": 2,
+   "riseT": 0.75,
+   "diveT": 0.8,
+   "underT": [
+    2,
+    1.7,
+    1.45
+   ],
+   "idleT": [
+    0.95,
+    0.75,
+    0.6
+   ],
+   "attacks": [
+    2,
+    3,
+    3
+   ],
+   "centre": [
+    0,
+    0.25,
+    0.35
+   ],
+   "slamTele": [
+    1.25,
+    1.05,
+    0.9
+   ],
+   "slamR": [
+    3,
+    3.1,
+    3.3
+   ],
+   "slamArms": [
+    2,
+    3,
+    4
+   ],
+   "slamGap": [
+    0.5,
+    0.42,
+    0.34
+   ],
+   "slamDmg": 1,
+   "slamKnock": 10,
+   "slamHeight": 2.6,
+   "recover": 1.15,
+   "volleyTele": 0.8,
+   "volleyN": [
+    3,
+    5,
+    5
+   ],
+   "volleyArc": [
+    0.45,
+    0.7,
+    0.85
+   ],
+   "volleyShots": [
+    2,
+    2,
+    3
+   ],
+   "volleyGap": 0.55,
+   "boltSpeed": [
+    14,
+    16,
+    18
+   ],
+   "charge": 1.05,
+   "laserTime": [
+    1.8,
+    2.1,
+    2.7
+   ],
+   "sweep": 0.55,
+   "sweepRate": [
+    0.62,
+    0.72,
+    0.82
+   ],
+   "beamLen": 60,
+   "eyeF": 3.1,
+   "eyeY": 0.3,
+   "jawF": 2.9,
+   "jawY": -1.2,
+   "reel": 1.5,
+   "reelVuln": 1.5,
+   "recoverVuln": 1.5,
+   "drones": [
+    0,
+    2,
+    3
+   ],
+   "droneY": 11.5,
+   "turn": 2.4
+  },
+  "taurus": {
+   "hp": 280,
+   "r": 2.6,
+   "top": 3.4,
+   "bodyR": 2.3,
+   "margin": 3.4,
+   "walk": [
+    3.6,
+    4.4,
+    5.2
+   ],
+   "stalk": [
+    1.6,
+    1.3,
+    1
+   ],
+   "paw": [
+    1.1,
+    0.9,
+    0.75
+   ],
+   "chainPaw": 0.6,
+   "lock": 0.35,
+   "charge": [
+    16,
+    18,
+    20
+   ],
+   "overshoot": 8,
+   "minRun": 10,
+   "maxRun": 42,
+   "skid": 0.7,
+   "chains": [
+    0,
+    1,
+    2
+   ],
+   "stun": [
+    3,
+    2.6,
+    2.2
+   ],
+   "stunVuln": 1.5,
+   "stunStomp": 14,
+   "shake": 0.6,
+   "trample": 2,
+   "trampleKnock": 13,
+   "trampleToss": 9,
+   "tossRange": 7.5,
+   "tossCone": 0.65,
+   "toss": [
+    0.7,
+    0.6,
+    0.55
+   ],
+   "tossR": 4.2,
+   "tossReach": 3.6,
+   "tossDmg": 2,
+   "tossKnock": 15,
+   "tossHeight": 2.2,
+   "tossCool": 0.55,
+   "crouch": [
+    0.85,
+    0.7,
+    0.6
+   ],
+   "slamR": 6.5,
+   "slamHeight": 1.2,
+   "crushR": 3,
+   "recover": 1.1,
+   "leapMin": 10,
+   "podTele": 0.7,
+   "volleys": [
+    2,
+    3,
+    4
+   ],
+   "podN": [
+    3,
+    4,
+    5
+   ],
+   "podArc": 0.55,
+   "podSpeed": 17,
+   "podGap": 0.5,
+   "high": 3,
+   "rage": 1.3,
+   "intro": 1.5,
+   "dyingTime": 1.8
+  },
+  "tremor": {
+   "hp": 320,
+   "r": 2.6,
+   "top": 3.2,
+   "bodyH": 1.7,
+   "bodyR": 2.4,
+   "margin": 3.5,
+   "intro": 2.2,
+   "walk": [
+    3.6,
+    4.4,
+    5.2
+   ],
+   "crawl": [
+    1.6,
+    2.6
+   ],
+   "digTele": [
+    1,
+    0.85,
+    0.7
+   ],
+   "digTime": 0.6,
+   "under": 3.9,
+   "burrowSpeed": [
+    7,
+    8.5,
+    10
+   ],
+   "burrowMax": [
+    4.5,
+    4,
+    3.5
+   ],
+   "emergeTele": [
+    1,
+    0.85,
+    0.72
+   ],
+   "emergeR": 3.4,
+   "emergeDmg": 2,
+   "emergeKnock": 13,
+   "emergeH": 3,
+   "rise": 0.45,
+   "stuck": [
+    1.6,
+    1.35,
+    1.15
+   ],
+   "stuckVuln": 1.25,
+   "spinTele": [
+    0.95,
+    0.85,
+    0.75
+   ],
+   "spinR": 7,
+   "spinDmg": 1,
+   "spinKnock": 12,
+   "spinH": 1.6,
+   "spinStun": [
+    2.2,
+    1.9,
+    1.6
+   ],
+   "stunVuln": 1.5,
+   "frontBlock": -0.4,
+   "boltTele": [
+    0.7,
+    0.6,
+    0.55
+   ],
+   "boltN": [
+    5,
+    7,
+    7
+   ],
+   "boltArc": [
+    0.8,
+    1,
+    1.1
+   ],
+   "boltSpeed": 16,
+   "volleys": [
+    1,
+    2,
+    3
+   ],
+   "volleyGap": 0.45,
+   "cracks": [
+    0,
+    2,
+    3
+   ],
+   "crackN": [
+    0,
+    4,
+    3
+   ],
+   "crackGap": 3.6,
+   "crackR": 2,
+   "crackDelay": 0.75,
+   "crackStep": 0.16,
+   "crackH": 2.2,
+   "ringN": 6,
+   "ringR": 5.6,
+   "ringZoneR": 2.1,
+   "ringDelay": 0.25,
+   "chain": [
+    1,
+    1,
+    2
+   ],
+   "minions": [
+    0,
+    2,
+    2
+   ]
+  },
+  "stormcrow": {
+   "hp": 300,
+   "r": 2.3,
+   "top": 2.6,
+   "bodyH": 1.3,
+   "orbitR": [
+    23,
+    22,
+    21
+   ],
+   "orbitH": [
+    14,
+    13.5,
+    13
+   ],
+   "orbitW": [
+    0.34,
+    0.4,
+    0.46
+   ],
+   "think": [
+    [
+     2.4,
+     3.4
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     1.6,
+     2.6
+    ]
+   ],
+   "diveTele": [
+    0.85,
+    0.72,
+    0.62
+   ],
+   "diveTele2": 0.65,
+   "diveSpeed": [
+    19,
+    22,
+    25
+   ],
+   "diveEase": 30,
+   "diveOut": 14,
+   "diveClimb": 10,
+   "diveLead": [
+    0,
+    0.35,
+    0.6
+   ],
+   "diveDmg": 2,
+   "diveKnock": 7,
+   "landSpeed": 18,
+   "doubleDive": [
+    0,
+    0.5,
+    0.8
+   ],
+   "perchChance": [
+    0.75,
+    0.6,
+    0.5
+   ],
+   "perchTime": [
+    3.2,
+    2.7,
+    2.2
+   ],
+   "perchR": 6,
+   "perchClear": 6,
+   "perchVuln": 1.5,
+   "gustTele": 0.7,
+   "gustR": 4.8,
+   "gustKnock": 12,
+   "fanTele": [
+    0.65,
+    0.55,
+    0.5
+   ],
+   "fanN": [
+    5,
+    7,
+    9
+   ],
+   "fanArc": [
+    0.5,
+    0.65,
+    0.8
+   ],
+   "fanSpeed": [
+    14,
+    15.5,
+    17
+   ],
+   "stormTele": 0.6,
+   "strikes": [
+    2,
+    3,
+    5
+   ],
+   "strikeDelay": [
+    1.2,
+    1.05,
+    0.95
+   ],
+   "strikeR": 3,
+   "strikeH": 3.5,
+   "minions": [
+    0,
+    1,
+    1
+   ],
+   "maxDrones": 3,
+   "takeoff": 1.1
+  },
+  "dragon": {
+   "hp": 300,
+   "headR": 1.9,
+   "headTop": 2.6,
+   "restH": 1.2,
+   "segs": 16,
+   "gap": 2.1,
+   "segR": [
+    1.45,
+    0.6
+   ],
+   "intro": 3,
+   "orbitR": 31,
+   "orbitRa": 2.5,
+   "orbitY": 11,
+   "orbitYa": 5,
+   "lead": 0.42,
+   "highY": 19,
+   "speed": [
+    10,
+    12,
+    13.5
+   ],
+   "steer": 2.6,
+   "flyTime": [
+    [
+     3,
+     4.6
+    ],
+    [
+     2.4,
+     3.8
+    ],
+    [
+     1.8,
+     3
+    ]
+   ],
+   "breathTele": [
+    1.1,
+    0.9,
+    0.75
+   ],
+   "breathTime": [
+    1.8,
+    2,
+    2.3
+   ],
+   "sweep": [
+    0.55,
+    0.65,
+    0.75
+   ],
+   "hoverR": 29,
+   "hoverY": [
+    8,
+    17
+   ],
+   "hoverAhead": 9,
+   "diveTele": [
+    1,
+    0.85,
+    0.7
+   ],
+   "diveTime": [
+    0.45,
+    0.42,
+    0.4
+   ],
+   "diveR": 5.5,
+   "diveUp": 18,
+   "diveOut": 9,
+   "diveMinR": 5.6,
+   "diveMaxH": 6,
+   "stun": [
+    2.8,
+    2.4,
+    2
+   ],
+   "stun2": 1.1,
+   "recoil2": 8,
+   "recoilSpeed": 15,
+   "diveSide": 1.35,
+   "divePend": 4.5,
+   "orbTele": [
+    0,
+    0.65,
+    0.55
+   ],
+   "orbs": [
+    0,
+    5,
+    7
+   ],
+   "orbArc": [
+    0,
+    0.8,
+    1
+   ],
+   "orbSpeed": 15,
+   "orbEvery": [
+    4.5,
+    6.5
+   ],
+   "minions": [
+    0,
+    2,
+    2
+   ],
+   "rageTime": 1.6,
+   "dyingTime": 2.6
+  },
+  "centurion": {
+   "hp": 280,
+   "r": 2.6,
+   "top": 8.2,
+   "bodyR": 2.4,
+   "intro": 2.2,
+   "margin": 6,
+   "speed": [
+    3.4,
+    4.2,
+    5
+   ],
+   "turn": [
+    1.3,
+    1.6,
+    2
+   ],
+   "keep": 5.5,
+   "guard": [
+    [
+     2,
+     2.8
+    ],
+    [
+     1.5,
+     2.2
+    ],
+    [
+     1.1,
+     1.7
+    ]
+   ],
+   "combo": [
+    0,
+    0.4,
+    0.6
+   ],
+   "shieldTop": 6.2,
+   "shieldCos": 0.34,
+   "dive": 0.42,
+   "vulnOpen": 1.5,
+   "sweep": {
+    "tele": [
+     0.9,
+     0.75,
+     0.6
+    ],
+    "r": 7,
+    "height": 1.5,
+    "swing": 0.35,
+    "recover": [
+     1.6,
+     1.4,
+     1.2
+    ]
+   },
+   "stomp": {
+    "tele": [
+     0.85,
+     0.72,
+     0.6
+    ],
+    "r": 11,
+    "height": 1.2,
+    "crushR": 3.4,
+    "reach": 2.6,
+    "crushDmg": 2,
+    "recover": [
+     1.4,
+     1.2,
+     1
+    ]
+   },
+   "charge": {
+    "tele": [
+     1,
+     0.85,
+     0.7
+    ],
+    "speed": [
+     17,
+     19,
+     21
+    ],
+    "time": 1.4,
+    "hitR": 1.2,
+    "dmg": 2,
+    "knock": 14,
+    "stagger": [
+     2.4,
+     2,
+     1.7
+    ],
+    "skid": 0.6,
+    "recover": 0.9
+   },
+   "throw": {
+    "tele": [
+     0.75,
+     0.62,
+     0.5
+    ],
+    "n": [
+     1,
+     2,
+     3
+    ],
+    "gap": 0.3,
+    "speed": [
+     24,
+     27,
+     30
+    ],
+    "lead": 0.55
+   },
+   "spin": {
+    "tele": 0.9,
+    "time": 3.2,
+    "speed": 5.4,
+    "turn": 2.5,
+    "r": 5.5,
+    "every": 0.3,
+    "delay": 0.5,
+    "height": 2,
+    "dizzy": 2.4,
+    "cd": 9
+   },
+   "reel": 1.2,
+   "shrug": {
+    "tele": 0.6,
+    "r": 4.2,
+    "height": 5.5,
+    "knock": 12
+   },
+   "helmBonus": 10,
+   "helmCD": 3.5,
+   "minions": 2
+  },
+  "dreadnought": {
+   "hp": 280,
+   "r": 3.6,
+   "top": 5.6,
+   "bodyH": 2.8,
+   "intro": 2,
+   "cuts": [
+    0.62,
+    0.3
+   ],
+   "podHp": [
+    6,
+    9,
+    12
+   ],
+   "arm": 0.9,
+   "unseal": 1.3,
+   "seal": 1.4,
+   "turn": 1.6,
+   "idle": [
+    [
+     1.8,
+     2.6
+    ],
+    [
+     1.4,
+     2.1
+    ],
+    [
+     1,
+     1.6
+    ]
+   ],
+   "charge": [
+    1.2,
+    1.05,
+    0.9
+   ],
+   "sweep": 1,
+   "sweepTime": [
+    2.1,
+    1.9,
+    1.7
+   ],
+   "passes": [
+    1,
+    1,
+    2
+   ],
+   "vent": [
+    2,
+    1.8,
+    1.5
+   ],
+   "ventVuln": 1.5,
+   "beamLen": 80,
+   "beamUp": 0.9,
+   "salvoTele": 0.8,
+   "volleys": [
+    2,
+    3,
+    4
+   ],
+   "volleyGap": 0.42,
+   "boltSpeed": [
+    15,
+    16.5,
+    18
+   ],
+   "fanArc": 0.7,
+   "bombTele": 1.25,
+   "bombStep": 0.12,
+   "bombR": 3,
+   "bombGap": 5.4,
+   "bombN": [
+    6,
+    7,
+    5
+   ],
+   "drones": [
+    2,
+    2,
+    3
+   ],
+   "droneCap": 4,
+   "droneTele": 0.8,
+   "droneRing": 14,
+   "droneY": 7.5,
+   "pulseR": 7.5,
+   "pulseTele": 1,
+   "pulseCD": 5,
+   "pulseNear": 8,
+   "shieldAtk": [
+    [
+     6.5,
+     8.5
+    ],
+    [
+     5.5,
+     7
+    ],
+    [
+     4.5,
+     6
+    ]
+   ],
+   "stagger": 2,
+   "staggerCD": 5,
+   "dyingTime": 2.2
+  }
+ },
  "LASER": {
   "WARN": 0.6,
   "DMG": 1,

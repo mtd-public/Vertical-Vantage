@@ -1,0 +1,1290 @@
+{
+ "format": "vertical-vantage.level/1",
+ "id": "seattle-pike",
+ "name": "PIKE PLACE",
+ "sub": "WATERFRONT · 15:20 · DRIZZLE",
+ "theme": "seaDrizzle",
+ "music": "emeraldDrizzle",
+ "seed": 4002,
+ "par": 300,
+ "pack": "seattle",
+ "packIdx": 1,
+ "bonus": false,
+ "time": null,
+ "killY": -0.6,
+ "water": 0,
+ "start": {
+  "x": -34,
+  "y": 2,
+  "z": 34,
+  "yaw": 0.25
+ },
+ "plats": [
+  {
+   "kind": "rect",
+   "style": "seaPromenade",
+   "x": -4,
+   "z": -40,
+   "h": 2,
+   "thick": 7,
+   "w": 12,
+   "d": 172,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaPier",
+   "x": -27,
+   "z": 32,
+   "h": 2,
+   "thick": 7,
+   "w": 34,
+   "d": 16,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaPier",
+   "x": -28,
+   "z": -11,
+   "h": 2,
+   "thick": 7,
+   "w": 36,
+   "d": 18,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaPier",
+   "x": -27,
+   "z": -59,
+   "h": 2,
+   "thick": 7,
+   "w": 34,
+   "d": 14,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaPier",
+   "x": -25,
+   "z": -105,
+   "h": 2,
+   "thick": 7,
+   "w": 30,
+   "d": 14,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "pierShed",
+   "x": -22,
+   "z": 32,
+   "h": 6.5,
+   "thick": 4.5,
+   "w": 10,
+   "d": 8,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "pierShed",
+   "x": -27,
+   "z": -59,
+   "h": 7,
+   "thick": 5,
+   "w": 12,
+   "d": 8,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "pierShed",
+   "x": -24,
+   "z": -105,
+   "h": 7.5,
+   "thick": 5.5,
+   "w": 10,
+   "d": 8,
+   "r": 0,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "wheelHub",
+   "x": -30,
+   "z": -11,
+   "h": 21.7,
+   "thick": 1.4,
+   "w": 0,
+   "d": 0,
+   "r": 1.4,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gondola",
+   "x": -30,
+   "z": -11,
+   "h": 21,
+   "thick": 2.2,
+   "w": 2.4,
+   "d": 2.4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": {
+    "orbit": "xy",
+    "amp": 15,
+    "period": 36,
+    "phase": 0
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gondola",
+   "x": -30,
+   "z": -11,
+   "h": 21,
+   "thick": 2.2,
+   "w": 2.4,
+   "d": 2.4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": {
+    "orbit": "xy",
+    "amp": 15,
+    "period": 36,
+    "phase": 0.1
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gondola",
+   "x": -30,
+   "z": -11,
+   "h": 21,
+   "thick": 2.2,
+   "w": 2.4,
+   "d": 2.4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 2,
+   "move": {
+    "orbit": "xy",
+    "amp": 15,
+    "period": 36,
+    "phase": 0.2
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gondola",
+   "x": -30,
+   "z": -11,
+   "h": 21,
+   "thick": 2.2,
+   "w": 2.4,
+   "d": 2.4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 3,
+   "move": {
+    "orbit": "xy",
+    "amp": 15,
+    "period": 36,
+    "phase": 0.3
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gondola",
+   "x": -30,
+   "z": -11,
+   "h": 21,
+   "thick": 2.2,
+   "w": 2.4,
+   "d": 2.4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 4,
+   "move": {
+    "orbit": "xy",
+    "amp": 15,
+    "period": 36,
+    "phase": 0.4
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gondola",
+   "x": -30,
+   "z": -11,
+   "h": 21,
+   "thick": 2.2,
+   "w": 2.4,
+   "d": 2.4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 5,
+   "move": {
+    "orbit": "xy",
+    "amp": 15,
+    "period": 36,
+    "phase": 0.5
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gondola",
+   "x": -30,
+   "z": -11,
+   "h": 21,
+   "thick": 2.2,
+   "w": 2.4,
+   "d": 2.4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 6,
+   "move": {
+    "orbit": "xy",
+    "amp": 15,
+    "period": 36,
+    "phase": 0.6
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gondola",
+   "x": -30,
+   "z": -11,
+   "h": 21,
+   "thick": 2.2,
+   "w": 2.4,
+   "d": 2.4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 7,
+   "move": {
+    "orbit": "xy",
+    "amp": 15,
+    "period": 36,
+    "phase": 0.7
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gondola",
+   "x": -30,
+   "z": -11,
+   "h": 21,
+   "thick": 2.2,
+   "w": 2.4,
+   "d": 2.4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 8,
+   "move": {
+    "orbit": "xy",
+    "amp": 15,
+    "period": 36,
+    "phase": 0.8
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gondola",
+   "x": -30,
+   "z": -11,
+   "h": 21,
+   "thick": 2.2,
+   "w": 2.4,
+   "d": 2.4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 9,
+   "move": {
+    "orbit": "xy",
+    "amp": 15,
+    "period": 36,
+    "phase": 0.9
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "marketRoof",
+   "x": 30,
+   "z": -55,
+   "h": 15,
+   "thick": 22,
+   "w": 20,
+   "d": 70,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": -16.711866202009787,
+   "z": -14.159730731475669,
+   "h": 31.30131738682144,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 2.855200920673087,
+    "phase": 0.06261151377111673
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": -10.468851144521278,
+   "z": -16.015468519056228,
+   "h": 28.557038043515888,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.0268144553527234,
+    "phase": 0.6744183478876948
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": -3.8355666306316714,
+   "z": -16.75243386495364,
+   "h": 25.8046333046497,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.7752933715935795,
+    "phase": 0.7145791067741811
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 2.0238706842356997,
+   "z": -19.707761181381464,
+   "h": 23.193252297108323,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 2.810618964442983,
+    "phase": 0.7681143092922866
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 7.90913453058432,
+   "z": -22.58905244089638,
+   "h": 20.299180458153465,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.0981156948953865,
+    "phase": 0.10241536074317992
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 14.790021185100013,
+   "z": -22.616224983665663,
+   "h": 17.72577290066651,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.103942080354318,
+    "phase": 0.46217598603107035
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "ferry",
+   "x": -90,
+   "z": 13,
+   "h": 7,
+   "thick": 6.5,
+   "w": 30,
+   "d": 12,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": {
+    "axis": "x",
+    "amp": 34,
+    "period": 64,
+    "phase": 0
+   },
+   "bob": {
+    "amp": 0.12,
+    "period": 5,
+    "phase": 0
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "ferry",
+   "x": -96,
+   "z": -42,
+   "h": 7,
+   "thick": 6.5,
+   "w": 30,
+   "d": 12,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": {
+    "axis": "x",
+    "amp": 34,
+    "period": 70,
+    "phase": 0
+   },
+   "bob": {
+    "amp": 0.12,
+    "period": 5,
+    "phase": 0
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "hillclimb",
+   "x": 5,
+   "z": -34,
+   "h": 5.5,
+   "thick": 12,
+   "w": 6,
+   "d": 16,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "hillclimb",
+   "x": 11,
+   "z": -34,
+   "h": 9,
+   "thick": 16,
+   "w": 6,
+   "d": 16,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "hillclimb",
+   "x": 17,
+   "z": -34,
+   "h": 12.5,
+   "thick": 20,
+   "w": 6,
+   "d": 16,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "marketSign",
+   "x": 22,
+   "z": -56,
+   "h": 23,
+   "thick": 6,
+   "w": 2.4,
+   "d": 28,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 28,
+   "z": -61,
+   "h": 19,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.15,
+    "period": 3.2,
+    "phase": 0.2
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 27.5,
+   "z": -50,
+   "h": 19.6,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.15,
+    "period": 2.9,
+    "phase": 0.6
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "brickBlock",
+   "x": 28,
+   "z": -103,
+   "h": 19,
+   "thick": 26,
+   "w": 16,
+   "d": 18,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "gumAlley",
+   "x": 43,
+   "z": -56,
+   "h": 8,
+   "thick": 15,
+   "w": 6,
+   "d": 32,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "brickBlock",
+   "x": 56,
+   "z": -63,
+   "h": 21,
+   "thick": 28,
+   "w": 20,
+   "d": 70,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "ventiGiant",
+   "x": 32,
+   "z": -38,
+   "h": 26,
+   "thick": 8,
+   "w": 0,
+   "d": 0,
+   "r": 4,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": {
+    "amp": 0.25,
+    "period": 4.5,
+    "phase": 0
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 26.251212245777,
+   "z": -26.707674879038706,
+   "h": 17.685592358279973,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.6888840191066263,
+    "phase": 0.3466239436529577
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 26.022806572588273,
+   "z": -30.034099069644906,
+   "h": 20.46567375098821,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.35518847820349,
+    "phase": 0.41816304763779044
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 27.26422998075887,
+   "z": -32.74586746259175,
+   "h": 23.28315932813566,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.4259416693355886,
+    "phase": 0.8579989317804575
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 32,
+   "z": -142,
+   "h": 38,
+   "thick": 178,
+   "w": 16,
+   "d": 16,
+   "r": 0,
+   "yaw": 0,
+   "tint": 6,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 30.24467560635927,
+   "z": -114.88369898146094,
+   "h": 22.111443095530074,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.0702915398404,
+    "phase": 0.9673217663075775
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 31.49810152570016,
+   "z": -119.1730702844314,
+   "h": 25.314781881341087,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.063800590764731,
+    "phase": 0.17299618013203144
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 29.654984620338933,
+   "z": -122.94201422190571,
+   "h": 28.57148989951238,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.072299158386886,
+    "phase": 0.3990375550929457
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 29.67869594623665,
+   "z": -127.02471080328908,
+   "h": 31.781434631758987,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.6476360416971145,
+    "phase": 0.007006119936704636
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 27.96160551119265,
+   "z": -130.81483566014444,
+   "h": 34.7294037588484,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.2517342117615042,
+    "phase": 0.13999118632636964
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 23.397345795108706,
+   "z": -75.20088473496376,
+   "h": 22.113486889819615,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.6581620012409983,
+    "phase": 0.6359154765959829
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 26.10842226347067,
+   "z": -80.96385924550978,
+   "h": 21.064171264017933,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.2247357898857443,
+    "phase": 0.9678917676210403
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "ventiCup",
+   "x": 28.382876761730124,
+   "z": -86.87237441275663,
+   "h": 20.035813918011264,
+   "thick": 2.8,
+   "w": 0,
+   "d": 0,
+   "r": 1.5,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 2.809082691045478,
+    "phase": 0.17787961871363223
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 84,
+   "z": -40,
+   "h": 46,
+   "thick": 186,
+   "w": 18,
+   "d": 18,
+   "r": 0,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 90,
+   "z": -90,
+   "h": 58,
+   "thick": 198,
+   "w": 16,
+   "d": 20,
+   "r": 0,
+   "yaw": 0,
+   "tint": 4,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 80,
+   "z": 10,
+   "h": 34,
+   "thick": 174,
+   "w": 16,
+   "d": 16,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 112,
+   "z": -132,
+   "h": 72,
+   "thick": 212,
+   "w": 20,
+   "d": 16,
+   "r": 0,
+   "yaw": 0,
+   "tint": 3,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 122,
+   "z": -58,
+   "h": 64,
+   "thick": 204,
+   "w": 18,
+   "d": 18,
+   "r": 0,
+   "yaw": 0,
+   "tint": 5,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 116,
+   "z": 2,
+   "h": 52,
+   "thick": 192,
+   "w": 16,
+   "d": 16,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 74,
+   "z": -168,
+   "h": 44,
+   "thick": 184,
+   "w": 14,
+   "d": 14,
+   "r": 0,
+   "yaw": 0,
+   "tint": 6,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 104,
+   "z": 44,
+   "h": 40,
+   "thick": 180,
+   "w": 20,
+   "d": 16,
+   "r": 0,
+   "yaw": 0,
+   "tint": 7,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 146,
+   "z": -100,
+   "h": 90,
+   "thick": 230,
+   "w": 18,
+   "d": 18,
+   "r": 0,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 150,
+   "z": -20,
+   "h": 76,
+   "thick": 216,
+   "w": 20,
+   "d": 20,
+   "r": 0,
+   "yaw": 0,
+   "tint": 5,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "seaTower",
+   "x": 60,
+   "z": 60,
+   "h": 26,
+   "thick": 166,
+   "w": 16,
+   "d": 14,
+   "r": 0,
+   "yaw": 0,
+   "tint": 3,
+   "move": null,
+   "bob": null
+  }
+ ],
+ "objective": "drives",
+ "arena": null,
+ "boss": null,
+ "bossName": null,
+ "drives": [
+  {
+   "x": -15,
+   "y": 22.1,
+   "z": -11
+  },
+  {
+   "x": -90,
+   "y": 8.1,
+   "z": -42
+  },
+  {
+   "x": 22,
+   "y": 24.1,
+   "z": -66
+  }
+ ],
+ "exit": {
+  "x": 32,
+  "y": 38,
+  "z": -142,
+  "yaw": 0
+ },
+ "portal": {
+  "x": 43,
+  "y": 9.4,
+  "z": -56
+ },
+ "enemies": [
+  {
+   "type": "walker",
+   "x": -38,
+   "y": 2,
+   "z": 36
+  },
+  {
+   "type": "drone",
+   "x": -30,
+   "y": 10,
+   "z": 12
+  },
+  {
+   "type": "guard",
+   "x": -4,
+   "y": 2,
+   "z": 0
+  },
+  {
+   "type": "drone",
+   "x": -16,
+   "y": 27,
+   "z": -8
+  },
+  {
+   "type": "walker",
+   "x": -84,
+   "y": 7,
+   "z": 13
+  },
+  {
+   "type": "guard",
+   "x": -102,
+   "y": 7,
+   "z": -42
+  },
+  {
+   "type": "drone",
+   "x": -66,
+   "y": 14,
+   "z": -30
+  },
+  {
+   "type": "walker",
+   "x": -36,
+   "y": 2,
+   "z": -55
+  },
+  {
+   "type": "turret",
+   "x": 36,
+   "y": 15,
+   "z": -26
+  },
+  {
+   "type": "spiker",
+   "x": 30,
+   "y": 15,
+   "z": -80
+  },
+  {
+   "type": "guard",
+   "x": 32,
+   "y": 19,
+   "z": -108
+  },
+  {
+   "type": "drone",
+   "x": 40,
+   "y": 30,
+   "z": -122
+  },
+  {
+   "type": "turret",
+   "x": 27,
+   "y": 38,
+   "z": -147
+  }
+ ],
+ "servers": [],
+ "pickups": [
+  {
+   "type": "health",
+   "x": -14,
+   "y": 3,
+   "z": -6
+  },
+  {
+   "type": "spread",
+   "x": -4,
+   "y": 3,
+   "z": -62
+  },
+  {
+   "type": "rapid",
+   "x": -96,
+   "y": 8,
+   "z": 13
+  },
+  {
+   "type": "rocket",
+   "x": 24,
+   "y": 20,
+   "z": -108
+  },
+  {
+   "type": "healthBig",
+   "x": 43,
+   "y": 9,
+   "z": -68
+  },
+  {
+   "type": "slowmo",
+   "x": 36,
+   "y": 16,
+   "z": -50
+  },
+  {
+   "type": "health",
+   "x": 32,
+   "y": 27,
+   "z": -38
+  }
+ ],
+ "lasers": [
+  {
+   "x": -4,
+   "y": 2,
+   "z": -32,
+   "len": 12,
+   "h": 2.4,
+   "yaw": 0,
+   "period": 3,
+   "on": 0.5,
+   "phase": 0
+  },
+  {
+   "x": 22,
+   "y": 23,
+   "z": -60,
+   "len": 2.4,
+   "h": 2.6,
+   "yaw": 0,
+   "period": 2.8,
+   "on": 0.5,
+   "phase": 0.3
+  },
+  {
+   "x": 30,
+   "y": 15,
+   "z": -70,
+   "len": 20,
+   "h": 2.6,
+   "yaw": 0,
+   "period": 3.4,
+   "on": 0.5,
+   "phase": 0.6
+  },
+  {
+   "x": 28,
+   "y": 19,
+   "z": -103,
+   "len": 16,
+   "h": 2.6,
+   "yaw": 0,
+   "period": 3,
+   "on": 0.5,
+   "phase": 0.15
+  }
+ ]
+}

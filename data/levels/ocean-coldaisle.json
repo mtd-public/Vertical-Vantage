@@ -1,0 +1,1164 @@
+{
+ "format": "vertical-vantage.level/1",
+ "id": "ocean-coldaisle",
+ "name": "COLD AISLE",
+ "sub": "SERVER BARGES · 19:40 · SUNSET",
+ "theme": "oceanSunset",
+ "music": "netdive",
+ "seed": 1022,
+ "par": 300,
+ "pack": "ocean",
+ "packIdx": 1,
+ "bonus": false,
+ "time": null,
+ "killY": -0.6,
+ "water": 0,
+ "start": {
+  "x": 0,
+  "y": 2.2,
+  "z": 6,
+  "yaw": 0
+ },
+ "plats": [
+  {
+   "kind": "rect",
+   "style": "oc-deck",
+   "x": 0,
+   "z": 4,
+   "h": 2.2,
+   "thick": 3.2,
+   "w": 14,
+   "d": 16,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-pontoon",
+   "x": 0.5,
+   "z": -10,
+   "h": 1.6,
+   "thick": 2.2,
+   "w": 6,
+   "d": 4,
+   "r": 0,
+   "yaw": 0.1,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.8,
+    "phase": 0.5055
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "oc-barge",
+   "x": 0,
+   "z": -64,
+   "h": 3,
+   "thick": 4,
+   "w": 18,
+   "d": 96,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-dc",
+   "x": -4,
+   "z": -62,
+   "h": 10,
+   "thick": 7,
+   "w": 5,
+   "d": 60,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-dc",
+   "x": 4,
+   "z": -62,
+   "h": 10,
+   "thick": 7,
+   "w": 5,
+   "d": 60,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-aisle",
+   "x": 0,
+   "z": -62,
+   "h": 7,
+   "thick": 4,
+   "w": 3,
+   "d": 60,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-chiller",
+   "x": -4,
+   "z": -28,
+   "h": 6.2,
+   "thick": 3.2,
+   "w": 4,
+   "d": 4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-chiller",
+   "x": 5,
+   "z": -24,
+   "h": 5.2,
+   "thick": 2.2,
+   "w": 5,
+   "d": 4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "container",
+   "x": -6,
+   "z": -102,
+   "h": 5.6,
+   "thick": 2.6,
+   "w": 2.44,
+   "d": 6.1,
+   "r": 0,
+   "yaw": 1.5707963267948966,
+   "tint": 3,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "container",
+   "x": 5,
+   "z": -104,
+   "h": 5.6,
+   "thick": 2.6,
+   "w": 2.44,
+   "d": 6.1,
+   "r": 0,
+   "yaw": 1.5707963267948966,
+   "tint": 6,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "container",
+   "x": 5,
+   "z": -104,
+   "h": 8.2,
+   "thick": 2.6,
+   "w": 2.44,
+   "d": 6.1,
+   "r": 0,
+   "yaw": 1.5707963267948966,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-barge",
+   "x": -40,
+   "z": -74,
+   "h": 3,
+   "thick": 4,
+   "w": 16,
+   "d": 88,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-dc",
+   "x": -40,
+   "z": -72,
+   "h": 8.6,
+   "thick": 5.6,
+   "w": 12,
+   "d": 52,
+   "r": 0,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-chiller",
+   "x": -43,
+   "z": -52,
+   "h": 10.8,
+   "thick": 2.200000000000001,
+   "w": 4,
+   "d": 6,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-chiller",
+   "x": -37,
+   "z": -88,
+   "h": 10.4,
+   "thick": 1.8000000000000007,
+   "w": 5,
+   "d": 4,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-stack",
+   "x": -40,
+   "z": -107,
+   "h": 27,
+   "thick": 28,
+   "w": 8,
+   "d": 8,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-landing",
+   "x": -33.853590345950984,
+   "z": -102.87912043798741,
+   "h": 11.719999999999999,
+   "thick": 0.6,
+   "w": 3.4,
+   "d": 3.4,
+   "r": 0,
+   "yaw": 2.5509732347149123,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-landing",
+   "x": -33.15442866942501,
+   "z": -109.81036530686133,
+   "h": 14.84,
+   "thick": 0.6,
+   "w": 3.4,
+   "d": 3.4,
+   "r": 0,
+   "yaw": -2.752035164544659,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-landing",
+   "x": -38.522146144193385,
+   "z": -114.25092738764343,
+   "h": 17.96,
+   "thick": 0.6,
+   "w": 3.4,
+   "d": 3.4,
+   "r": 0,
+   "yaw": -1.771858256624644,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-landing",
+   "x": -45.19960977651148,
+   "z": -112.26536401134871,
+   "h": 21.08,
+   "thick": 0.6,
+   "w": 3.4,
+   "d": 3.4,
+   "r": 0,
+   "yaw": -0.791681348704628,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-landing",
+   "x": -47.268925655392295,
+   "z": -105.61337827206565,
+   "h": 24.2,
+   "thick": 0.6,
+   "w": 3.4,
+   "d": 3.4,
+   "r": 0,
+   "yaw": 0.1884955592153873,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-barge",
+   "x": 40,
+   "z": -58,
+   "h": 3,
+   "thick": 4,
+   "w": 16,
+   "d": 88,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-dc",
+   "x": 40,
+   "z": -60,
+   "h": 9.4,
+   "thick": 6.4,
+   "w": 12,
+   "d": 52,
+   "r": 0,
+   "yaw": 0,
+   "tint": 3,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-chiller",
+   "x": 37,
+   "z": -44,
+   "h": 11.6,
+   "thick": 2.1999999999999993,
+   "w": 5,
+   "d": 5,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-chiller",
+   "x": 43,
+   "z": -76,
+   "h": 11.8,
+   "thick": 2.4000000000000004,
+   "w": 5,
+   "d": 6,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "oc-cooling",
+   "x": -20,
+   "z": -24,
+   "h": 14,
+   "thick": 15,
+   "w": 0,
+   "d": 0,
+   "r": 5.5,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "oc-cooling",
+   "x": 20,
+   "z": -98,
+   "h": 16,
+   "thick": 17,
+   "w": 0,
+   "d": 0,
+   "r": 5.5,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "oc-cooling",
+   "x": -20,
+   "z": -96,
+   "h": 12,
+   "thick": 13,
+   "w": 0,
+   "d": 0,
+   "r": 4.5,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-tray",
+   "x": -20.25,
+   "z": -60,
+   "h": 9.3,
+   "thick": 0.5,
+   "w": 2.2,
+   "d": 27.5,
+   "r": 0,
+   "yaw": -1.5707963267948966,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-cargo",
+   "x": 19.5,
+   "z": -64,
+   "h": 11,
+   "thick": 1.2,
+   "w": 4,
+   "d": 4.5,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": {
+    "axis": "x",
+    "amp": 7.5,
+    "period": 9,
+    "phase": 0
+   },
+   "bob": {
+    "amp": 0.12,
+    "period": 2.2,
+    "phase": 0
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "oc-cargo",
+   "x": 20,
+   "z": -34,
+   "h": 7.5,
+   "thick": 1.2,
+   "w": 4,
+   "d": 4,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": {
+    "axis": "z",
+    "amp": 6,
+    "period": 8,
+    "phase": 0.3
+   },
+   "bob": {
+    "amp": 0.12,
+    "period": 2.4,
+    "phase": 0.5
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "oc-cargo",
+   "x": -20,
+   "z": -78,
+   "h": 6.4,
+   "thick": 1.2,
+   "w": 4,
+   "d": 4,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": {
+    "orbit": "xz",
+    "amp": 5,
+    "period": 12,
+    "phase": 0
+   },
+   "bob": {
+    "amp": 0.1,
+    "period": 2.6,
+    "phase": 0.2
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": -14.716668469443928,
+   "z": -42.5388822787056,
+   "h": 3.114144115685485,
+   "thick": 3.9141441156854855,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.28,
+    "period": 3.4,
+    "phase": 0.7005557778980847
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": -20.50443156758317,
+   "z": -42.983750918861716,
+   "h": 3.1332381782820447,
+   "thick": 3.9332381782820445,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.28,
+    "period": 3.4,
+    "phase": 0.26604656000192417
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": -26.16187351602179,
+   "z": -43.906463774586776,
+   "h": 2.8782008269568906,
+   "thick": 3.678200826956891,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.28,
+    "period": 3.4,
+    "phase": 0.8154644003093541
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": 15,
+   "z": -23.027676997147502,
+   "h": 2.9639186883112414,
+   "thick": 3.763918688311241,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.28,
+    "period": 3.4,
+    "phase": 0.8445331191511825
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": 20.5,
+   "z": -23.36941354740411,
+   "h": 3.13965601392556,
+   "thick": 3.9396560139255596,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.28,
+    "period": 3.4,
+    "phase": 0.21692108198758198
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": 26,
+   "z": -23.034561883471905,
+   "h": 2.9867077593924476,
+   "thick": 3.7867077593924474,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.28,
+    "period": 3.4,
+    "phase": 0.6251682201759889
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": -61.022153947502375,
+   "z": -25.04897090839222,
+   "h": 1.199679961241782,
+   "thick": 1.999679961241782,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.40004521035589274,
+    "period": 3.4,
+    "phase": 0.33983161158254394
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": -57.09936125949025,
+   "z": -94.48033368913457,
+   "h": 1.2884948646649719,
+   "thick": 2.088494864664972,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.4201024035690352,
+    "period": 3.4,
+    "phase": 0.9384876650520599
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": -66.03186172619462,
+   "z": -35.072547872550786,
+   "h": 1.4169129127636553,
+   "thick": 2.2169129127636555,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.35451514458982275,
+    "period": 3.4,
+    "phase": 0.4528927801949907
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": -55.05739654973149,
+   "z": -74.62761801667511,
+   "h": 1.3278799585066736,
+   "thick": 2.1278799585066737,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.36424301855731755,
+    "period": 3.4,
+    "phase": 0.13566109008528393
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": 60.62799059506506,
+   "z": -76.92804532125592,
+   "h": 1.432289825193584,
+   "thick": 2.2322898251935843,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.41455055588157846,
+    "period": 3.4,
+    "phase": 0.2274009302230553
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": 58.52959168050438,
+   "z": -69.37525222077966,
+   "h": 1.41015192437917,
+   "thick": 2.2101519243791703,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.31240320968208835,
+    "period": 3.4,
+    "phase": 0.47871264161448934
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": 63.26958977105096,
+   "z": -96.41470784321427,
+   "h": 1.171150443609804,
+   "thick": 1.971150443609804,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.37526157129323107,
+    "period": 3.4,
+    "phase": 0.38216135805426177
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": 58.34597305348143,
+   "z": -90.32826801761985,
+   "h": 1.1527276801876725,
+   "thick": 1.9527276801876725,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.43160936875501643,
+    "period": 3.4,
+    "phase": 0.3551658818633294
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "oc-pontoon",
+   "x": -20,
+   "z": -66,
+   "h": 1.6,
+   "thick": 2.2,
+   "w": 5,
+   "d": 7,
+   "r": 0,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.12,
+    "period": 3.8,
+    "phase": 0.08200000000000074
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": -27.5,
+   "z": -70,
+   "h": 1.4,
+   "thick": 2.2,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.25,
+    "period": 3.4,
+    "phase": 0.33750000000000036
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "oc-buoy",
+   "x": -14,
+   "z": -72,
+   "h": 1.3,
+   "thick": 2.1,
+   "w": 0,
+   "d": 0,
+   "r": 1.7,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.25,
+    "period": 3.4,
+    "phase": 0.1900000000000004
+   }
+  },
+  {
+   "kind": "rect",
+   "style": "oc-deck",
+   "x": 5,
+   "z": -122,
+   "h": 4,
+   "thick": 5,
+   "w": 22,
+   "d": 12,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-chiller",
+   "x": -1,
+   "z": -122,
+   "h": 7.4,
+   "thick": 3.4000000000000004,
+   "w": 5,
+   "d": 5,
+   "r": 0,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-cargo",
+   "x": 10,
+   "z": -134,
+   "h": 17,
+   "thick": 1.2,
+   "w": 4,
+   "d": 4,
+   "r": 0,
+   "yaw": 0,
+   "tint": -1,
+   "move": {
+    "axis": "y",
+    "amp": 8,
+    "period": 11,
+    "phase": 0
+   },
+   "bob": null
+  },
+  {
+   "kind": "rect",
+   "style": "oc-tray",
+   "x": -23.5,
+   "z": -127,
+   "h": 27.35,
+   "thick": 0.5,
+   "w": 2.2,
+   "d": 40.607881008493905,
+   "r": 0,
+   "yaw": -0.6632029927060933,
+   "tint": 0,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "oc-cooling",
+   "x": 0,
+   "z": -150,
+   "h": 30,
+   "thick": 31,
+   "w": 0,
+   "d": 0,
+   "r": 13,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  }
+ ],
+ "objective": "drives",
+ "arena": null,
+ "boss": null,
+ "bossName": null,
+ "drives": [
+  {
+   "x": -40,
+   "y": 28.1,
+   "z": -107
+  },
+  {
+   "x": 19.5,
+   "y": 12.1,
+   "z": -64
+  },
+  {
+   "x": 0,
+   "y": 8.1,
+   "z": -62
+  }
+ ],
+ "exit": {
+  "x": 0,
+  "y": 30,
+  "z": -150,
+  "yaw": 0
+ },
+ "portal": {
+  "x": -20,
+  "y": 3,
+  "z": -66
+ },
+ "enemies": [
+  {
+   "type": "guard",
+   "x": 2,
+   "y": 3,
+   "z": -20
+  },
+  {
+   "type": "turret",
+   "x": -4,
+   "y": 10,
+   "z": -36
+  },
+  {
+   "type": "turret",
+   "x": 4,
+   "y": 10,
+   "z": -88
+  },
+  {
+   "type": "spiker",
+   "x": 0,
+   "y": 7,
+   "z": -84
+  },
+  {
+   "type": "walker",
+   "x": -26,
+   "y": 9.3,
+   "z": -60
+  },
+  {
+   "type": "turret",
+   "x": 40,
+   "y": 9.4,
+   "z": -48
+  },
+  {
+   "type": "guard",
+   "x": 42,
+   "y": 9.4,
+   "z": -82
+  },
+  {
+   "type": "guard",
+   "x": -42,
+   "y": 8.6,
+   "z": -66
+  },
+  {
+   "type": "walker",
+   "x": -28,
+   "y": 27.35,
+   "z": -121.2
+  },
+  {
+   "type": "guard",
+   "x": 10,
+   "y": 4,
+   "z": -120
+  },
+  {
+   "type": "drone",
+   "x": -20,
+   "y": 18,
+   "z": -50
+  },
+  {
+   "type": "drone",
+   "x": 22,
+   "y": 16,
+   "z": -60
+  },
+  {
+   "type": "drone",
+   "x": -36,
+   "y": 30,
+   "z": -98
+  },
+  {
+   "type": "drone",
+   "x": 8,
+   "y": 26,
+   "z": -132
+  }
+ ],
+ "servers": [],
+ "pickups": [
+  {
+   "type": "health",
+   "x": -3,
+   "y": 4,
+   "z": -20
+  },
+  {
+   "type": "rapid",
+   "x": -4,
+   "y": 11,
+   "z": -46
+  },
+  {
+   "type": "health",
+   "x": 40,
+   "y": 10.4,
+   "z": -36
+  },
+  {
+   "type": "rocket",
+   "x": -40,
+   "y": 9.6,
+   "z": -94
+  },
+  {
+   "type": "healthBig",
+   "x": -21.5,
+   "y": 2.6,
+   "z": -63
+  },
+  {
+   "type": "spread",
+   "x": 4,
+   "y": 11,
+   "z": -76
+  },
+  {
+   "type": "health",
+   "x": 0,
+   "y": 5,
+   "z": -126
+  },
+  {
+   "type": "slowmo",
+   "x": -18,
+   "y": 28.4,
+   "z": -134
+  }
+ ],
+ "lasers": [
+  {
+   "x": 0,
+   "y": 7,
+   "z": -50,
+   "len": 3,
+   "h": 2.6,
+   "yaw": 0,
+   "period": 2.6,
+   "on": 0.5,
+   "phase": 0
+  },
+  {
+   "x": 0,
+   "y": 7,
+   "z": -74,
+   "len": 3,
+   "h": 2.6,
+   "yaw": 0,
+   "period": 2.6,
+   "on": 0.5,
+   "phase": 0.5
+  },
+  {
+   "x": -20,
+   "y": 9.3,
+   "z": -60,
+   "len": 2.2,
+   "h": 2.4,
+   "yaw": 1.5707963267948966,
+   "period": 3,
+   "on": 0.5,
+   "phase": 0.25
+  },
+  {
+   "x": -23.5,
+   "y": 27.35,
+   "z": -127,
+   "len": 2.2,
+   "h": 2.4,
+   "yaw": -0.663,
+   "period": 2.8,
+   "on": 0.5,
+   "phase": 0
+  },
+  {
+   "x": 40,
+   "y": 9.4,
+   "z": -60,
+   "len": 12,
+   "h": 2.4,
+   "yaw": 0,
+   "period": 3.4,
+   "on": 0.5,
+   "phase": 0.7
+  }
+ ]
+}

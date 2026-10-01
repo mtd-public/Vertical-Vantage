@@ -1,0 +1,444 @@
+{
+ "format": "vertical-vantage.level/1",
+ "id": "seattle-boss",
+ "name": "ABOVE THE NEEDLE",
+ "sub": "SPACE NEEDLE · 23:10 · THUNDERSTORM · BOSS",
+ "theme": "seaStorm",
+ "music": "stormcrow",
+ "seed": 4004,
+ "par": 210,
+ "pack": "seattle",
+ "packIdx": 3,
+ "bonus": false,
+ "time": null,
+ "killY": -12,
+ "water": null,
+ "start": {
+  "x": 0,
+  "y": 0,
+  "z": 3,
+  "yaw": 0
+ },
+ "plats": [
+  {
+   "kind": "disc",
+   "style": "stormDeck",
+   "x": 0,
+   "z": 0,
+   "h": 0,
+   "thick": 4.5,
+   "w": 0,
+   "d": 0,
+   "r": 13,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "needleStem",
+   "x": 0,
+   "z": 0,
+   "h": -5,
+   "thick": 140,
+   "w": 0,
+   "d": 0,
+   "r": 2.6,
+   "yaw": 0,
+   "tint": -1,
+   "move": null,
+   "bob": null
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": 18.477590650225736,
+   "z": 7.653668647301796,
+   "h": 2.5,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.6,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.2,
+    "phase": 0
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": 7.653668647301797,
+   "z": 18.477590650225736,
+   "h": 5,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.6,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.6,
+    "phase": 0.125
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": -7.653668647301794,
+   "z": 18.477590650225736,
+   "h": 3,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.6,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 4,
+    "phase": 0.25
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": -18.477590650225736,
+   "z": 7.653668647301798,
+   "h": 6.5,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.6,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.2,
+    "phase": 0.375
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": -18.477590650225736,
+   "z": -7.653668647301793,
+   "h": 2,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.6,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.6,
+    "phase": 0.5
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": -7.6536686473017905,
+   "z": -18.477590650225736,
+   "h": 5.5,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.6,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 4,
+    "phase": 0.625
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": 7.6536686473018,
+   "z": -18.477590650225732,
+   "h": 3.5,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.6,
+   "yaw": 0,
+   "tint": 0,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.2,
+    "phase": 0.75
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": 18.477590650225736,
+   "z": -7.653668647301791,
+   "h": 7,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.6,
+   "yaw": 0,
+   "tint": 1,
+   "move": null,
+   "bob": {
+    "amp": 0.18,
+    "period": 3.6,
+    "phase": 0.875
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": 6.0104076400856545,
+   "z": 6.010407640085654,
+   "h": 7,
+   "thick": 0.6,
+   "w": 0,
+   "d": 0,
+   "r": 1.9,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.15,
+    "period": 3.6,
+    "phase": 0.1
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": -6.010407640085654,
+   "z": 6.0104076400856545,
+   "h": 8,
+   "thick": 0.6,
+   "w": 0,
+   "d": 0,
+   "r": 1.9,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.15,
+    "period": 3.6,
+    "phase": 0.35
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": -6.010407640085655,
+   "z": -6.010407640085654,
+   "h": 6.5,
+   "thick": 0.6,
+   "w": 0,
+   "d": 0,
+   "r": 1.9,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.15,
+    "period": 3.6,
+    "phase": 0.6
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": 6.010407640085653,
+   "z": -6.010407640085655,
+   "h": 7.5,
+   "thick": 0.6,
+   "w": 0,
+   "d": 0,
+   "r": 1.9,
+   "yaw": 0,
+   "tint": 2,
+   "move": null,
+   "bob": {
+    "amp": 0.15,
+    "period": 3.6,
+    "phase": 0.85
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": 14.500000000000004,
+   "z": 25.11473670974872,
+   "h": 11,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.4,
+   "yaw": 0,
+   "tint": 3,
+   "move": null,
+   "bob": {
+    "amp": 0.2,
+    "period": 3.9,
+    "phase": 0
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": -29,
+   "z": 3.5514757175273244e-15,
+   "h": 12,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.4,
+   "yaw": 0,
+   "tint": 3,
+   "move": null,
+   "bob": {
+    "amp": 0.2,
+    "period": 3.9,
+    "phase": 0.3333333333333333
+   }
+  },
+  {
+   "kind": "disc",
+   "style": "stormPad",
+   "x": 14.500000000000004,
+   "z": -25.11473670974872,
+   "h": 10.5,
+   "thick": 0.8,
+   "w": 0,
+   "d": 0,
+   "r": 2.4,
+   "yaw": 0,
+   "tint": 3,
+   "move": null,
+   "bob": {
+    "amp": 0.2,
+    "period": 3.9,
+    "phase": 0.6666666666666666
+   }
+  }
+ ],
+ "objective": "boss",
+ "arena": {
+  "x0": -32,
+  "x1": 32,
+  "z0": -32,
+  "z1": 32,
+  "floor": 0,
+  "ceil": 26
+ },
+ "boss": {
+  "x": 0,
+  "y": 14,
+  "z": -23,
+  "kind": "stormcrow"
+ },
+ "bossName": "STORMCROW",
+ "drives": [],
+ "exit": {
+  "x": 0,
+  "y": 0,
+  "z": 10.5,
+  "yaw": 3.141592653589793
+ },
+ "portal": null,
+ "enemies": [
+  {
+   "type": "drone",
+   "x": 14.500000000000004,
+   "y": 15,
+   "z": 25.11473670974872
+  },
+  {
+   "type": "drone",
+   "x": 14.500000000000004,
+   "y": 14,
+   "z": -25.11473670974872
+  }
+ ],
+ "servers": [],
+ "pickups": [
+  {
+   "type": "health",
+   "x": 7.653668647301797,
+   "y": 6,
+   "z": 18.477590650225736,
+   "respawn": 22
+  },
+  {
+   "type": "health",
+   "x": -7.6536686473017905,
+   "y": 6.5,
+   "z": -18.477590650225736,
+   "respawn": 22
+  },
+  {
+   "type": "health",
+   "x": -4,
+   "y": 1,
+   "z": -4,
+   "respawn": 28
+  },
+  {
+   "type": "healthBig",
+   "x": -29,
+   "y": 13,
+   "z": 3.5514757175273244e-15,
+   "respawn": 45
+  },
+  {
+   "type": "spread",
+   "x": -18.477590650225736,
+   "y": 7.5,
+   "z": 7.653668647301798,
+   "respawn": 25
+  },
+  {
+   "type": "rapid",
+   "x": 18.477590650225736,
+   "y": 8,
+   "z": -7.653668647301791,
+   "respawn": 25
+  },
+  {
+   "type": "rocket",
+   "x": -6.010407640085654,
+   "y": 9,
+   "z": 6.0104076400856545,
+   "respawn": 30
+  },
+  {
+   "type": "slowmo",
+   "x": 14.500000000000004,
+   "y": 12,
+   "z": 25.11473670974872,
+   "respawn": 35
+  },
+  {
+   "type": "overdrive",
+   "x": 14.500000000000004,
+   "y": 11.5,
+   "z": -25.11473670974872,
+   "respawn": 40
+  }
+ ],
+ "lasers": []
+}

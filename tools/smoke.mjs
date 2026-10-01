@@ -208,7 +208,9 @@ await run('bosses', { viewport: { width: 1280, height: 720 } }, async (page) => 
   for (const b of list) {
     await page.evaluate((i) => GAME.start(i), b.i);
     await skip(page);
-    await page.waitForTimeout(2600);
+    // wait out the intro (bosses' intros differ: 2-3 s of game time), then give it a moment to act
+    await page.waitForFunction(() => GAME.G.world.boss && GAME.G.world.boss.state !== 'intro', null, { timeout: 10000 }).catch(() => {});
+    await page.waitForTimeout(600);
     const st = await page.evaluate(() => ({ hp: GAME.G.world.boss.hp, state: GAME.G.world.boss.state, bar: !document.getElementById('boss-hud').classList.contains('hidden') }));
     check(st.hp > 0 && st.state !== 'intro' && st.bar, `${b.id}: ${b.kind} is up and fighting (${st.state}), gauge shown`);
     await page.screenshot({ path: `${OUT}/boss-${b.kind}.png` });

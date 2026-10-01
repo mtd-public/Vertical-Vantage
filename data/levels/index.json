@@ -2,7 +2,8 @@
  "stages": [
   "docks",
   "skyway",
-  "neon"
+  "neon",
+  "warehouse"
  ],
  "bonus": {
   "docks": "bonus-docks",

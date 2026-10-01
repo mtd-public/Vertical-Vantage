@@ -1,6 +1,6 @@
 // "ECHO", the robot's onboard AI: just a face on a little CRT plate in the HUD corner. It reacts to
-// what happens with big glowing eyes and stock anime expressions (^ ^, > <, sparkle eyes, sweat
-// drops, anger marks, spirals, tears), with the chaotic, sugar-rush energy of a small cartoon robot
+// what happens with glowing, iris-less eye shapes (EVE-style ovals at rest; line shapes like ^ ^,
+// > <, v v, \ /, O O, T T for the stock anime expressions), with the chaotic, sugar-rush energy of a small cartoon robot
 // sidekick, plus a speech bubble of quips and non-sequiturs. An original character: no borrowed
 // designs or catchphrases. Drawn on a 48×48 canvas, upscaled with hard pixels.
 //
@@ -28,6 +28,13 @@ const LINES = {
   clear: ['Stage clear! You’re a natural!', 'Extraction complete! Snack time?'],
   dead: ['Signal lost…', 'Shell offline… again?'],
   exitHint: ['The exit’s the big beam. Can’t miss it!'],
+  bossStart: ['Big spider. Big, BIG spider.', 'Mission mode. Take it apart.'],
+  bossTele: ['It’s gonna jump! MOVE!', 'Incoming!'],
+  bossCharge: ['Laser! Get behind something!', 'Eyes glowing. Bad sign.'],
+  bossPhase: ['It’s mad now.', 'It’s climbing the walls! Literally!'],
+  bossDown: ['SPIDER: SQUASHED!', 'We did it! Exit’s open!'],
+  spiked: ['Ow! Spikes! Shoot those ones!', 'Not that one, it’s pointy!'],
+  slow: ['Bullet time!', 'Everything… is… slooow…'],
   idle: [
     'That cola ad says “40% less dread”. I measured. It’s 38%.',
     'Budget Clones is hiring. Both of me applied.',
@@ -51,6 +58,8 @@ const REACT = {
   power: ['manic', 'power', 2], zap: ['angry', 'zap', 3], portal: ['sparkle', 'portal', 5], bonus: ['serious', 'bonus', 5], bonusClear: ['manic', 'bonusClear', 6],
   bonusTimeout: ['worried', 'bonusTimeout', 6], clear: ['sparkle', 'clear', 6], dead: ['dead', 'dead', 7], start: ['happy', 'start', 2],
   idle: [['idle', 'derp', 'happy', 'smug'], 'idle', 0], guard: ['smug', 'guard', 1], exitHint: ['idle', 'exitHint', 1],
+  bossStart: ['serious', 'bossStart', 5], bossTele: ['shock', 'bossTele', 3], bossCharge: ['worried', 'bossCharge', 3], bossPhase: ['angry', 'bossPhase', 4],
+  bossDown: [['sparkle', 'manic'], 'bossDown', 7], spiked: ['hurt', 'spiked', 3], slow: ['sparkle', 'slow', 3],
 };
 
 const COL = { plate: '#0a0d1c', rim: '#2a3450', eye: '#5ff0ff', red: '#ff2a3a', gold: '#ffd23a', pink: '#ff7ab8', white: '#ffffff', tear: '#7fd8ff', mouth: '#1a0f20', tongue: '#ff5a8a', vein: '#ff3b5c' };
@@ -134,7 +143,7 @@ export class Avatar {
     g.save(); g.translate(shake, bob);
     const ec = e === 'serious' || e === 'angry' ? COL.red : COL.eye;
     const blinking = this.blink < 0 && ['idle', 'happy', 'worried', 'derp'].includes(e);
-    if (blinking) { line(g, 12, 20, 20, 20, ec, 2); line(g, 28, 20, 36, 20, ec, 2); } else this.eyes(g, e, ec);
+    this.eyes(g, blinking ? 'blink' : e, ec);
     this.mouth(g, e, ec, open);
     this.marks(g, e);
     g.restore();
@@ -146,37 +155,37 @@ export class Avatar {
     }
   }
 
+  // Eyes are glowing shapes with no iris, pupil or highlight (EVE-style): soft tilted ovals at rest,
+  // thick glowing strokes for the expressions (^ ^, > <, v v, \ /, O O, T T, x x, spirals, slits).
   eyes(g, e, c) {
     const L = 16, R = 32, Y = 20, t = this.t;
-    const round = (x, r, pr, px = 0, py = 0) => { circle(g, x, Y, r, c); circle(g, x + px, Y + py, pr, COL.plate); circle(g, x + px - 1.5, Y + py - 1.5, 1.2, COL.white); };
+    g.save();
+    g.shadowColor = c; g.shadowBlur = e === 'dead' ? 0 : 4; // the glow (a dead screen doesn't glow)
     switch (e) {
-      case 'happy': arc(g, L, Y + 2, 4, Math.PI, 0, c, 2); arc(g, R, Y + 2, 4, Math.PI, 0, c, 2); break; // ^ ^
-      case 'manic': // huge eyes, tiny pupils, darting: pure sugar rush
-        round(L, 7, 1.6, Math.sin(t * 9) * 2, Math.cos(t * 7) * 2); round(R, 7, 1.6, Math.cos(t * 8) * 2, Math.sin(t * 11) * 2); break;
-      case 'sparkle': // anime shoujo eyes
-        circle(g, L, Y, 6, c); circle(g, R, Y, 6, c); circle(g, L, Y + 1, 3.5, '#1a4a8a'); circle(g, R, Y + 1, 3.5, '#1a4a8a');
-        star(g, L - 2, Y - 2, 2.2, COL.white); star(g, R - 2, Y - 2, 2.2, COL.white); circle(g, L + 2, Y + 3, 1, COL.white); circle(g, R + 2, Y + 3, 1, COL.white); break;
+      case 'happy': chev(g, L, Y, 1, c); chev(g, R, Y, 1, c); break; // ^ ^
+      case 'smug': chev(g, L, Y + 1, -0.8, c); chev(g, R, Y + 1, -0.8, c); break; // v v
+      case 'hurt': poly(g, [[L - 4, Y - 4], [L + 3, Y], [L - 4, Y + 4]], c, 3); poly(g, [[R + 4, Y - 4], [R - 3, Y], [R + 4, Y + 4]], c, 3); break; // > <
+      case 'angry': line(g, L - 5, Y - 3, L + 5, Y + 1.5, c, 3.5); line(g, R + 5, Y - 3, R - 5, Y + 1.5, c, 3.5); break; // \ /
+      case 'serious': oval(g, L, Y, 6, 1.3, 0.18, c); oval(g, R, Y, 6, 1.3, -0.18, c); break; // mission mode: thin red slits
+      case 'manic': { // wide-open ovals that squash and stretch: pure sugar rush
+        const k = Math.sin(t * 22) * 0.9;
+        oval(g, L, Y, 5.2 + k, 7 - k, 0, c); oval(g, R, Y, 5.2 - k, 7 + k, 0, c); break;
+      }
+      case 'sparkle': sparkle(g, L, Y, 6.5, c); sparkle(g, R, Y, 6.5, c); break; // ✦ ✦
       case 'love': heart(g, L, Y, 5.5, COL.pink); heart(g, R, Y, 5.5, COL.pink); break;
-      case 'hurt': line(g, L - 4, Y - 4, L + 3, Y, c, 2); line(g, L + 3, Y, L - 4, Y + 4, c, 2); line(g, R + 4, Y - 4, R - 3, Y, c, 2); line(g, R - 3, Y, R + 4, Y + 4, c, 2); break; // > <
-      case 'angry': // slanted, glaring
-        g.fillStyle = c; g.beginPath(); g.moveTo(L - 6, Y - 4); g.lineTo(L + 5, Y); g.lineTo(L + 4, Y + 4); g.lineTo(L - 5, Y + 3); g.fill();
-        g.beginPath(); g.moveTo(R + 6, Y - 4); g.lineTo(R - 5, Y); g.lineTo(R - 4, Y + 4); g.lineTo(R + 5, Y + 3); g.fill(); break;
-      case 'serious': // mission mode: narrow red slits
-        g.fillStyle = c; g.fillRect(L - 6, Y - 1, 12, 3); g.fillRect(R - 6, Y - 1, 12, 3); g.fillStyle = 'rgba(255,42,58,0.25)'; g.fillRect(L - 7, Y - 3, 14, 7); g.fillRect(R - 7, Y - 3, 14, 7); break;
-      case 'smug': // half-lidded
-        g.fillStyle = c; g.fillRect(L - 5, Y, 10, 4); g.fillRect(R - 5, Y, 10, 4); g.fillStyle = COL.plate; g.fillRect(L - 1, Y + 1, 4, 3); g.fillRect(R - 1, Y + 1, 4, 3);
-        line(g, L - 6, Y - 1, L + 5, Y - 1, c, 1); line(g, R - 5, Y - 1, R + 6, Y - 1, c, 1); break;
-      case 'shock': circle(g, L, Y, 7, COL.white); circle(g, R, Y, 7, COL.white); circle(g, L, Y, 1.5, COL.plate); circle(g, R, Y, 1.5, COL.plate); break;
+      case 'shock': ring(g, L, Y, 5.5, c, 2.5); ring(g, R, Y, 5.5, c, 2.5); break; // O O (hollow)
       case 'dizzy': spiral(g, L, Y, 6, t * 8, c); spiral(g, R, Y, 6, t * 8 + 1, c); break;
-      case 'worried': round(L, 6, 2, 0, 1); round(R, 6, 2, 0, 1); line(g, L - 5, Y - 9, L + 3, Y - 7, c, 1); line(g, R + 5, Y - 9, R - 3, Y - 7, c, 1); break;
-      case 'cry': line(g, L - 5, Y - 2, L + 5, Y - 2, c, 2); line(g, L, Y - 2, L, Y + 3, c, 2); line(g, R - 5, Y - 2, R + 5, Y - 2, c, 2); line(g, R, Y - 2, R, Y + 3, c, 2); break; // T T
-      case 'derp': round(L, 7, 2.5, 2, -1); round(R, 4, 1.5, -1, 2); break; // one big, one small
-      case 'dead': for (const x of [L, R]) { line(g, x - 4, Y - 4, x + 4, Y + 4, '#556', 2); line(g, x + 4, Y - 4, x - 4, Y + 4, '#556', 2); } break;
-      default: { // idle: big round glowing eyes that glance around
-        const lx = Math.round(Math.sin(t * 0.7) * 2), ly = Math.round(Math.sin(t * 0.43) * 1);
-        round(L, 6, 2.6, lx, ly); round(R, 6, 2.6, lx, ly);
+      case 'worried': oval(g, L, Y + 1, 5, 3, -0.42, c); oval(g, R, Y + 1, 5, 3, 0.42, c); break; // outer ends drooping
+      case 'cry': for (const x of [L, R]) { line(g, x - 5, Y - 2, x + 5, Y - 2, c, 3); line(g, x, Y - 2, x, Y + 4, c, 3); } break; // T T
+      case 'derp': oval(g, L, Y - 1, 6, 6, 0, c); oval(g, R, Y + 2, 3, 2, 0.3, c); break; // one big, one small
+      case 'dead': for (const x of [L, R]) { line(g, x - 4, Y - 4, x + 4, Y + 4, '#556', 2.5); line(g, x + 4, Y - 4, x - 4, Y + 4, '#556', 2.5); } break;
+      case 'blink': oval(g, L, Y + 1, 5.5, 0.9, 0.22, c); oval(g, R, Y + 1, 5.5, 0.9, -0.22, c); break;
+      default: { // idle: EVE's soft ovals, tipped toward the middle, drifting as it glances around
+        const gx = Math.round(Math.sin(t * 0.7) * 2), gy = Math.round(Math.sin(t * 0.43) * 1);
+        oval(g, L + gx, Y + gy, 5.5, 3.6, 0.22, c); oval(g, R + gx, Y + gy, 5.5, 3.6, -0.22, c);
       }
     }
+    g.restore();
   }
 
   mouth(g, e, c, open) {
@@ -214,8 +223,13 @@ export class Avatar {
 function rrect(g, x, y, w, h, r) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
 function circle(g, x, y, r, c) { g.fillStyle = c; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); }
 function arc(g, x, y, r, a0, a1, c, w) { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.arc(x, y, r, a0, a1); g.stroke(); }
-function line(g, x0, y0, x1, y1, c, w) { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); }
+function line(g, x0, y0, x1, y1, c, w) { g.strokeStyle = c; g.lineWidth = w; g.lineCap = 'round'; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); }
+function poly(g, pts, c, w) { g.strokeStyle = c; g.lineWidth = w; g.lineCap = 'round'; g.lineJoin = 'round'; g.beginPath(); pts.forEach(([x, y], i) => g[i ? 'lineTo' : 'moveTo'](x, y)); g.stroke(); }
+function chev(g, x, y, up, c) { poly(g, [[x - 5, y + 2 * up], [x, y - 3 * up], [x + 5, y + 2 * up]], c, 3); } // ^ (up = 1) or v (up < 0)
+function oval(g, x, y, rx, ry, rot, c) { g.fillStyle = c; g.beginPath(); g.ellipse(x, y, rx, ry, rot, 0, Math.PI * 2); g.fill(); }
+function ring(g, x, y, r, c, w) { g.strokeStyle = c; g.lineWidth = w; g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.stroke(); }
+function sparkle(g, x, y, r, c) { g.fillStyle = c; g.beginPath(); for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2 - Math.PI / 2, rr = k % 2 ? r * 0.28 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.closePath(); g.fill(); } // ✦
 function wave(g, x, y, w, c) { g.strokeStyle = c; g.lineWidth = 1; g.beginPath(); for (let i = 0; i <= w; i++) g[i ? 'lineTo' : 'moveTo'](x + i, y + Math.sin(i * 1.2) * 1.5); g.stroke(); }
 function star(g, x, y, r, c) { g.fillStyle = c; g.beginPath(); for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2, rr = k % 2 ? r * 0.35 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.fill(); }
 function heart(g, x, y, s, c) { g.fillStyle = c; g.beginPath(); g.moveTo(x, y + s * 0.8); g.bezierCurveTo(x - s * 1.4, y - s * 0.1, x - s * 0.6, y - s * 1.1, x, y - s * 0.35); g.bezierCurveTo(x + s * 0.6, y - s * 1.1, x + s * 1.4, y - s * 0.1, x, y + s * 0.8); g.fill(); }
-function spiral(g, x, y, r, rot, c) { g.strokeStyle = c; g.lineWidth = 1; g.beginPath(); for (let i = 0; i < 40; i++) { const a = rot + i * 0.45, rr = (i / 40) * r; g[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.stroke(); }
+function spiral(g, x, y, r, rot, c) { g.strokeStyle = c; g.lineWidth = 1.6; g.lineCap = 'round'; g.beginPath(); for (let i = 0; i <= 36; i++) { const a = rot + i * 0.28, rr = (i / 36) * r; g[i ? 'lineTo' : 'moveTo'](x + Math.cos(a) * rr, y + Math.sin(a) * rr); } g.stroke(); } // ~1.6 turns: stays open at 48 px

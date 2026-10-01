@@ -122,5 +122,6 @@ export default {
     { type: 'healthBig', x: -58, y: 18, z: -86 },
     { type: 'health', x: 64, y: 14.5, z: -30 },
     { type: 'health', x: 75, y: BOOM - 1.2, z: -55.5 },
+    { type: 'slowmo', x: 47.5, y: PIER + CONT.h * 4 + 1, z: -36 },
   ],
 };

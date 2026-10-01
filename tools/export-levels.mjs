@@ -6,7 +6,7 @@ import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { STAGES, BONUS } from '../js/levels/index.js';
-import { T, WEAPONS, WEAPON_ORDER, OVERDRIVE_RATE, ENEMIES, ENEMY_BOLT } from '../js/sim/tuning.js';
+import { T, WEAPONS, WEAPON_ORDER, OVERDRIVE_RATE, ENEMIES, ENEMY_BOLT, BOSS } from '../js/sim/tuning.js';
 import { LASER } from '../js/sim/hazards.js';
 import { DEEP, CARS, CONT } from '../js/levels/kit.js';
 
@@ -36,6 +36,7 @@ const level = (L) => ({
   bonus: !!L.bonus, time: L.time ?? null, killY: L.killY, water: L.water ?? null,
   start: L.start,
   plats: L.plats.map((p) => ({ kind: p.kind, style: p.style, x: p.x, z: p.z, h: p.h, thick: p.thick, w: p.w ?? 0, d: p.d ?? 0, r: p.r ?? 0, yaw: p.yaw || 0, tint: p.tint ?? -1, move: p.move || null, bob: p.bob || null })),
+  objective: L.objective || 'drives', arena: L.arena || null, boss: L.boss || null, bossName: L.bossName || null,
   drives: L.drives || [], exit: L.exit || null, portal: L.portal || null,
   enemies: L.enemies || [], servers: L.servers || [], pickups: L.pickups || [], lasers: L.lasers || [],
 });
@@ -43,6 +44,6 @@ const level = (L) => ({
 for (const s of STAGES) out(`data/levels/${s.id}.json`, level(s));
 for (const k in BONUS) out(`data/levels/${BONUS[k].id}.json`, level(BONUS[k]));
 out('data/levels/index.json', { stages: STAGES.map((s) => s.id), bonus: Object.fromEntries(Object.entries(BONUS).map(([k, b]) => [k, b.id])) });
-out('data/tuning.json', { format: 'vertical-vantage.tuning/1', T, WEAPONS, WEAPON_ORDER, OVERDRIVE_RATE, ENEMIES, ENEMY_BOLT, LASER, kit: { DEEP, CARS, CONT } });
+out('data/tuning.json', { format: 'vertical-vantage.tuning/1', T, WEAPONS, WEAPON_ORDER, OVERDRIVE_RATE, ENEMIES, ENEMY_BOLT, BOSS, LASER, kit: { DEEP, CARS, CONT } });
 
 if (check) { console.log(stale ? `${stale} file(s) stale: run node tools/export-levels.mjs` : 'data/ is up to date'); process.exit(stale ? 1 : 0); }

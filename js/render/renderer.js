@@ -17,6 +17,16 @@ import { box, Kit } from './geo.js';
 
 const DEG = Math.PI / 180;
 const _v = new THREE.Vector3(), _c = new THREE.Color();
+const _up = new THREE.Vector3(), _fw = new THREE.Vector3(), _bk = new THREE.Vector3(), _rt = new THREE.Vector3(), _ft = new THREE.Vector3(), _kn = new THREE.Vector3(), _d = new THREE.Vector3();
+const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _Y = new THREE.Vector3(0, 1, 0);
+// Stretch a unit box between a and b (in the parent's frame), thickness th.
+function seg3(mesh, a, b, th) {
+  _d.subVectors(b, a);
+  const len = _d.length() || 1e-3;
+  mesh.position.copy(a).addScaledVector(_d, 0.5);
+  mesh.quaternion.setFromUnitVectors(_Y, _d.multiplyScalar(1 / len));
+  mesh.scale.set(th, len, th);
+}
 const WEAPON_COL = { blaster: 0x2be8ff, spread: 0xff7a2b, rapid: 0x9fff6a, rocket: 0xff3b5c };
 
 export class GameRenderer {
@@ -77,8 +87,13 @@ export class GameRenderer {
     const L = { root, th, view: buildLevelView(w, th, this.M, root), enemies: new Map(), pickups: new Map(), drives: new Map(), lasers: new Map(), exit: null, portal: null, water: null };
     const M = this.M;
     for (const e of w.enemies) {
-      const g = e.type === 'drone' ? MD.droneModel(M) : e.type === 'walker' ? MD.walkerModel(M) : e.type === 'guard' ? MD.guardModel(M, e.id) : MD.serverModel(M);
+      const g = e.type === 'drone' ? MD.droneModel(M) : e.type === 'walker' ? MD.walkerModel(M) : e.type === 'spiker' ? MD.spikerModel(M) : e.type === 'guard' ? MD.guardModel(M, e.id) : e.type === 'boss' ? MD.bossModel(M) : MD.serverModel(M);
       root.add(g); L.enemies.set(e, g);
+      if (e.type === 'boss') { // the laser beam lives in world space (unit box along +Z, lookAt'd and stretched)
+        L.beam = new THREE.Mesh(box(1, 1, 1, { z: 0.5 }), M.beam);
+        L.beam.visible = false; L.beam.frustumCulled = false;
+        root.add(L.beam);
+      }
     }
     for (const o of w.pickups) { const g = MD.pickupModel(M, o.type); root.add(g); L.pickups.set(o, g); }
     for (const o of w.drives) { const g = MD.driveModel(M); root.add(g); L.drives.set(o, g); }
@@ -150,6 +165,7 @@ export class GameRenderer {
 
     // enemies
     for (const [e, g] of L.enemies) {
+      if (e.type === 'boss') { this.updateBoss(e, g, dt, t, P); continue; }
       if (e.dead) { g.visible = false; continue; }
       g.visible = true;
       g.position.set(e.x, e.y, e.z);
@@ -160,7 +176,7 @@ export class GameRenderer {
       if (e.type === 'drone') {
         g.getObjectByName('rotors').rotation.y = t * 25;
         eye.scale.setScalar(e.state === 'tele' ? 1.5 + Math.sin(t * 40) * 0.3 : 1);
-      } else if (e.type === 'walker') {
+      } else if (e.type === 'walker' || e.type === 'spiker') {
         for (let i = 0; i < 4; i++) g.getObjectByName('leg' + i).rotation.x = Math.sin(e.t * 12 + i * 1.6) * 0.35;
       } else if (e.type === 'guard') {
         const sight = g.getObjectByName('sight');
@@ -245,6 +261,56 @@ export class GameRenderer {
     this.M.vmFlash.color.set(WEAPON_COL[P.weapon] || 0xffffff);
   }
 
+  // ARACHNE-9: stand it on its surface (up = the surface normal), pose eight legs, aim the turret,
+  // draw the beam. Orientation is smoothed so wall / ceiling transitions swing rather than snap.
+  updateBoss(e, g, dt, t, P) {
+    const L = this.level;
+    if (e.dead) { g.visible = false; if (L.beam) L.beam.visible = false; return; }
+    g.visible = true;
+    const up = _up.set(e.nx, e.ny, e.nz);
+    let fw = _fw.set(e.fx, 0, e.fz);
+    if (Math.abs(up.y) < 0.5) fw.set(0, 1, 0); // on a wall it faces up the wall
+    fw.addScaledVector(up, -fw.dot(up)).normalize();
+    const back = _bk.copy(fw).negate(), right = _rt.crossVectors(up, back).normalize();
+    _m4.makeBasis(right, up, back);
+    _q.setFromRotationMatrix(_m4);
+    g.quaternion.slerp(_q, Math.min(1, dt * 9));
+    const crouch = e.crouch * 0.55;
+    g.position.set(e.cx - up.x * crouch, e.cy - up.y * crouch, e.cz - up.z * crouch);
+    if (e.state === 'dying') g.position.x += Math.sin(t * 60) * 0.12;
+    const flash = e.flash > 0 || e.state === 'dying' && Math.sin(t * 30) > 0;
+    if (flash !== !!g.userData.flashing) setFlash(g, flash, this.M.flash);
+    // eyes flare on every telegraph
+    const tele = e.state === 'crouch' || e.state === 'charge' || e.state === 'dropTele';
+    g.getObjectByName('eye').scale.setScalar(tele ? 1.3 + Math.sin(t * 40) * 0.25 : 1);
+    // turret tracks you (barrels along +Z: lookAt aims them)
+    const tur = g.getObjectByName('turret');
+    tur.lookAt(P.x, P.y + 1, P.z);
+    // legs: tetrapod gait in the body frame; feet lift in two alternating groups of four
+    const ph = e.gait * 1.6, bodyH = 1.8 - crouch;
+    for (const l of g.userData.legs) {
+      const grp = (l.i + (l.side > 0 ? 1 : 0)) % 2, s = Math.sin(ph + grp * Math.PI);
+      const lift = e.state === 'leap' || e.state === 'drop' ? 0.9 : Math.max(0, s) * 0.75;
+      const swing = Math.cos(ph + grp * Math.PI) * 0.45;
+      const foot = _ft.set(l.rest.x, -bodyH + lift, l.rest.z + swing);
+      if (e.state === 'leap' || e.state === 'drop') foot.set(l.rest.x * 0.8, -bodyH * 0.5, l.rest.z * 1.2); // legs splay mid-air
+      const knee = _kn.copy(l.hip).add(foot).multiplyScalar(0.5);
+      knee.y += 1.5; knee.x += l.side * 0.4;
+      seg3(l.thigh, l.hip, knee, 0.32); seg3(l.shin, knee, foot, 0.24); // (children of g: body frame)
+      l.knee.position.copy(knee);
+    }
+    // the beam (sight line while charging, the real thing while firing)
+    const B = e.beam, bm = L.beam;
+    bm.visible = B.on || (B.sight && Math.sin(t * 35) > -0.3);
+    if (bm.visible) {
+      bm.position.set(B.ox, B.oy, B.oz);
+      bm.lookAt(B.ox + B.dx, B.oy + B.dy, B.oz + B.dz);
+      const th = B.on ? 0.42 + Math.sin(t * 50) * 0.06 : 0.05;
+      bm.scale.set(th, th, B.len);
+      this.M.beam.opacity = B.on ? 0.9 : 0.55;
+    }
+  }
+
   onEvents(events, w) {
     const fx = this.fx;
     for (const e of events) {
@@ -252,7 +318,7 @@ export class GameRenderer {
         case 'fire': this.recoil = 1; this.flashT = 0.05; break;
         case 'impact': fx.burst(e.x, e.y, e.z, e.kind === 'bolt' ? 5 : 6, e.kind === 'bolt' ? 0xff3a8a : 0xbff8ff, 5, 0.09, 0.35, 10); break;
         case 'hit': fx.burst(e.x, e.y, e.z, 8, 0xffb040, 6, 0.1, 0.4); break;
-        case 'kill': fx.boom(e.x, e.y, e.z, e.kind === 'guard' ? 2.2 : 2.6); fx.burst(e.x, e.y, e.z, 16, e.kind === 'walker' ? 0xff8a1a : e.kind === 'guard' ? 0x3a3a44 : 0xe8ecf4, 8, 0.22, 1.2, 14); break;
+        case 'kill': fx.boom(e.x, e.y, e.z, e.kind === 'boss' ? 7 : e.kind === 'guard' ? 2.2 : 2.6); fx.burst(e.x, e.y, e.z, 16, e.kind === 'walker' ? 0xff8a1a : e.kind === 'guard' ? 0x3a3a44 : 0xe8ecf4, 8, 0.22, 1.2, 14); break;
         case 'serverDown': fx.boom(e.x, e.y, e.z, 3, 0x7bff4a); fx.burst(e.x, e.y, e.z, 24, 0x2bff7a, 10, 0.16, 1, 12); break;
         case 'explode': fx.boom(e.x, e.y, e.z, e.r); break;
         case 'stomp': fx.burst(e.x, e.y, e.z, 12, 0xffffff, 7, 0.14, 0.5); fx.shake = Math.max(fx.shake, 0.18); break;
@@ -265,6 +331,12 @@ export class GameRenderer {
         case 'zap': fx.burst(e.x, e.y, e.z, 10, 0xff2a3a, 7, 0.1, 0.4); break;
         case 'portal': fx.burst(e.x, e.y, e.z, 30, 0xff2bd6, 10, 0.18, 0.8, 0); break;
         case 'enemyFire': fx.burst(e.x, e.y, e.z, 3, 0xff3a8a, 2, 0.12, 0.2, 0); break;
+        case 'bossSlam': fx.shockwave(e.x, e.y + 0.05, e.z, e.r); fx.burst(e.x, e.y + 0.3, e.z, 26, 0xc8c4bc, 9, 0.3, 0.9, 10); fx.shake = Math.max(fx.shake, 0.6); break;
+        case 'bossLeap': fx.burst(e.x, e.y - 1.6, e.z, 18, 0xc8c4bc, 6, 0.25, 0.6, 8); fx.shake = Math.max(fx.shake, 0.25); break;
+        case 'bossDying': fx.shake = Math.max(fx.shake, 0.5); break;
+        case 'bossPhase': case 'bossRoar': fx.shake = Math.max(fx.shake, 0.3); break;
+        case 'spiked': fx.burst(e.x, e.y, e.z, 10, 0xff2a3a, 6, 0.12, 0.4); fx.shake = Math.max(fx.shake, 0.25); break;
+        case 'respawnPickup': fx.burst(e.x, e.y, e.z, 12, MD.PICKUP_COL[e.kind] || 0xffffff, 3, 0.1, 0.5, -2); break;
         default: break;
       }
     }
@@ -314,7 +386,7 @@ function makeMaterials() {
   const swirlPink = canvasTex(64, 64, (g) => {
     for (let k = 0; k < 8; k++) { g.fillStyle = k % 2 ? 'rgba(255,43,214,0.95)' : 'rgba(43,232,255,0.7)'; g.beginPath(); g.moveTo(32, 32); g.arc(32, 32, 32, (k / 8) * Math.PI * 2, ((k + 0.5) / 8) * Math.PI * 2); g.fill(); }
   }, false);
-  const icons = canvasTex(256, 32, MD.iconAtlasPaint, false);
+  const icons = canvasTex(512, 32, MD.iconAtlasPaint, false);
   const add = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false };
   return {
     paint: new THREE.MeshLambertMaterial({ vertexColors: true }),
@@ -343,6 +415,9 @@ function makeMaterials() {
     exitPortal: new THREE.MeshBasicMaterial({ map: swirl, opacity: 0.85, ...add }),
     portalSwirl: new THREE.MeshBasicMaterial({ map: swirlPink, opacity: 0.9, ...add }),
     laser: new THREE.MeshBasicMaterial({ color: 0xff2a3a, fog: false }),
+    beam: new THREE.MeshBasicMaterial({ color: 0xff3a4a, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
+    legThigh: new THREE.MeshLambertMaterial({ color: 0x8a92a6, flatShading: true }),
+    legShin: new THREE.MeshLambertMaterial({ color: 0x4e5466, flatShading: true }),
     laserSheet: new THREE.MeshBasicMaterial({ color: 0xff2a3a, opacity: 0.18, ...add }),
     vmPaint: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, fog: false }),
     vmGlow: new THREE.MeshBasicMaterial({ color: 0x2be8ff, fog: false }),

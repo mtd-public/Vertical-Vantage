@@ -43,10 +43,18 @@ export const T = {
   FALL_DAMAGE: 2, // falling off the world costs two cells and puts you back on the last safe ground.
   KNOCKBACK: 7, // m/s shove away from whatever hit you (contact damage only).
 
-  // ---- stomping (land on an enemy: Jumping Flash's first verb)
-  STOMP_DMG: 3, // kills drones, walkers and guards in one stomp.
-  STOMP_BOUNCE: 12, // bounce speed after a stomp…
+  // ---- stomping (land on an enemy: Jumping Flash's first verb). Damage per kind is ENEMIES[k].stomp.
+  STOMP_BOUNCE: 12, // a free bounce off any smooth head or back…
   STOMP_REFUND: true, // …and the air jumps come back, so stomp chains feel great.
+  STOMP_AIM: 0.8, // if it survived (or it's the boss), the view snaps down onto it for this long…
+  STOMP_AIM_RATE: 12, // …turning this fast (rad/s)…
+  STOMP_SHOOT: 0.45, // …and the gun fires on its own: bounce → aim down → shoot.
+  SPIKE_DMG: 1, // landing on a spiked crawler hurts (shoot those),
+  SPIKE_BOUNCE: 9, // and pops you back up off it.
+
+  // ---- slow-mo (bullet time: everything but you runs slow)
+  SLOW_TIME: 6, // seconds of your time.
+  SLOW_K: 0.4, // the world's clock rate while it lasts: enemies, bolts, the boss, movers, lasers.
 
   // ---- pickups and objectives
   PICKUP_R: 1.5, // generous (doc 14 #53): a pickup you brushed should count.
@@ -62,7 +70,7 @@ export const T = {
   BONUS_FALL_PENALTY: 3, // seconds lost (instead of health) for falling off a bonus arena.
 
   // ---- scoring
-  SCORE: { drone: 100, walker: 150, guard: 200, server: 250, drive: 1000, stompMul: 2, bonusClear: 5000, perSecondLeft: 100, timePar: 10 },
+  SCORE: { drone: 100, walker: 150, spiker: 250, guard: 200, server: 250, boss: 10000, drive: 1000, stompMul: 2, bonusClear: 5000, perSecondLeft: 100, timePar: 10 },
 };
 
 // Weapons: fire straight down the view line, always (the crosshair is the muzzle).
@@ -76,15 +84,33 @@ export const WEAPONS = {
 export const WEAPON_ORDER = ['blaster', 'spread', 'rapid', 'rocket'];
 export const OVERDRIVE_RATE = 0.5; // OVERDRIVE: fire interval × this.
 
-// Enemies. r = hit radius; top = height of the stompable top above the feet.
+// Enemies. r = hit radius; top = height of the stompable top above the feet; stomp = damage a
+// stomp deals (small robots die from the bounce alone); spiked = landing on it hurts you instead.
 export const ENEMIES = {
   // Small hover robot: bobs at its post, telegraphs (eye flare) then lobs a slow bolt you can dodge.
-  drone: { hp: 2, r: 0.75, top: 0.5, range: 34, fireMin: 1.8, fireMax: 2.8, tele: 0.5, bolt: 13, leash: 5, chase: 2.2 },
+  drone: { hp: 2, r: 0.75, top: 0.5, range: 34, fireMin: 1.8, fireMax: 2.8, tele: 0.5, bolt: 13, leash: 5, chase: 2.2, stomp: 99 },
   // Little crawler robot: patrols its platform, scuttles at you if you land on it. Contact damage.
-  walker: { hp: 3, r: 0.85, top: 1.0, range: 14, patrol: 2.2, run: 4.0 },
-  // Security officer in a long coat: laser-sight telegraph, then a 3-round burst. Stands its ground.
-  guard: { hp: 3, r: 0.55, top: 1.85, range: 40, aim: 0.85, burst: 3, gap: 0.13, bolt: 21, cool: 2.6 },
+  walker: { hp: 3, r: 0.85, top: 1.0, range: 14, patrol: 2.2, run: 4.0, stomp: 99 },
+  // Its spiked cousin: same crawl, but its back is all spikes. Don't land on it, shoot it.
+  spiker: { hp: 4, r: 0.85, top: 1.1, range: 14, patrol: 1.8, run: 3.4, stomp: 0, spiked: true },
+  // Security officer in a long coat: laser-sight telegraph, then a 3-round burst. A stomp staggers him (2).
+  guard: { hp: 3, r: 0.55, top: 1.85, range: 40, aim: 0.85, burst: 3, gap: 0.13, bolt: 21, cool: 2.6, stomp: 2 },
   // Bonus-stage target: a server rack. Doesn't fight back.
-  server: { hp: 2, r: 0.9, top: 2.2 },
+  server: { hp: 2, r: 0.9, top: 2.2, stomp: 2 },
+  // ARACHNE-9 (numbers in BOSS). Its back is armoured but smooth: bounce off it, then shoot down.
+  boss: { hp: 240, r: 2.4, top: 3.0, stomp: 4 },
+};
+
+// The warehouse boss (js/sim/boss.js). Phases by health: 1 > 60 %, 2 > 30 %, 3 below.
+export const BOSS = {
+  hp: 240, r: 2.4, top: 3.0, // ~36 s of blaster on target; weapons and OVERDRIVE cut that hard.
+  bodyH: 1.8, margin: 3.5, // body centre above its surface; how close to the walls it walks.
+  speed: [4.5, 5.6, 6.6], // m/s by phase: you outrun it (8.5) but not by much.
+  crouch: [0.8, 0.65, 0.5], // pounce telegraph by phase (it squats and its eyes flare).
+  slamR: 6, crushR: 2.8, recover: 1.2, // landing shockwave (jump it), direct hit, then a stunned window (×1.5 damage).
+  charge: 1.0, laserTime: 1.8, sweep: 0.55, sweepRate: 0.62, beamLen: 70, // laser: sight line, then a sweep across you; cover blocks it.
+  ceilTime: 3.2, dropTele: 0.6, // crawls the ceiling toward you, then flares and drops.
+  turretEvery: [2.6, 3.8], turretBurst: [3, 4, 5], turretGap: 0.16, turretSpeed: 19, // the back turret's bursts.
+  dyingTime: 2.2,
 };
 export const ENEMY_BOLT = { r: 0.28, dmg: 1, life: 4 };

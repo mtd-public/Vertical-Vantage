@@ -15,16 +15,17 @@ import { makeLaser, updateLasers } from './hazards.js';
 export function createWorld(level, opts = {}) {
   const w = {
     level, opts: { autoLook: true, ...opts },
-    t: 0, time: 0, rng: mulberry32(level.seed || 1), nextId: 1,
+    t: 0, time: 0, pt: 0, slow: 0, rng: mulberry32(level.seed || 1), nextId: 1, // pt: the world clock (runs slow in slow-mo)
     plats: makePlats(level.plats),
     player: null, enemies: [], shots: [], bolts: [], pickups: [], drives: [], lasers: [], exit: null, portal: null,
-    events: [], score: 0, drivesGot: 0, exitOpen: false, phase: 'play', request: null,
+    events: [], score: 0, drivesGot: 0, exitOpen: false, phase: 'play', request: null, boss: null,
     bonus: null, clear: null,
     stats: { kills: 0, stomps: 0, shots: 0, hits: 0, damage: 0, falls: 0 },
   };
   posePlats(w.plats, 0);
   w.player = makePlayer(level.start);
   for (const d of level.enemies || []) w.enemies.push(makeEnemy(w, d));
+  if (level.boss) { w.boss = makeEnemy(w, { ...level.boss, type: 'boss' }); w.enemies.push(w.boss); }
   for (const d of level.servers || []) w.enemies.push(makeEnemy(w, { ...d, type: 'server' }));
   for (const d of level.pickups || []) w.pickups.push(thing(w, d, d.type));
   for (const d of level.lasers || []) w.lasers.push(makeLaser(w, d));
@@ -38,15 +39,19 @@ export function createWorld(level, opts = {}) {
 }
 
 function thing(w, d, type) {
-  const o = { id: w.nextId++, type, x: d.x, y: d.y, z: d.z, got: false, used: false, t: 0, host: null, lx: 0, ly: 0, lz: 0 };
+  const o = { id: w.nextId++, type, x: d.x, y: d.y, z: d.z, got: false, used: false, t: 0, host: null, lx: 0, ly: 0, lz: 0, respawn: d.respawn || 0, gotT: 0 };
   if (!d.fly) { attach(w.plats, o, 8); place(o); }
   return o;
 }
 
 export function step(w, c) {
   const dt = T.DT;
+  // slow-mo: the world's clock runs at SLOW_K while you keep full speed (bullet time)
+  const edt = w.slow > 0 ? dt * T.SLOW_K : dt;
+  if (w.slow > 0) { w.slow = Math.max(0, w.slow - dt); if (w.slow === 0) w.events.push({ type: 'slowEnd' }); }
   w.t += dt;
-  updatePlats(w.plats, w.t);
+  w.pt += edt;
+  updatePlats(w.plats, w.pt);
   if (w.phase !== 'play') { // the world keeps moving under the result card, but nothing happens
     for (const o of w.pickups) place(o);
     for (const o of w.drives) place(o);
@@ -57,9 +62,9 @@ export function step(w, c) {
   w.time += dt;
   updatePlayer(w, c, dt);
   updateLasers(w);
-  updateEnemies(w, dt);
+  updateEnemies(w, edt);
   updateShots(w, dt);
-  updateBolts(w, dt);
+  updateBolts(w, edt);
   pickups(w, dt);
   objectives(w, dt);
   falls(w);
@@ -76,6 +81,7 @@ function pickups(w, dt) {
   for (const o of w.pickups) {
     o.t += dt;
     place(o);
+    if (o.got && o.respawn && (o.gotT += dt) >= o.respawn) { o.got = false; o.gotT = 0; w.events.push({ type: 'respawnPickup', kind: o.type, x: o.x, y: o.y, z: o.z }); }
     if (o.got || P.dead || !near(P, o, T.PICKUP_R)) continue;
     if (!collect(w, P, o)) continue;
     o.got = true;
@@ -110,6 +116,7 @@ function collect(w, P, o) {
     case 'hyper': P.hyper = Math.min(T.POWER_TIME * 2, P.hyper + T.POWER_TIME); return true;
     case 'overdrive': P.over = Math.min(T.POWER_TIME * 2, P.over + T.POWER_TIME); return true;
     case 'time': if (!w.bonus) return false; w.bonus.left += T.TIME_BONUS; return true;
+    case 'slowmo': if (w.slow <= 0) w.events.push({ type: 'slowStart' }); w.slow = Math.min(T.SLOW_TIME * 2, w.slow + T.SLOW_TIME); return true;
     default: return true;
   }
 }
@@ -187,7 +194,8 @@ export function snapshot(w) {
     hp: P.hp, hpMax: T.HP_MAX, weapon: P.weapon, ammo: P.weapon === 'blaster' ? Infinity : P.ammo[P.weapon],
     drives: w.drivesGot, drivesTotal: w.drives.length, exitOpen: w.exitOpen, score: w.score, time: w.time,
     jumpsLeft: P.ground ? T.JUMP_V.length : Math.max(0, T.JUMP_V.length - P.jumps), alt: P.y,
-    hyper: P.hyper, over: P.over, bonus: w.bonus ? { left: w.bonus.left, down: w.bonus.down, total: w.bonus.total } : null,
+    hyper: P.hyper, over: P.over, slow: w.slow, bonus: w.bonus ? { left: w.bonus.left, down: w.bonus.down, total: w.bonus.total } : null,
+    boss: w.boss ? { hp: Math.max(0, w.boss.hp), maxHp: w.boss.maxHp, name: w.level.bossName || 'BOSS', dead: w.boss.dead || w.boss.state === 'dying', phase: w.boss.phase } : null,
     phase: w.phase,
   };
 }

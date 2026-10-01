@@ -14,7 +14,8 @@ export function makePlayer(start) {
   return {
     x: start.x, y: start.y, z: start.z, vx: 0, vy: 0, vz: 0,
     px: start.x, py: start.y, pz: start.z, // previous step (render interpolation)
-    yaw: start.yaw || 0, pitch: start.pitch ?? -0.12, auto: 0, autoOff: false, grab: 0,
+    yaw: start.yaw || 0, pitch: start.pitch ?? -0.12, auto: 0, autoOff: false, grab: 0, autoPitch: T.AUTO_PITCH,
+    lock: null, lockT: 0, autoShoot: 0, // stomp → aim-down lock on whatever you bounced off
     ground: null, coyote: 0, buffer: 0, jumps: 0, air: 0, landT: 9, lastVy: 0,
     hp: T.HP_MAX, inv: 0, dead: false,
     weapon: 'blaster', ammo: { spread: 0, rapid: 0, rocket: 0 }, cool: 0, shotN: 0,
@@ -26,7 +27,7 @@ export function makePlayer(start) {
 }
 
 // The pitch actually used for the camera and the gun.
-export function viewPitch(P) { return P.pitch * (1 - P.auto) + T.AUTO_PITCH * P.auto; }
+export function viewPitch(P) { return P.pitch * (1 - P.auto) + P.autoPitch * P.auto; }
 
 export function eye(P) { return P.y + T.EYE; }
 
@@ -49,6 +50,23 @@ export function updatePlayer(w, c, dt) {
     P.pitch = viewPitch(P) + dp; P.auto = 0; P.autoOff = true; P.grab = 0;
   } else P.pitch += dp;
   P.pitch = clamp(P.pitch, T.PITCH_MIN, T.PITCH_MAX);
+  if (P.autoOff) P.lock = null; // a deliberate look cancels the stomp lock too
+
+  // ---- stomp lock: after bouncing off something that's still standing, swing the view onto it
+  let autoTarget = T.AUTO_PITCH;
+  const L = P.lock;
+  if (L && (P.lockT -= dt) > 0 && !L.dead && L.hp > 0) {
+    const ex = L.x - P.x, ey = L.y + L.top * 0.5 - (P.y + T.EYE), ez = L.z - P.z;
+    const yawT = Math.atan2(-ex, -ez);
+    let dyaw = yawT - P.yaw;
+    while (dyaw > Math.PI) dyaw -= 2 * Math.PI;
+    while (dyaw < -Math.PI) dyaw += 2 * Math.PI;
+    const r = T.STOMP_AIM_RATE * dt;
+    P.yaw += clamp(dyaw, -r, r);
+    autoTarget = clamp(Math.atan2(ey, Math.sqrt(ex * ex + ez * ez)), T.PITCH_MIN, 0.3);
+    P.auto = Math.min(1, P.auto + r);
+  } else if (L) { P.lock = null; }
+  P.autoPitch += (autoTarget - P.autoPitch) * Math.min(1, (P.lock ? T.STOMP_AIM_RATE : 6) * dt);
 
   // ---- ride the platform under us (before anything else moves us)
   const G = P.ground;
@@ -113,7 +131,7 @@ export function updatePlayer(w, c, dt) {
       P.landT = 0;
     }
     P.ground = landed; P.jumps = 0; P.coyote = T.COYOTE; P.air = 0;
-    P.autoOff = false; P.grab = 0;
+    P.autoOff = false; P.grab = 0; P.lock = null;
     // remember solid footing well inside the edge (respawn point after a fall)
     P.safeT += dt;
     if (P.safeT > 0.25 && !landed.move && inside(landed, P.x, P.z, -0.8)) {
@@ -131,7 +149,8 @@ export function updatePlayer(w, c, dt) {
 
   // ---- auto look-down (Jumping Flash): tip the view toward your feet while you fall
   const wantAuto = w.opts.autoLook && !P.ground && !P.autoOff && P.vy < T.AUTO_VY && P.air > 0.15;
-  if (wantAuto) P.auto = Math.min(1, P.auto + (1 - P.auto) * Math.min(1, T.AUTO_IN * dt));
+  if (P.lock) { /* the stomp lock owns the view */ }
+  else if (wantAuto) P.auto = Math.min(1, P.auto + (1 - P.auto) * Math.min(1, T.AUTO_IN * dt));
   else P.auto = Math.max(0, P.auto - P.auto * Math.min(1, T.AUTO_OUT * dt) - (P.ground ? dt * 0.2 : 0));
 
   // walk cycle for the legs
@@ -141,7 +160,8 @@ export function updatePlayer(w, c, dt) {
   // ---- weapons
   if (c.swap) cycleWeapon(w, P, c.swap);
   P.cool -= dt;
-  if (c.fire && P.cool <= 0 && !P.dead) fire(w, P);
+  P.autoShoot = Math.max(0, P.autoShoot - dt);
+  if ((c.fire || P.autoShoot > 0) && P.cool <= 0 && !P.dead) fire(w, P);
 }
 
 function approach(P, tx, tz, maxDv) {

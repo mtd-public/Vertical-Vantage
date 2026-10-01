@@ -94,5 +94,6 @@ export default {
     { type: 'healthBig', x: 32, y: 7, z: 16 },
     { type: 'health', x: -58, y: 39, z: -92 },
     { type: 'health', x: 52, y: 42, z: -61 },
+    { type: 'slowmo', x: -4, y: 51, z: -116 },
   ],
 };

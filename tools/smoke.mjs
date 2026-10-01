@@ -146,6 +146,29 @@ await run('flow', { viewport: { width: 1280, height: 720 } }, async (page) => {
   await page.screenshot({ path: `${OUT}/flow-clear.png` });
 });
 
+await run('boss', { viewport: { width: 1280, height: 720 } }, async (page) => {
+  await page.evaluate(() => GAME.start(3));
+  await skip(page);
+  await page.waitForTimeout(2600);
+  const b = await page.evaluate(() => ({ hp: GAME.G.world.boss.hp, state: GAME.G.world.boss.state, bar: !document.getElementById('boss-hud').classList.contains('hidden') }));
+  check(b.hp > 0 && b.state !== 'intro' && b.bar, `ARACHNE-9 is up and fighting (${b.state}), boss gauge shown`);
+  await page.screenshot({ path: `${OUT}/boss-fight.png` });
+  // pin it, aim at it, shoot it down
+  await page.evaluate(() => { const B = GAME.G.world.boss, P = GAME.G.world.player; B.hp = 1; B.state = 'recover'; B.timer = 9; P.inv = 99; P.x = 6; P.z = 8; });
+  for (let i = 0; i < 12; i++) {
+    await page.evaluate(() => { const B = GAME.G.world.boss, P = GAME.G.world.player; GAME.look(Math.atan2(-(B.cx - P.x), -(B.cz - P.z)), Math.atan2(B.cy - (P.y + 1.55), Math.hypot(B.cx - P.x, B.cz - P.z))); });
+    await page.keyboard.down('j'); await page.waitForTimeout(60);
+  }
+  await page.keyboard.up('j');
+  await page.waitForTimeout(3000);
+  const s = await state(page);
+  check(s.exitOpen, 'killing the boss opens the exit');
+  await page.screenshot({ path: `${OUT}/boss-down.png` });
+  await page.evaluate(() => { const e = GAME.G.world.exit; GAME.warpTo({ x: e.x, y: e.y + 0.05, z: e.z }); });
+  await page.waitForTimeout(2000);
+  check(await page.evaluate(() => !!document.querySelector('[data-go="ending"]')), 'the last stage clear leads to the ending');
+});
+
 await browser.close();
 console.log(fails ? `\n${fails} check(s) FAILED` : '\nsmoke OK');
 process.exit(fails ? 1 : 0);

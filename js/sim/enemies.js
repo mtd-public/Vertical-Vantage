@@ -7,6 +7,7 @@ import { T, ENEMIES, ENEMY_BOLT } from './tuning.js';
 import { clamp, pointVSegDist2 } from './util.js';
 import { raycast, groundBelow, toLocal, toWorld } from './plats.js';
 import { hurtPlayer } from './player.js';
+import { initBoss, updateBoss, bossDown } from './boss.js';
 
 const _l = [0, 0], _w = [0, 0];
 
@@ -39,7 +40,8 @@ export function makeEnemy(w, d) {
     dir: w.rng() < 0.5 ? -1 : 1, phase: w.rng() * 6.283, t: 0,
     aimX: 0, aimY: 0, aimZ: 0, // where the laser sight / eye points (render)
   };
-  if (e.type !== 'drone') { attach(w.plats, e, 6); if (e.host) e.ly = 0; place(e); }
+  if (e.type === 'boss') initBoss(w, e, d);
+  else if (e.type !== 'drone') { attach(w.plats, e, 6); if (e.host) e.ly = 0; place(e); }
   return e;
 }
 
@@ -51,6 +53,7 @@ export function updateEnemies(w, dt) {
     e.flash = Math.max(0, e.flash - dt);
     if (e.dead) { e.deadT += dt; continue; }
     const S = ENEMIES[e.type];
+    if (e.type === 'boss') { updateBoss(w, e, dt); if (e.state !== 'dying' && e.state !== 'intro') contact(w, e); continue; }
     if (e.type !== 'drone') place(e);
     const dx = px - e.x, dz = pz - e.z, ey = e.y + e.top * 0.7, dy = py - ey;
     const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -65,7 +68,7 @@ export function updateEnemies(w, dt) {
     }
     e.aimX = px; e.aimY = py; e.aimZ = pz;
     if (e.type === 'drone') drone(w, e, S, dt, dx, dz, dist);
-    else if (e.type === 'walker') walker(w, e, S, dt);
+    else if (e.type === 'walker' || e.type === 'spiker') walker(w, e, S, dt);
     else if (e.type === 'guard') guard(w, e, S, dt, dx, dz, dist);
     // stomps, and contact damage (walkers bite, drones bump, guards shove)
     contact(w, e);
@@ -161,14 +164,24 @@ function contact(w, e) {
   if (P.dead) return;
   const dx = P.x - e.x, dz = P.z - e.z, rr = e.r + T.RADIUS * 0.8;
   if (dx * dx + dz * dz > rr * rr) return;
-  const feet = P.y, top = e.y + e.top;
-  // stomp: coming down onto its top
-  if (P.vy < -0.5 && feet <= top + 0.4 && feet >= top - 0.75) {
-    damageEnemy(w, e, T.STOMP_DMG, true);
+  const feet = P.y, top = e.y + e.top, S = ENEMIES[e.type];
+  // landing on its head / back (the boss only while it's on the floor, back up)
+  const onBack = e.type !== 'boss' || e.surf === 'floor';
+  if (P.vy < -0.5 && feet <= top + 0.4 && feet >= top - 0.75 && onBack) {
+    if (S.spiked) { // spikes: it hurts, and you pop back up
+      P.vy = T.SPIKE_BOUNCE; P.ground = null;
+      P.inv = 0; hurtPlayer(w, T.SPIKE_DMG);
+      w.events.push({ type: 'spiked', x: e.x, y: top, z: e.z });
+      return;
+    }
+    // a free bounce; small robots die from it alone
+    damageEnemy(w, e, S.stomp * (e.vuln || 1), true);
     P.vy = T.STOMP_BOUNCE; P.ground = null;
     if (T.STOMP_REFUND) P.jumps = 1;
     w.stats.stomps++;
-    w.events.push({ type: 'stomp', x: e.x, y: top, z: e.z });
+    w.events.push({ type: 'stomp', x: e.x, y: top, z: e.z, kind: e.type });
+    // still standing (or the boss)? the view snaps down onto it and the gun fires: bounce → aim → shoot
+    if (!e.dead && e.hp > 0) { P.lock = e; P.lockT = T.STOMP_AIM; P.autoShoot = T.STOMP_SHOOT; }
     return;
   }
   // body contact (vertical overlap)
@@ -188,8 +201,17 @@ function shootBolt(w, e, x, y, z, speed) {
 
 export function damageEnemy(w, e, dmg, stomp = false) {
   if (e.dead) return;
+  if (e.type === 'boss') {
+    if (e.state === 'dying' || e.state === 'intro') return;
+    dmg *= e.vuln || 1; // stunned after a slam: ×1.5
+  }
   e.hp -= dmg; e.flash = 0.12;
   w.stats.hits++;
+  if (e.type === 'boss') {
+    if (e.hp <= 0) bossDown(w, e);
+    else w.events.push({ type: 'hit', kind: 'boss', x: e.x, y: e.y + e.top * 0.5, z: e.z });
+    return;
+  }
   if (e.type === 'guard' && e.state === 'idle') { e.state = 'aim'; e.timer = ENEMIES.guard.aim * 0.6; } // shot? it turns on you
   if (e.hp <= 0) {
     e.dead = true; e.deadT = 0;

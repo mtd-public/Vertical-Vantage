@@ -49,6 +49,18 @@ export class FX {
     this.marker.rotation.x = -Math.PI / 2; this.marker.renderOrder = 5;
     scene.add(this.marker);
     this.rain = null;
+    // shockwave rings (boss slams)
+    this.waves = [];
+    for (let i = 0; i < 3; i++) {
+      const m = new THREE.Mesh(new THREE.RingGeometry(0.86, 1, seg(40, 20)), new THREE.MeshBasicMaterial({ color: 0xffd0a0, transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending }));
+      m.rotation.x = -Math.PI / 2; m.visible = false; m.userData = { life: 0, r: 6 };
+      scene.add(m); this.waves.push(m);
+    }
+  }
+
+  shockwave(x, y, z, r) {
+    const m = this.waves.find((q) => !q.visible) || this.waves[0];
+    m.visible = true; m.position.set(x, y, z); m.userData.life = 0; m.userData.r = r;
   }
 
   // ---- spawners
@@ -158,6 +170,14 @@ export class FX {
       m.material.opacity = 1 - k;
       m.material.color.lerpColors(HOT, COOL, k);
       m.rotation.set(t * 3, t * 2, 0);
+    }
+    for (const m of this.waves) {
+      if (!m.visible) continue;
+      const u = m.userData; u.life += dt;
+      const k = u.life / 0.4;
+      if (k >= 1) { m.visible = false; continue; }
+      m.scale.setScalar(0.3 + u.r * k);
+      m.material.opacity = 1 - k;
     }
     if (this.rain) { this.rain.material.uniforms.uT.value = t; this.rain.material.uniforms.uCam.value.copy(camera.position); }
   }

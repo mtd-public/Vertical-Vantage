@@ -34,7 +34,17 @@ step has consumed yet (`input.peekLook()`), so the camera never lags on a frame 
 **Events the adapter reacts to:** `jump{stage}`, `land{impact}`, `bonk`, `fire{weapon}`, `empty`,
 `swap`, `hit`, `kill{kind,pts,stomp}`, `serverDown`, `explode{r}`, `stomp`, `hurt{hp}`, `zap`, `fall`,
 `dead`, `drive{n,of}`, `exitOpen`, `portal`, `clear`, `bonusClear`, `bonusTimeout`, `pickup{kind}`,
-`enemyFire`, `aim`, `tele`, `laserOn`, `impact{nx,ny,nz,kind}`.
+`enemyFire`, `aim`, `tele`, `laserOn`, `impact{nx,ny,nz,kind}`, `spiked`, `slowStart`, `slowEnd`,
+`respawnPickup`, `bossRoar`, `bossTele`, `bossLeap`, `bossSlam{r}`, `bossCharge`, `bossLaser`, `bossCeil`,
+`bossPhase{phase}`, `bossDying`.
+
+The boss (`sim/boss.js`) is a pose, not a physics body. Its state is: a body centre `(cx, cy, cz)`, a
+surface normal `(nx, ny, nz)` (its "up"), a heading `(fx, fz)` and a `surf` value (floor / wall / ceil /
+air). The renderer builds its orientation from those, using up = normal and forward = heading (or "up
+the wall" while climbing).
+
+**Slow-mo** runs a second clock, `world.pt`, at `T.SLOW_K`. Platforms, lasers, enemies and bolts step
+with it; the player and the player's shots step with `DT`. Without slow-mo, `pt === t` exactly.
 
 ## Determinism rules (from dr-mow-godot's WORK_GUIDE)
 

@@ -32,9 +32,15 @@
   "INVULN": 1.1,
   "FALL_DAMAGE": 2,
   "KNOCKBACK": 7,
-  "STOMP_DMG": 3,
   "STOMP_BOUNCE": 12,
   "STOMP_REFUND": true,
+  "STOMP_AIM": 0.8,
+  "STOMP_AIM_RATE": 12,
+  "STOMP_SHOOT": 0.45,
+  "SPIKE_DMG": 1,
+  "SPIKE_BOUNCE": 9,
+  "SLOW_TIME": 6,
+  "SLOW_K": 0.4,
   "PICKUP_R": 1.5,
   "DRIVES": 3,
   "EXIT_R": 2.4,
@@ -47,8 +53,10 @@
   "SCORE": {
    "drone": 100,
    "walker": 150,
+   "spiker": 250,
    "guard": 200,
    "server": 250,
+   "boss": 10000,
    "drive": 1000,
    "stompMul": 2,
    "bonusClear": 5000,
@@ -122,7 +130,8 @@
    "tele": 0.5,
    "bolt": 13,
    "leash": 5,
-   "chase": 2.2
+   "chase": 2.2,
+   "stomp": 99
   },
   "walker": {
    "hp": 3,
@@ -130,7 +139,18 @@
    "top": 1,
    "range": 14,
    "patrol": 2.2,
-   "run": 4
+   "run": 4,
+   "stomp": 99
+  },
+  "spiker": {
+   "hp": 4,
+   "r": 0.85,
+   "top": 1.1,
+   "range": 14,
+   "patrol": 1.8,
+   "run": 3.4,
+   "stomp": 0,
+   "spiked": true
   },
   "guard": {
    "hp": 3,
@@ -141,18 +161,65 @@
    "burst": 3,
    "gap": 0.13,
    "bolt": 21,
-   "cool": 2.6
+   "cool": 2.6,
+   "stomp": 2
   },
   "server": {
    "hp": 2,
    "r": 0.9,
-   "top": 2.2
+   "top": 2.2,
+   "stomp": 2
+  },
+  "boss": {
+   "hp": 240,
+   "r": 2.4,
+   "top": 3,
+   "stomp": 4
   }
  },
  "ENEMY_BOLT": {
   "r": 0.28,
   "dmg": 1,
   "life": 4
+ },
+ "BOSS": {
+  "hp": 240,
+  "r": 2.4,
+  "top": 3,
+  "bodyH": 1.8,
+  "margin": 3.5,
+  "speed": [
+   4.5,
+   5.6,
+   6.6
+  ],
+  "crouch": [
+   0.8,
+   0.65,
+   0.5
+  ],
+  "slamR": 6,
+  "crushR": 2.8,
+  "recover": 1.2,
+  "charge": 1,
+  "laserTime": 1.8,
+  "sweep": 0.55,
+  "sweepRate": 0.62,
+  "beamLen": 70,
+  "ceilTime": 3.2,
+  "dropTele": 0.6,
+  "turretEvery": [
+   2.6,
+   3.8
+  ],
+  "turretBurst": [
+   3,
+   4,
+   5
+  ],
+  "turretGap": 0.16,
+  "turretSpeed": 19,
+  "dyingTime": 2.2
  },
  "LASER": {
   "WARN": 0.6,

@@ -38,8 +38,8 @@ export function updateLasers(w) {
   for (const o of w.lasers) {
     place(o);
     const prev = o.state;
-    o.k = ((w.t / o.period + o.phase) % 1 + 1) % 1;
-    o.state = laserState(o, w.t);
+    o.k = ((w.pt / o.period + o.phase) % 1 + 1) % 1; // the world clock: lasers slow down in slow-mo too
+    o.state = laserState(o, w.pt);
     if (o.state === 'on' && prev !== 'on') w.events.push({ type: 'laserOn', id: o.id, x: o.x, y: o.y, z: o.z });
     if (o.state !== 'on' || P.dead) continue;
     // player cylinder vs the curtain: a segment in XZ, a span in Y

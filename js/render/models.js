@@ -106,6 +106,65 @@ export function walkerModel(M) {
 }
 
 const COATS = [0x5a4a32, 0x1c1c24, 0x3a4a3a, 0x6a2a2a];
+// The spiked crawler: a walker whose back is all spikes (red dome: don't land on it).
+export function spikerModel(M) {
+  const g = walkerModel(M);
+  const body = g.children[0];
+  const K = new Kit();
+  K.add('s', part(new THREE.SphereGeometry(0.55, seg(12, 8), seg(6, 4), 0, Math.PI * 2, 0, Math.PI / 2), { y: 0.5, sy: 0.8, color: 0xc81e3a }));
+  for (let k = 0; k < 9; k++) {
+    const a = (k / 9) * Math.PI * 2, r = k === 8 ? 0 : 0.34, rx = k === 8 ? 0 : Math.sin(a) * 0.6, rz = k === 8 ? 0 : -Math.cos(a) * 0.6;
+    K.add('s', part(new THREE.ConeGeometry(0.1, 0.45, 4), { x: Math.cos(a) * r, y: 0.88 - (k === 8 ? -0.05 : 0.08), z: Math.sin(a) * r, rx: rz, rz: -rx, color: 0xd8dce8 }));
+  }
+  K.add('s', cyl(0.56, 0.48, 0.22, seg(12, 8), { y: 0.42, color: 0x2a2c38 }));
+  body.geometry.dispose();
+  body.geometry = K.build().s;
+  return g;
+}
+
+// ARACHNE-9: the spider-mech boss. A low armoured hull, an eye cluster and laser emitter up front,
+// a twin-barrel turret on its back, eight two-segment legs posed every frame by the renderer
+// (unit boxes stretched between hip, knee and foot). Origin = body centre, faces -Z, up +Y.
+export function bossModel(M) {
+  const g = new THREE.Group();
+  const body = new THREE.Group(); body.name = 'body'; g.add(body);
+  const K = new Kit();
+  const gun = 0x6a7488, dark = 0x2a2c36, plate = 0xa4aec0;
+  K.add('p', part(new THREE.CylinderGeometry(1.7, 2.1, 1.1, 8), { sz: 1.35, color: gun }));
+  K.add('p', part(new THREE.CylinderGeometry(1.2, 1.7, 0.5, 8), { y: 0.8, sz: 1.3, color: plate }));
+  K.add('p', part(new THREE.CylinderGeometry(1.5, 1.2, 0.5, 8), { y: -0.8, sz: 1.3, color: dark }));
+  for (let k = -2; k <= 2; k++) K.add('p', box(0.5, 0.06, 2.6, { x: k * 0.55, y: 1.06, color: k % 2 ? 0xffcc1a : 0x15151a })); // hazard stripes on its back
+  K.add('p', box(1.5, 0.95, 1.1, { y: 0.05, z: -2.25, color: gun }), box(1.2, 0.3, 0.9, { y: 0.6, z: -2.2, color: plate })); // head
+  K.add('p', cyl(0.22, 0.28, 0.7, 8, { y: -0.3, z: -2.85, rx: Math.PI / 2, color: dark })); // laser emitter
+  K.add('p', box(0.3, 0.3, 0.3, { x: 1.85, y: 0.25, z: 0.8, color: dark }), box(0.3, 0.3, 0.3, { x: -1.85, y: 0.25, z: 0.8, color: dark }));
+  body.add(new THREE.Mesh(K.build().p, M.paintFlat));
+  const E = new Kit();
+  for (const [x, y, r] of [[-0.45, 0.25, 0.16], [0.45, 0.25, 0.16], [-0.2, 0.42, 0.1], [0.2, 0.42, 0.1], [-0.6, 0.0, 0.09], [0.6, 0.0, 0.09]]) E.add('e', ball(r, { x, y, z: -2.82, color: 0xff2a3a }, 0));
+  E.add('e', cyl(0.12, 0.12, 0.08, 8, { y: -0.3, z: -3.22, rx: Math.PI / 2, color: 0xff6a3a }));
+  for (const sx of [-1, 1]) E.add('e', box(0.08, 0.12, 3.2, { x: sx * 1.95, y: 0.1, color: 0xff2a3a })); // side strips
+  E.add('e', part(new THREE.TorusGeometry(1.5, 0.08, 3, seg(16, 10)), { rx: Math.PI / 2, y: -1.05, sz: 1.3, color: 0xff3a4a })); // underglow ring
+  const eyes = new THREE.Mesh(E.build().e, M.glow); eyes.name = 'eye'; body.add(eyes);
+  // turret on its back (barrels along +Z so lookAt() aims it)
+  const turret = new THREE.Group(); turret.name = 'turret'; turret.position.y = 1.25; body.add(turret);
+  const TK = new Kit();
+  TK.add('t', cyl(0.55, 0.65, 0.4, 8, { color: plate }), box(0.7, 0.4, 0.8, { y: 0.35, color: gun }));
+  TK.add('t', box(0.12, 0.12, 1.1, { x: -0.18, y: 0.38, z: 0.75, color: dark }), box(0.12, 0.12, 1.1, { x: 0.18, y: 0.38, z: 0.75, color: dark }));
+  turret.add(new THREE.Mesh(TK.build().t, M.paintFlat));
+  // legs: 8 × (thigh, shin) of a shared unit box
+  const unit = prep(new THREE.BoxGeometry(1, 1, 1), 0xffffff);
+  const kneeGeo = prep(new THREE.IcosahedronGeometry(0.22, 0), 0xff3a3a);
+  const legs = [];
+  const zs = [-1.3, -0.45, 0.45, 1.3];
+  for (const side of [-1, 1]) zs.forEach((z, i) => {
+    const thigh = new THREE.Mesh(unit, M.legThigh), shin = new THREE.Mesh(unit, M.legShin);
+    const knee = new THREE.Mesh(kneeGeo, M.glow);
+    g.add(thigh, shin, knee);
+    legs.push({ side, i, hip: new THREE.Vector3(side * 1.55, 0.1, z), rest: new THREE.Vector3(side * 3.6, 0, z * 1.7), thigh, shin, knee });
+  });
+  g.userData.legs = legs;
+  return g;
+}
+
 export function guardModel(M, variant = 0) {
   const g = new THREE.Group();
   const K = new Kit();
@@ -146,8 +205,9 @@ export function serverModel(M) {
 function merge2(list) { const K = new Kit(); K.add('x', ...list); return K.build().x; }
 
 // ------------------------------------------------------------------ pickups and objectives
-export const PICKUP_COL = { health: 0x3dff7a, healthBig: 0x3dff7a, spread: 0xff7a2b, rapid: 0x2be8ff, rocket: 0xff3b5c, hyper: 0x7bff4a, overdrive: 0xffb02b, time: 0xffe52b };
-export const PICKUP_ICON = { health: 0, healthBig: 0, spread: 1, rapid: 2, rocket: 3, hyper: 4, overdrive: 5, time: 6 };
+export const PICKUP_COL = { health: 0x3dff7a, healthBig: 0x3dff7a, spread: 0xff7a2b, rapid: 0x2be8ff, rocket: 0xff3b5c, hyper: 0x7bff4a, overdrive: 0xffb02b, time: 0xffe52b, slowmo: 0x8fb8ff };
+export const PICKUP_ICON = { health: 0, healthBig: 0, spread: 1, rapid: 2, rocket: 3, hyper: 4, overdrive: 5, time: 6, slowmo: 8 };
+const ICON_LOCK = 9, ICONS = 16;
 
 export function pickupModel(M, type) {
   const g = new THREE.Group(), col = PICKUP_COL[type];
@@ -167,17 +227,24 @@ export function pickupModel(M, type) {
   g.add(ic);
   return g;
 }
-function iconQuad(i) { const u0 = i / 8; return atlasQuad(0.6, 0.6, [u0, 0, u0 + 1 / 8, 1]); }
+function iconQuad(i) { const u0 = i / ICONS; return atlasQuad(0.6, 0.6, [u0, 0, u0 + 1 / ICONS, 1]); }
 
-export function iconAtlasPaint(g) { // 256 × 32: + S P R H O T D
-  const glyphs = ['+', 'S', 'P', 'R', 'H', 'O', 'T', 'D'];
-  const cols = ['#3dff7a', '#ff7a2b', '#2be8ff', '#ff3b5c', '#7bff4a', '#ffb02b', '#ffe52b', '#ffd23a'];
-  g.clearRect(0, 0, 256, 32);
+export function iconAtlasPaint(g) { // 512 × 32: 16 cells: + S P R H O T D ⧗ 🔒
+  const glyphs = ['+', 'S', 'P', 'R', 'H', 'O', 'T', 'D', '', ''];
+  const cols = ['#3dff7a', '#ff7a2b', '#2be8ff', '#ff3b5c', '#7bff4a', '#ffb02b', '#ffe52b', '#ffd23a', '#8fb8ff', '#ff2a3a'];
+  g.clearRect(0, 0, 512, 32);
   glyphs.forEach((ch, i) => {
-    g.fillStyle = 'rgba(10,10,20,0.75)'; g.fillRect(i * 32 + 3, 3, 26, 26);
-    g.strokeStyle = cols[i]; g.lineWidth = 2; g.strokeRect(i * 32 + 3, 3, 26, 26);
-    g.fillStyle = cols[i]; g.font = 'bold 20px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(ch, i * 32 + 16, 17);
+    const x = i * 32;
+    g.fillStyle = 'rgba(10,10,20,0.75)'; g.fillRect(x + 3, 3, 26, 26);
+    g.strokeStyle = cols[i]; g.lineWidth = 2; g.strokeRect(x + 3, 3, 26, 26);
+    g.fillStyle = cols[i]; g.strokeStyle = cols[i];
+    if (i === 8) { // hourglass (slow-mo)
+      g.beginPath(); g.moveTo(x + 9, 8); g.lineTo(x + 23, 8); g.lineTo(x + 16, 16); g.closePath(); g.fill();
+      g.beginPath(); g.moveTo(x + 16, 16); g.lineTo(x + 23, 24); g.lineTo(x + 9, 24); g.closePath(); g.stroke();
+      g.fillRect(x + 12, 21, 8, 3);
+    } else if (i === 9) { // padlock (the exit is locked)
+      g.lineWidth = 3; g.beginPath(); g.arc(x + 16, 14, 5, Math.PI, 0); g.stroke(); g.fillRect(x + 9, 14, 14, 10);
+    } else { g.font = 'bold 20px monospace'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(ch, x + 16, 17); }
   });
 }
 
@@ -212,7 +279,7 @@ export function exitModel(M) {
   portal.position.y = 2.5; portal.name = 'portal'; g.add(portal);
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 260, 10, 1, true), M.exitBeam); // starts above the gate: you never stand inside it
   beam.position.y = 138; beam.name = 'beam'; g.add(beam);
-  const lock = new THREE.Mesh(iconQuad(7), M.icons);
+  const lock = new THREE.Mesh(iconQuad(ICON_LOCK), M.icons);
   lock.position.set(0, 3, 0.05); lock.scale.setScalar(2.4); lock.name = 'lock'; g.add(lock);
   return g;
 }

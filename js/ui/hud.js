@@ -11,7 +11,7 @@ export class Hud {
     this.el = {
       hud: $('hud'), hp: $('hp'), drives: $('drives'), objective: $('objective'), score: $('score'), clock: $('clock'),
       altFill: $('alt-fill'), altMark: $('alt-mark'), altNum: $('alt-num'), pips: $('pips'), weapon: $('weapon'), ammo: $('ammo'),
-      powers: $('powers'), bonus: $('bonus-hud'), bonusTime: $('bonus-time'), bonusCount: $('bonus-count'),
+      powers: $('powers'), bonus: $('bonus-hud'), boss: $('boss-hud'), bossName: $('boss-name'), bossFill: $('boss-fill'), slow: $('slowmo'), bonusTime: $('bonus-time'), bonusCount: $('bonus-count'),
       cross: $('crosshair'), hit: $('hitmark'), markers: $('markers'), floaters: $('floaters'), toasts: $('toasts'), vig: $('vignette'),
     };
     this.cache = {};
@@ -28,6 +28,9 @@ export class Hud {
     this.el.drives.classList.toggle('hidden', !w.drives.length);
     this.el.objective.classList.toggle('hidden', !!w.bonus);
     this.el.bonus.classList.toggle('hidden', !w.bonus);
+    this.el.boss.classList.toggle('hidden', !w.boss);
+    if (w.boss) this.el.bossName.textContent = w.level.bossName || 'BOSS';
+    this.lastBossHp = w.boss ? w.boss.hp : 0;
     let top = 0;
     for (const p of w.plats) top = Math.max(top, p.h);
     this.altMax = Math.max(20, Math.min(110, top + 6));
@@ -52,11 +55,11 @@ export class Hud {
     }
     E.vig.classList.toggle('hurt', P.hurtT < 0.18);
     // drives + objective
-    const dk = snap.drives + '/' + snap.exitOpen;
+    const dk = snap.drives + '/' + snap.exitOpen + '/' + !!snap.boss;
     if (this.cache.dr !== dk) {
       this.cache.dr = dk;
       [...E.drives.children].forEach((c, i) => c.classList.toggle('got', i < snap.drives));
-      E.objective.textContent = snap.exitOpen ? 'EXIT OPEN — REACH THE GATE' : `RECOVER DATA DRIVES ${snap.drives}/${snap.drivesTotal}`;
+      E.objective.textContent = snap.exitOpen ? 'EXIT OPEN — REACH THE GATE' : snap.boss ? `DESTROY ${snap.boss.name}` : `RECOVER DATA DRIVES ${snap.drives}/${snap.drivesTotal}`;
       E.objective.classList.toggle('open', snap.exitOpen);
     }
     this.set('score', E.score, String(snap.score).padStart(6, '0'));
@@ -72,11 +75,19 @@ export class Hud {
     // weapon
     this.set('wpn', E.weapon, WEAPONS[snap.weapon].name);
     this.set('ammo', E.ammo, snap.ammo === Infinity ? '∞' : String(snap.ammo));
-    const pw = `${snap.hyper > 0 ? 'H' + Math.ceil(snap.hyper) : ''}|${snap.over > 0 ? 'O' + Math.ceil(snap.over) : ''}`;
+    const pw = `${snap.hyper > 0 ? 'H' + Math.ceil(snap.hyper) : ''}|${snap.over > 0 ? 'O' + Math.ceil(snap.over) : ''}|${snap.slow > 0 ? 'S' + Math.ceil(snap.slow) : ''}`;
     if (this.cache.pw !== pw) {
       this.cache.pw = pw;
-      E.powers.innerHTML = (snap.hyper > 0 ? `<div>HYPER JUMP ${Math.ceil(snap.hyper)}</div>` : '') + (snap.over > 0 ? `<div class="over">OVERDRIVE ${Math.ceil(snap.over)}</div>` : '');
+      E.powers.innerHTML = (snap.hyper > 0 ? `<div>HYPER JUMP ${Math.ceil(snap.hyper)}</div>` : '') + (snap.over > 0 ? `<div class="over">OVERDRIVE ${Math.ceil(snap.over)}</div>` : '') + (snap.slow > 0 ? `<div class="slow">SLOW-MO ${Math.ceil(snap.slow)}</div>` : '');
     }
+    if (snap.boss) {
+      const k = snap.boss.hp / snap.boss.maxHp;
+      E.bossFill.style.width = (k * 100).toFixed(1) + '%';
+      E.boss.classList.toggle('hurt', snap.boss.hp < this.lastBossHp);
+      E.boss.classList.toggle('hidden', snap.boss.dead && snap.exitOpen);
+      this.lastBossHp = snap.boss.hp;
+    }
+    E.slow.classList.toggle('on', snap.slow > 0);
     if (snap.bonus) {
       this.set('bt', E.bonusTime, snap.bonus.left.toFixed(1));
       E.bonusTime.classList.toggle('low', snap.bonus.left < 8);

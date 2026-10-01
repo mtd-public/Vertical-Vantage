@@ -21,15 +21,17 @@ No build step and no npm dependencies. It uses three.js r160 (vendored) through 
 
 | | |
 |---|---|
-| **Stages** | **1 HARBOR 9**: future docks by day, with container stairs, a hover barge and a crane boom. **2 SKYWAY**: Neo-Tokyo rooftops by day, with a shuttle-bus lane and an arcology. **3 NEON RAIN**: night and rain, live traffic lanes, a police cruiser, a pagoda, and a 92 m megatower. |
-| **Goal** | Collect 3 hard drives. The exit (a neon torii gate with a beam you can see from anywhere) goes from red to cyan. Walk in to finish. |
+| **Stages** | **1 HARBOR 9**: future docks by day, with container stairs, a hover barge and a crane boom. **2 SKYWAY**: Neo-Tokyo rooftops by day, with a shuttle-bus lane and an arcology. **3 NEON RAIN**: night and rain, live traffic lanes, a police cruiser, a pagoda, and a 92 m megatower. **4 WAREHOUSE 13**: the boss stage. |
+| **Goal** | Collect 3 hard drives. The exit (a neon torii gate with a beam you can see from anywhere) goes from red to cyan. Walk in to finish. In stage 4, the exit opens when the boss dies. |
+| **Boss** | **ARACHNE-9** is a spider mech in the middle of OmniCorp's warehouse. It chases you. It telegraphs a pounce, then lands with a slam shockwave that you jump over. It charges, then sweeps a laser that cover blocks. It climbs the long walls, crawls the ceiling and drops onto you. A turret on its back fires bursts at you. It gets more aggressive at 60 % and 30 % health, and it is stunned (taking 1.5× damage) after each slam. The warehouse has catwalks, racks, hover-pallet lifts, and respawning health, weapons, slow-mo and OVERDRIVE. |
 | **Movement** | Triple jump (+2.9 m, +4.3 m, +6.1 m). Auto look-down while falling, with a landing ring under you. Hover cars bob and move, and you ride them. Air control. Coyote time and jump buffering. |
+| **Stomp bounce** | Landing on a smooth head or back is a free bounce, and it refunds your air jumps. Drones and crawlers die from the bounce alone. Guards and the boss survive it: the view then snaps down onto them and fires a short volley (bounce → aim down → shoot). Spiked crawlers hurt you if you land on them, so shoot those. |
 | **Hazards** | Laser walls that cycle on and off with a flicker warning: jump the short ones, time the tall ones. Falling costs 2 integrity and respawns you. |
 | **Enemies** | Hover drones that telegraph, then fire slow bolts. Crawler bots that patrol their deck and ride it. Security officers in long coats with a laser-sight telegraph and a 3-round burst. Stomp any of them. |
-| **Weapons** | Blaster (infinite), Spread, Pulse SMG and Rockets (splash) as pickups. Health cans. HYPER jump and OVERDRIVE power-ups. |
+| **Weapons** | Blaster (infinite), Spread, Pulse SMG and Rockets (splash) as pickups. Health cans. HYPER jump, OVERDRIVE and **SLOW-MO** power-ups. SLOW-MO is bullet time: enemies, bolts, the boss, lasers and movers run at 40 % speed while you don't, and the music drags like tape. |
 | **Bonus stages** | Each stage hides a magenta portal. It leads to the SERVER CORE, where you destroy every server in 30 s. Inside are TIME+, HYPER and weapon power-ups, and the Jumping Flash power-up sunburst sky. |
 | **Set dressing** | Satirical adverts on floating billboards, ad decks and facades, all fictional parody brands: SYNTH-COLA "now with 40% less dread", BUDGET CLONES, SPYTOAST PRO, MAYOR-BOT and others. Billboards and ad decks are also platforms. |
-| **ECHO** | Your onboard AI is a small face in the corner that reacts with big glowing eyes and anime expressions: ^ ^, > <, sparkle eyes, sweat drops, spirals, and a red-eyed "mission mode". Speech-bubble quips are optional. |
+| **ECHO** | Your onboard AI is a small face in the corner that reacts with glowing, iris-less EVE-style eyes. At rest they are soft ovals; for anime expressions they become line shapes: ^ ^, v v, > <, \ /, O O, T T, x x, spirals, sparkles, hearts, and red "mission mode" slits. Speech-bubble quips are optional. `tools/echo-sheet.html` shows every expression. |
 | **Music** | Procedural, with no audio files: breakcore, Y2K and hard techno. Every song cycles through several sections (intro, A, B, breakdown, drop). |
 
 ## Controls
@@ -58,6 +60,7 @@ js/sim/        PURE game rules: no three.js, no DOM (ports translate these line 
   enemies.js     drone / walker / guard / server AI, shots, bolts, stomps
   hazards.js     laser walls
   world.js       createWorld(level) · step(world, control) · events · snapshot
+js/sim/boss.js  ARACHNE-9: a state machine on the inside surfaces of the warehouse (floor / walls / ceiling)
 js/levels/     PURE level data built with kit.js (dr-mow's rect/disc/mv vocabulary + cars, chains, billboards, lasers)
 js/render/     three.js view: retro.js (PS1 patch), sky.js (arcade sky + city skyline), level-view.js,
                models.js (cars, robots, officers, gate…), fx.js, ads.js (the satirical ad atlas), renderer.js
@@ -74,10 +77,11 @@ GAME_DESIGN.md   pillars, numbers, cast, art, budget, delta log
 ## Verify
 
 ```
-node tools/sim-check.mjs              # every drive/exit/portal/server reachable inside the jump envelope; movement numbers; scripted play
+node tools/sim-check.mjs              # every drive/exit/portal/server reachable inside the jump envelope; movement numbers; scripted play;
+                                      # the boss's full move set, stomp-bounce lock-on, spikes, slow-mo, respawns
 node tools/export-levels.mjs --check  # data/ matches the JS levels
 node tools/golden.mjs --check         # golden traces match, and replay identically from the JSON levels
-python3 -m http.server 4180 & BASE=http://localhost:4180/ node tools/smoke.mjs   # desktop, phone ×2, gamepad, bonus + clear flow
+python3 -m http.server 4180 & BASE=http://localhost:4180/ node tools/smoke.mjs   # desktop, phone ×2, gamepad, bonus + clear flow, boss fight → ending
 ```
 
 CI (`.github/workflows/pages.yml`) runs all of these on every push. It deploys to GitHub Pages only

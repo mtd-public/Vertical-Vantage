@@ -108,6 +108,7 @@ function beginPlay() {
 function pause(why) {
   if (G.mode !== 'play') return;
   G.mode = 'paused';
+  audio.laserHum(false);
   input.enabled = false; input.reset(); input.releaseLock();
   showControls();
   Screens.pause();
@@ -242,6 +243,7 @@ function handleEvents(w) {
       case 'drive': hud.toast(`DATA DRIVE ${e.n}/${e.of}`, 'gold'); avatar.react(e.n >= 3 ? 'drive3' : 'drive', e.n >= 3); input.rumble(0.3, 0.6, 160); break;
       case 'exitOpen': setTimeout(() => hud.toast('EXIT OPEN!', ''), 500); break;
       case 'pickup': {
+        if (e.kind === 'slowmo') break; // its own toast (slowStart)
         hud.toast(PICKUP_TOAST[e.kind] || WEAPONS[e.kind]?.name || e.kind.toUpperCase(), e.kind.startsWith('health') ? '' : 'gold');
         avatar.react(e.kind.startsWith('health') ? 'health' : WEAPONS[e.kind] ? 'weapon' : 'power');
         break;
@@ -258,6 +260,14 @@ function handleEvents(w) {
       case 'dead': avatar.react('dead', true); break;
       case 'bonusClear': avatar.react('bonusClear', true); break;
       case 'bonusTimeout': avatar.react('bonusTimeout', true); break;
+      case 'bossRoar': hud.toast(`${w.level.bossName || 'BOSS'}!`, 'red'); avatar.react('bossStart', true); input.rumble(0.6, 0.3, 400); break;
+      case 'bossTele': avatar.react('bossTele'); break;
+      case 'bossCharge': avatar.react('bossCharge'); break;
+      case 'bossSlam': input.rumble(1, 0.6, 350); break;
+      case 'bossPhase': hud.toast(e.phase === 2 ? 'IT’S CLIMBING THE WALLS!' : 'ENRAGED!', 'red'); avatar.react('bossPhase', true); input.rumble(0.8, 0.5, 300); break;
+      case 'bossDying': hud.toast(`${w.level.bossName || 'BOSS'} DOWN!`, 'gold'); avatar.react('bossDown', true); input.rumble(1, 1, 700); break;
+      case 'spiked': hud.toast('SPIKES!', 'red'); avatar.react('spiked'); input.rumble(0.5, 0.6, 150); break;
+      case 'slowStart': hud.toast('SLOW-MO', ''); avatar.react('slow'); break;
       default: break;
     }
   }
@@ -316,7 +326,8 @@ function frame(now) {
     hud.update(G.world, snap, renderer, innerWidth, innerHeight);
   }
   renderer.render();
-  audio.update(dt, G.mode !== 'boot', G.mode === 'paused');
+  audio.update(dt, G.mode !== 'boot', G.mode === 'paused', G.world.slow > 0 && G.mode === 'play');
+  audio.laserHum(!!(G.world.boss && G.world.boss.beam.on && G.mode === 'play'));
   avatar.update(dt, G.mode === 'play');
   // touch stick visual
   if (G.touch && G.mode === 'play') {

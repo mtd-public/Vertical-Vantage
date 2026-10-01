@@ -1819,6 +1819,10 @@
    }
   }
  ],
+ "objective": "drives",
+ "arena": null,
+ "boss": null,
+ "bossName": null,
  "drives": [
   {
    "x": -31.5,
@@ -2006,6 +2010,12 @@
    "x": -31.5,
    "y": 54,
    "z": -65
+  },
+  {
+   "type": "slowmo",
+   "x": 4,
+   "y": 35,
+   "z": -36
   }
  ],
  "lasers": [

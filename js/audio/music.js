@@ -496,7 +496,7 @@ export class Music {
   }
 
   // Per frame. song: a SONGS key; playing: music wanted now; fast: slow-mo is on (speed up); paused: duck it.
-  update(dt, { song, playing, fast, paused }) {
+  update(dt, { song, playing, fast, paused, slow }) {
     const c = this.sfx.ctx;
     if (!c || !this.init()) return;
     if (song && !SONGS[song]) song = null;
@@ -506,7 +506,7 @@ export class Music {
       if (this.fade === 0) { this.song = song; this.beat = 0; this.next = 0; }
     } else this.fade = Math.min(1, this.fade + dt * 3);
     const S = SONGS[this.song];
-    const rate = fast ? 1.35 : 1; // slow-mo: the tape runs fast (tempo and pitch)
+    const rate = fast ? 1.35 : slow ? 0.72 : 1; // dr-mow slow-mo: the tape runs fast; Vertical Vantage bullet time: the tape drags
     const spb = 60 / S.bpm / 4; // seconds per 16th at normal speed
     this.bus.gain.setTargetAtTime(want * 0.55 * this.fade, t, 0.2);
     this.lp.frequency.setTargetAtTime(S.lp ?? (S.dark ? 3200 : 20000), t, 0.3);

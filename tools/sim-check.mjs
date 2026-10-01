@@ -183,6 +183,7 @@ for (const k in BONUS) checkLevel(BONUS[k], true);
 // ------------------------------------------------------------------ 4. scripted play
 console.log('scripted play');
 for (const s of STAGES) {
+  if (s.boss) { bossChecks(s); continue; }
   const w = createWorld(s);
   // teleport onto each drive in turn (the reachability proof covers getting there)
   for (const d of w.drives) {
@@ -228,6 +229,109 @@ for (const s of STAGES) {
   const Q = w4.player;
   ok([Q.x, Q.y, Q.z, Q.vx, Q.vy, Q.vz, Q.yaw, Q.pitch].every(Number.isFinite), `${s.id}: 120 s random play stays finite`);
 }
+// ------------------------------------------------------------------ the boss stage
+function bossChecks(s) {
+  const keep = (w) => { const P = w.player; P.hp = T.HP_MAX; P.dead = false; if (w.phase === 'dead') w.phase = 'play'; };
+  // 1. it chases a player who stands still
+  {
+    const w = createWorld(s), B = w.boss;
+    for (let i = 0; i < 120 * 2.2; i++) { step(w, C0); keep(w); }
+    const d0 = Math.hypot(B.cx - w.player.x, B.cz - w.player.z);
+    for (let i = 0; i < 120 * 1.2; i++) { step(w, C0); keep(w); }
+    const d1 = Math.hypot(B.cx - w.player.x, B.cz - w.player.z);
+    ok(d1 < d0 - 2 || B.state !== 'chase', `${s.id}: ARACHNE-9 chases (${d0.toFixed(1)} → ${d1.toFixed(1)} m, ${B.state})`);
+  }
+  // 2. over 90 s it uses its whole move set, hits you, and its turret fires
+  {
+    const w = createWorld(s), B = w.boss, seen = new Set(), ev = new Set();
+    let hurt = 0;
+    for (let i = 0; i < 120 * 90; i++) {
+      step(w, C0);
+      seen.add(B.state); seen.add('surf:' + B.surf);
+      for (const e of w.events) { ev.add(e.type + (e.from ? ':' + e.from : '')); if (e.type === 'hurt') hurt++; }
+      w.events.length = 0;
+      keep(w); w.player.inv = 0;
+      if (i === 120 * 30) B.hp = B.maxHp * 0.5; // into phase 2: it starts climbing
+    }
+    for (const k of ['crouch', 'leap', 'recover', 'charge', 'laser', 'toWall', 'climb', 'ceil', 'drop', 'surf:wall', 'surf:ceil']) ok(seen.has(k), `${s.id}: boss reaches ${k}`);
+    ok(ev.has('bossSlam') && ev.has('enemyFire:boss') && ev.has('bossPhase'), `${s.id}: slam, turret fire, phase change (${[...ev].filter((x) => x.startsWith('boss') || x.includes(':boss')).join(', ')})`);
+    ok(hurt > 3, `${s.id}: it can actually hurt you (${hurt} hits in 90 s)`);
+  }
+  // 3. a stomp on its back: free bounce, damage, aim lock, and the gun fires on its own
+  {
+    const w = createWorld(s), B = w.boss;
+    for (let i = 0; i < 30; i++) step(w, C0);
+    const P = w.player, hp0 = B.hp;
+    B.state = 'recover'; B.timer = 5;
+    P.x = B.cx; P.z = B.cz + 0.3; P.y = B.cy + B.top / 2 + 0.3; P.vy = -4; P.ground = null;
+    step(w, C0);
+    ok(P.vy > 10 && B.hp < hp0 && P.lock === B, `${s.id}: stomping its back bounces you and locks on (hp ${hp0}→${B.hp})`);
+    const shots0 = w.stats.shots;
+    for (let i = 0; i < 40; i++) step(w, C0);
+    ok(w.stats.shots > shots0 && P.auto > 0.5 && P.autoPitch < -0.6, `${s.id}: …the view swings down onto it and fires (${w.stats.shots - shots0} shots, pitch ${P.autoPitch.toFixed(2)})`);
+  }
+  // 4. kill it → dying → dead → exit opens → clear
+  {
+    const w = createWorld(s), B = w.boss;
+    for (let i = 0; i < 120 * 2.5; i++) step(w, C0);
+    B.hp = 1; B.state = 'chase';
+    const P = w.player; P.x = 8; P.z = 4;
+    let ev = [];
+    for (let i = 0; i < 120 * 4; i++) {
+      P.yaw = Math.atan2(-(B.cx - P.x), -(B.cz - P.z)); P.pitch = Math.atan2(B.cy - (P.y + T.EYE), Math.hypot(B.cx - P.x, B.cz - P.z)); P.auto = 0;
+      step(w, { ...C0, fire: true }); ev.push(...w.events.map((e) => e.type)); w.events.length = 0; keep(w);
+    }
+    ok(B.dead && w.exitOpen && ev.includes('bossDying'), `${s.id}: killing ARACHNE-9 opens the exit`);
+    P.x = w.exit.x; P.z = w.exit.z; P.y = w.exit.y + 0.05; P.vy = 0;
+    for (let i = 0; i < 10; i++) step(w, C0);
+    ok(w.phase === 'clear', `${s.id}: then the gate clears the stage`);
+  }
+}
+
+// ------------------------------------------------------------------ stomps, spikes, slow-mo, respawns
+{
+  const base = { start: { x: 0, y: 0, z: 0 }, killY: -50, plats: [{ kind: 'rect', x: 0, z: 0, w: 40, d: 40, h: 0, thick: 2 }] };
+  // a guard survives a stomp (2 of 3): bounce, lock-on, auto-fire
+  let w = createWorld({ ...base, enemies: [{ type: 'guard', x: 0, y: 0, z: -6 }] });
+  for (let i = 0; i < 10; i++) step(w, C0);
+  let P = w.player, g = w.enemies[0];
+  P.x = g.x; P.z = g.z; P.y = g.y + g.top + 0.3; P.vy = -3; P.ground = null;
+  step(w, C0);
+  ok(g.hp === 1 && P.lock === g && P.vy > 10, 'a stomp staggers a guard, bounces you and locks on');
+  const sh = w.stats.shots;
+  for (let i = 0; i < 50; i++) step(w, C0);
+  ok(w.stats.shots > sh, 'bounce → aim down → the gun fires on its own');
+  // drones and walkers die from the bounce alone
+  for (const type of ['walker', 'drone']) {
+    w = createWorld({ ...base, enemies: [{ type, x: 0, y: type === 'drone' ? 3 : 0, z: -6 }] });
+    for (let i = 0; i < 10; i++) step(w, C0);
+    P = w.player; g = w.enemies[0];
+    P.x = g.x; P.z = g.z; P.y = g.y + g.top + 0.3; P.vy = -3; P.ground = null;
+    step(w, C0);
+    ok(g.dead && P.vy > 10, `a ${type} dies from the bounce alone`);
+  }
+  // a spiker hurts you instead
+  w = createWorld({ ...base, enemies: [{ type: 'spiker', x: 0, y: 0, z: -6 }] });
+  for (let i = 0; i < 10; i++) step(w, C0);
+  P = w.player; g = w.enemies[0];
+  P.x = g.x; P.z = g.z; P.y = g.y + g.top + 0.3; P.vy = -3; P.ground = null; P.inv = 0;
+  step(w, C0);
+  ok(!g.dead && P.hp === T.HP_MAX - T.SPIKE_DMG && P.vy > 5, 'landing on a spiker hurts and pops you up');
+  // slow-mo: the world clock runs slow, yours doesn't; it ends
+  w = createWorld({ ...base, pickups: [{ type: 'slowmo', x: 0, y: 1, z: 0 }, { type: 'health', x: 0, y: 1, z: 0, respawn: 2 }] });
+  step(w, C0);
+  ok(w.slow > 0, 'slow-mo pickup starts bullet time');
+  const t0 = w.t, p0 = w.pt;
+  for (let i = 0; i < 120; i++) step(w, C0);
+  ok(Math.abs((w.pt - p0) / (w.t - t0) - T.SLOW_K) < 1e-6, `the world runs at ${T.SLOW_K}× while you run at 1×`);
+  for (let i = 0; i < 120 * T.SLOW_TIME; i++) step(w, C0);
+  ok(w.slow === 0, 'slow-mo runs out');
+  // respawning pickup
+  w.player.hp = 3; const hpk = w.pickups[1]; hpk.got = false; step(w, C0);
+  ok(hpk.got, 'health picked up'); w.player.hp = T.HP_MAX; for (let i = 0; i < 120 * 2.1; i++) step(w, C0);
+  ok(!hpk.got, 'a respawning pickup comes back');
+}
+
 for (const k in BONUS) {
   const B = BONUS[k];
   const w = createWorld(B);

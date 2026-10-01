@@ -296,6 +296,10 @@
    }
   }
  ],
+ "objective": "drives",
+ "arena": null,
+ "boss": null,
+ "bossName": null,
  "drives": [],
  "exit": null,
  "portal": null,

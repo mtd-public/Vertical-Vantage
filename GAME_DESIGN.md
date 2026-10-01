@@ -49,7 +49,10 @@ The verb count is move, look, jump, fire and swap, which means a stick plus a bu
 | Auto look-down | to −66° once vy < 2.5 m/s, blend 2.4/s in, 6/s out | Puts the landing ring in view; a deliberate look (> 0.06 rad) takes over until you land. |
 | Integrity | 8 cells; bolt −1, fall −2, laser −1 | Careless fights cost half a bar, not the run. |
 | Invulnerability | 1.1 s blink | Doc 10. |
-| Stomp | 3 damage, 12 m/s bounce, refunds the air jumps | Stomp chains feel great. |
+| Stomp | Free 12 m/s bounce that refunds the air jumps. Drones and walkers die (they're small); guards take 2; the boss takes 4 (× 1.5 when stunned). | Stomp chains feel great. |
+| Stomp lock | If it survives: the view swings onto it at 12 rad/s for 0.8 s and auto-fires for 0.45 s | Bounce → aim down → shoot, in one move. |
+| Spiker | Landing on it costs 1 cell and pops you up 9 m/s | Some enemies you must shoot, not stomp. |
+| Slow-mo | 6 s; the world clock runs at 0.4×, you at 1× | Bullet time for the boss's laser and turret. |
 | Pickup radius | 1.5 m (drives 1.8) | Generous (doc 14 #53). |
 | Blaster | 0.15 s, 1 dmg, 75 m/s, ∞ | Always something to shoot with. |
 | Spread | 5 pellets in a fixed fan, 0.42 s, 24 shots | Close-range crowd clearing. |
@@ -60,6 +63,11 @@ The verb count is move, look, jump, fire and swap, which means a stick plus a bu
 | Guard | 3 HP, 40 m, 0.85 s laser sight, 3 × 21 m/s bolts, 2.6 s cooldown | Fair, readable, dangerous. |
 | Laser walls | lit ≤ 60 % of a 2.2–4.4 s cycle, 0.6 s flicker warning | Always a ≥ 1 s gap (sim-check proves it). |
 | Bonus | 30 s, 12–17 servers, TIME+ adds 5 s, falling costs 3 s | Jumping Flash bonus-round pressure. |
+| ARACHNE-9 | 240 HP; speed 4.5 / 5.6 / 6.6 m/s by phase (you run 8.5) | About 36 s of blaster on target; pickups and OVERDRIVE cut that hard. |
+| Pounce | 0.8 / 0.65 / 0.5 s squat telegraph, a leap that leads you by 0.35 s, a 6 m shockwave (jump it) or a 2.8 m crush (2 cells), then 1.2 s stunned | Readable, punishable, then a reward window. |
+| Laser | 1.0 s sight line, then a 1.8 s sweep through you (cover blocks it) | Teaches using crates and catwalks. |
+| Climb | Phase 2+: up a long wall, a 3.2 s ceiling crawl toward you, a 0.6 s flare, then a drop | Up and down change everything (Jumping Flash's vertical theme, aimed at you). |
+| Turret | 3 / 4 / 5-bolt bursts every 2.6–3.8 s at 19 m/s, leading you by 0.25 s | Keeps you moving between the big attacks. |
 
 **Reachability:** `tools/sim-check.mjs` builds a graph over every walkable top and samples the movers
 over 30 s. An edge exists when the gap is inside 80 % of the real jump envelope for that rise. Every
@@ -79,6 +87,9 @@ reachable from each drive and from the portal.
 - **Walker:** an orange dome on four legs with a cyan eye-bar.
 - **Guard:** a long-coated security officer with a cyan visor and a rifle.
 - **Server:** a black rack with blinking LEDs.
+- **Spiker:** a red-domed crawler covered in spikes. Shoot it; don't land on it.
+- **ARACHNE-9:** a gunmetal spider mech. It has a red eye cluster and laser emitter, glowing knees,
+  a red underglow ring, hazard stripes and a twin-barrel turret on its back.
 
 ## 6. HUD
 
@@ -109,7 +120,7 @@ on touch). Bonus stages add a big timer and a server count.
 
 ## 8. Progression
 
-Three stages unlock in order (Stage Select remembers them). Score carries across a run. Each stage
+Three stages, then the boss stage, unlock in order (Stage Select remembers them). Score carries across a run. Each stage
 has a hidden bonus portal. Best score per stage and best run are stored in localStorage (wrapped in
 try/catch).
 
@@ -168,3 +179,13 @@ mstr-gme-dsgn-tmpt `kits/`:
   - on/off laser walls
   - breakcore, Y2K and hard-techno music with multiple loops per song
   - the reacting AI face: expressions only, with GIR-like energy but an original design
+
+### claude/wizardly-hopper-ftczx9 (boss update)
+
+- ECHO's eyes are now EVE-style shapes with no iris; expressions are mostly lines (^ ^, v v, > <, \ /, O O, T T).
+- Stage 4, WAREHOUSE 13, with the ARACHNE-9 spider mech. It chases, pounces with a telegraph and a
+  slam shockwave, sweeps a laser, climbs walls and the ceiling, and fires a back turret.
+- Stomp bounces: a free bounce, then lock-on and auto-fire if the enemy survives. Small robots die
+  from the bounce alone. New spiked crawlers you must shoot.
+- A SLOW-MO bullet-time power-up, and respawning pickups in the boss arena.
+- A new boss track, "Arachne": breakcore × hard techno with grind stabs.

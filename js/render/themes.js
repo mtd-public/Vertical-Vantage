@@ -22,6 +22,12 @@ export const THEMES = {
     cloud: '#4a3460', cloudShade: '#2a1c3c', city: 1, arc: [0, 4], cityCol: '#1a1026', windows: 1, neon: 1.25,
     water: null, rain: 1, stars: 0.35, beams: 1,
   },
+  warehouse: { // inside: sodium lamps, a dark haze, the night city through the skylights
+    skyTop: '#06051a', skyBot: '#1c1a26', sun: '#e8ecff', sunDir: [-0.2, 0.9, -0.3], night: 1,
+    fog: [34, 150], hemi: ['#b0acc8', '#6a6278', 1.7], key: ['#ffd8a0', 1.1],
+    cloud: '#4a3460', cloudShade: '#2a1c3c', city: 0, arc: [0, 4], cityCol: '#1a1026', windows: 0.8, neon: 1.1,
+    water: null, rain: 0, stars: 0, beams: 0,
+  },
   bonusDay: {
     skyTop: '#2a6cff', skyBot: '#bfe8ff', sun: '#fff3c4', sunDir: [-0.4, 0.6, -0.6], night: 0, power: 1,
     fog: [80, 300], hemi: ['#ffffff', '#6a7aa0', 1.8], key: ['#fff6e0', 2.2],

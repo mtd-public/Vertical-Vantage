@@ -96,4 +96,20 @@ addSong('bootSeq', {
   ],
 });
 
-export const STAGE_SONG = { docks: 'harborBreak', skyway: 'skyway2000', neon: 'neonHard', bonus: 'serverRush', menu: 'bootSeq' };
+// Stage 4 boss — ARACHNE-9: breakcore × hard techno, distorted power-chord stabs, an acid line, a hero hook.
+addSong('arachne', {
+  name: 'Arachne', bpm: 176, lead: 'darkpad', dark: true, lp: 12000, kick: 'deep', bassVoice: 'acid', bassOct: 0, hookVoice: 'hero', echo: 0.2,
+  stabs: 'x..x..x...x.x...', stabVoice: 'grind',
+  chords: [[38, [50, 57, 62, 65]], [34, [46, 53, 58, 62]], [36, [48, 55, 60, 64]], [33, [45, 52, 57, 61]]], // Dm · B♭ · C · A
+  bassLine: '0! 0 12 0 0! 0 12^ 10 0! 0 12 0 7 0 5 3',
+  hook: ['D5 - - - F5 - A5 - - - G5 - F5 - E5 -', 'D5 - - - - - . . A4 - - - D5 - - -', 'Bb4 - C5 - D5 - F5 - - - E5 - D5 - C5 -', 'C#5 - - - E5 - - - A5 - - - - - . .'],
+  parts: [
+    { name: 'intro', bars: 4, drums: ['k...k...k...k...', 'k...k...k...k...', 'k...k...k...k...', 'k...k...k...krrr'], hats: '..o...o...o...o.', noHook: true, noStabs: true, noBass: true },
+    { name: 'A', bars: 4, reps: 2, drums: CHOP, hats: 'm.m.m.m.m.m.m.m.', noHook: true, frantic: true },
+    { name: 'B', bars: 4, reps: 2, drums: ['k...k...k...k...', 'k...k...k..kk...', 'k...k...k...k.kk', 'k...k...k...krrr'], perc: 'i...c..i....c.i.', hats: 'mmommmommmommmom' },
+    { name: 'break', bars: 2, noDrums: true, noBass: true, noStabs: true, hats: 'hhhhhhhhhhhhhhhh', perc: ['....c.......c...', 'c.c.c.c.cccccccc'] },
+    { name: 'drop', bars: 4, reps: 2, drums: [AMEN[0], CHOP[0], AMEN[2], CHOP[3]], hats: 'h.h.h.hih.h.h.ho', frantic: true },
+  ],
+});
+
+export const STAGE_SONG = { docks: 'harborBreak', skyway: 'skyway2000', neon: 'neonHard', warehouse: 'arachne', bonus: 'serverRush', menu: 'bootSeq' };

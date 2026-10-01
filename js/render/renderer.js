@@ -64,6 +64,8 @@ export class GameRenderer {
     this.cannon = MD.cannonModel(this.M);
     this.vmScene.add(this.cannon);
     this.recoil = 0; this.flashT = 0; this.showCannon = true;
+    this.kick = 1; this.swapT = 0; this.held = 'blaster'; this.shown = ''; this.spinV = 0;
+    this.swayX = 0; this.swayY = 0; this.lastYaw = 0; this.lastPitch = 0;
     this.level = null;
     this.aspect = 1;
     this.lastHp = T.HP_MAX;
@@ -153,23 +155,35 @@ export class GameRenderer {
     L.view.update(t);
     if (L.water) L.water.material.map.offset.set(t * 0.012, t * 0.02);
 
-    // legs
+    // legs: run cycle on the ground; a springy tuck on each jump (deeper on the 2nd and 3rd); they
+    // dangle and trail while you fall, reach for the deck just before you land, and point straight
+    // down while you bounce off something's head
     const lg = this.legs;
+    const below = P.ground ? null : groundBelow(w.plats, x, z, y - 0.01);
     lg.position.set(x, y + bob * 0.3, z);
     lg.rotation.y = yaw;
     const hipL = lg.getObjectByName('hipL'), hipR = lg.getObjectByName('hipR');
-    let hl, hr, kl, kr;
+    const fwd = -(P.vx * Math.sin(yaw) + P.vz * Math.cos(yaw)); // forward speed
+    let hl, hr, kl, kr, squash = 0;
     if (P.ground) {
       const s = Math.sin(P.stride * 2.4) * 0.7 * Math.min(1, sp / T.RUN);
       hl = s; hr = -s; kl = -Math.max(0, -s) * 1.2 - 0.05; kr = -Math.max(0, s) * 1.2 - 0.05;
-      if (P.landT < 0.25) { const k = 1 - P.landT / 0.25; hl += 0.6 * k; hr += 0.6 * k; kl -= 1.0 * k; kr -= 1.0 * k; }
-    } else if (P.vy > 0) { hl = 0.75; hr = 0.55; kl = -1.5; kr = -1.25; } // tucked: Jumping Flash's springy hop
-    else { hl = 0.35; hr = 0.15; kl = -0.35; kr = -0.2; }
+      if (P.landT < 0.25) { const k = 1 - P.landT / 0.25; hl += 0.6 * k; hr += 0.6 * k; kl -= 1.0 * k; kr -= 1.0 * k; squash = 0.12 * k; }
+    } else if (P.lockT > 0) { hl = hr = -0.08; kl = kr = 0; } // stomp: legs straight down
+    else if (P.vy > 0) {
+      const k = [1, 1, 1.25, 1.55][Math.min(3, P.jumps)];
+      hl = 0.75 * k; hr = 0.55 * k; kl = -1.5 * k; kr = -1.25 * k;
+    } else if (below && y - (below.h + below.oy) < 1.6) { hl = 0.12; hr = 0.06; kl = -0.15; kr = -0.1; } // about to land
+    else {
+      const sw = Math.sin(t * 3.2) * 0.07, trail = Math.max(-0.3, Math.min(0.3, -fwd * 0.03));
+      hl = 0.3 + sw + trail; hr = 0.14 - sw + trail; kl = -0.4 - sw; kr = -0.22 + sw;
+    }
     for (const [hip, h, k] of [[hipL, hl, kl], [hipR, hr, kr]]) {
       hip.rotation.x += (h - hip.rotation.x) * Math.min(1, dt * 14);
       const knee = hip.getObjectByName('knee');
       knee.rotation.x += (k - knee.rotation.x) * Math.min(1, dt * 14);
     }
+    lg.scale.y += (1 - squash - lg.scale.y) * Math.min(1, dt * 20);
     lg.visible = !P.dead;
 
     // enemies
@@ -242,7 +256,7 @@ export class GameRenderer {
     }
     // landing marker: where you'll come down (only in the air, over a deck)
     const mk = this.fx.marker;
-    const g = P.ground ? null : groundBelow(w.plats, x, z, y - 0.01);
+    const g = below;
     mk.visible = !!g && !P.dead;
     if (g) {
       const top = g.h + g.oy, hgt = y - top;
@@ -253,20 +267,34 @@ export class GameRenderer {
     }
     this.fx.update(dt, w, cam, t);
 
-    // arm cannon: bob, recoil, drops away when you look at your feet
-    const c = this.cannon;
-    this.recoil = Math.max(0, this.recoil - dt * 9);
+    // arm cannon: bob, sway, per-weapon recoil, a dip on swap, drops away when you look at your feet
+    const c = this.cannon, MZ = c.userData.mz;
+    if (P.weapon !== this.held) { this.held = P.weapon; this.swapT = 1; }
+    this.swapT = Math.max(0, this.swapT - dt * 4);
+    const show = this.swapT > 0.5 ? this.shown || this.held : this.held; // the new muzzle comes up from below
+    if (show !== this.shown) { for (const k in MZ) MZ[k].group.visible = k === show; this.shown = show; }
+    this.recoil = Math.max(0, this.recoil - dt * (this.kick > 1.5 ? 5 : 9));
     this.flashT = Math.max(0, this.flashT - dt);
+    this.spinV *= Math.exp(-dt * 2.5);
+    const spin = MZ.rapid.group.getObjectByName('spin'); spin.rotation.z += this.spinV * dt;
+    // sway: the gun lags your look and leans with strafing
+    let dyw = yaw - this.lastYaw; dyw -= Math.round(dyw / (Math.PI * 2)) * Math.PI * 2;
+    const dpt = pitch - this.lastPitch; this.lastYaw = yaw; this.lastPitch = pitch;
+    const side = P.vx * Math.cos(yaw) - P.vz * Math.sin(yaw), idt = 1 / Math.max(dt, 1 / 240);
+    const tx = Math.max(-0.05, Math.min(0.05, -dyw * idt * 0.006 - side * 0.0035)), ty = Math.max(-0.04, Math.min(0.04, -dpt * idt * 0.006));
+    this.swayX += (tx - this.swayX) * Math.min(1, dt * 10); this.swayY += (ty - this.swayY) * Math.min(1, dt * 10);
     const low = pitch < -0.45 ? (-0.45 - pitch) * 0.35 : 0;
-    const port = this.aspect < 1;
-    c.position.set(port ? 0.2 : 0.3, -0.29 + bob * 0.5 - low + (P.ground ? 0 : 0.02), -0.95 + this.recoil * 0.06);
+    const port = this.aspect < 1, rk = this.recoil * this.kick, sdip = Math.sin(this.swapT * Math.PI);
+    c.position.set((port ? 0.2 : 0.3) + this.swayX, -0.29 + bob * 0.5 - low + (P.ground ? 0 : 0.02) + this.swayY - sdip * 0.22, -0.95 + rk * 0.06);
     c.scale.setScalar(0.62);
-    c.rotation.set(this.recoil * 0.3 + low * 0.6, -0.04, 0);
+    c.rotation.set(rk * 0.3 + low * 0.6 - sdip * 0.9, 0.1 - this.swayX * 2, this.swayX * 3 + (this.held === 'rapid' ? (Math.random() - 0.5) * this.recoil * 0.08 : 0));
     c.visible = this.showCannon && !P.dead;
     this.M.vmGlow.color.set(WEAPON_COL[P.weapon] || 0xffffff);
     const fl = c.getObjectByName('flash');
+    fl.position.z = (MZ[this.shown]?.tip ?? -0.47) - 0.05;
     fl.visible = this.flashT > 0;
     fl.rotation.z = Math.random() * 6;
+    fl.scale.setScalar(this.held === 'rocket' ? 1.6 : this.held === 'spread' ? 1.35 : this.held === 'rapid' ? 0.75 : 1);
     this.M.vmFlash.color.set(WEAPON_COL[P.weapon] || 0xffffff);
   }
 
@@ -325,7 +353,12 @@ export class GameRenderer {
     const fx = this.fx;
     for (const e of events) {
       switch (e.type) {
-        case 'fire': this.recoil = 1; this.flashT = 0.05; break;
+        case 'fire': {
+          const k = { blaster: 1, spread: 1.5, rapid: 0.45, rocket: 2.2 }[e.weapon] ?? 1;
+          this.kick = k; this.recoil = 1; this.flashT = e.weapon === 'rocket' ? 0.08 : 0.05;
+          if (e.weapon === 'rapid') this.spinV = Math.min(60, this.spinV + 18);
+          break;
+        }
         case 'impact': fx.burst(e.x, e.y, e.z, e.kind === 'bolt' ? 5 : 6, e.kind === 'bolt' ? 0xff3a8a : 0xbff8ff, 5, 0.09, 0.35, 10); break;
         case 'hit': fx.burst(e.x, e.y, e.z, 8, 0xffb040, 6, 0.1, 0.4); break;
         case 'kill': fx.boom(e.x, e.y, e.z, e.kind === 'boss' ? 7 : e.kind === 'guard' ? 2.2 : 2.6); fx.burst(e.x, e.y, e.z, 16, e.kind === 'walker' ? 0xff8a1a : e.kind === 'guard' ? 0x3a3a44 : e.kind === 'boss' ? 0xe0313a : 0xe8ecf4, 8, 0.22, 1.2, 14); break;

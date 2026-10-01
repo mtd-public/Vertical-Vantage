@@ -375,17 +375,38 @@ export function legsModel(M) {
   return g;
 }
 
-// The arm cannon in camera space (drawn in its own pass on top of the world).
+// The arm cannon in camera space (drawn in its own pass on top of the world). One housing, and a
+// muzzle per weapon (only the held one is shown): blaster barrel, spread trumpet with a fan of
+// stubs, pulse-SMG barrel cluster (spins), and a four-tube rocket pod. userData.mz[weapon] =
+// { group, tip } where tip is the muzzle's z (the flash sits there).
 export function cannonModel(M) {
   const g = new THREE.Group();
+  const white = 0xe8ecf4, blue = 0x2a5ad8, dark = 0x3a3e4a, black = 0x1a1c22;
   const body = merge2([
-    box(0.16, 0.16, 0.42, { z: 0.05, color: 0xe8ecf4 }), box(0.2, 0.08, 0.3, { y: 0.11, z: 0.02, color: 0x2a5ad8 }),
-    cyl(0.07, 0.08, 0.34, seg(10, 6), { z: -0.28, rx: Math.PI / 2, color: 0x3a3e4a }), cyl(0.085, 0.085, 0.06, seg(10, 6), { z: -0.44, rx: Math.PI / 2, color: 0xff8a1a }),
-    box(0.06, 0.1, 0.14, { x: -0.1, y: -0.05, z: 0.14, color: 0x3a3e4a }),
+    box(0.16, 0.16, 0.42, { z: 0.05, color: white }), box(0.2, 0.08, 0.3, { y: 0.11, z: 0.02, color: blue }),
+    box(0.06, 0.1, 0.14, { x: -0.1, y: -0.05, z: 0.14, color: dark }), box(0.17, 0.05, 0.08, { y: -0.08, z: -0.14, color: dark }),
   ]);
   g.add(new THREE.Mesh(body, M.vmPaint));
   const strip = new THREE.Mesh(merge2([box(0.02, 0.03, 0.34, { x: 0.085, y: 0.03, z: 0.02 }), box(0.02, 0.03, 0.34, { x: -0.085, y: 0.03, z: 0.02 })]), M.vmGlow);
   strip.name = 'strip'; g.add(strip);
+  const R = Math.PI / 2, mz = {};
+  const add = (key, tip, ...parts) => { const grp = new THREE.Group(); grp.name = 'mz-' + key; grp.add(new THREE.Mesh(merge2(parts), M.vmPaint)); grp.visible = false; g.add(grp); mz[key] = { group: grp, tip }; return grp; };
+  add('blaster', -0.47,
+    cyl(0.07, 0.08, 0.34, seg(10, 6), { z: -0.28, rx: R, color: dark }), cyl(0.085, 0.085, 0.06, seg(10, 6), { z: -0.44, rx: R, color: 0xff8a1a }));
+  add('spread', -0.52, // a wide trumpet and a fan of three stubs on top
+    cyl(0.07, 0.09, 0.14, seg(10, 6), { z: -0.2, rx: R, color: dark }),
+    cyl(0.07, 0.19, 0.24, seg(10, 6), { z: -0.38, rx: -R, color: 0xff8a1a }), cyl(0.19, 0.19, 0.03, seg(10, 6), { z: -0.5, rx: R, color: black }),
+    ...[-0.35, 0, 0.35].map((ry) => cyl(0.03, 0.03, 0.26, 6, { x: Math.sin(ry) * 0.09, y: 0.16, z: -0.26, rx: R, ry, color: dark })),
+    box(0.22, 0.04, 0.16, { y: 0.14, z: -0.14, color: 0xff8a1a }));
+  const smg = add('rapid', -0.62, // a long six-barrel cluster (it spins) and a drum magazine on the side
+    cyl(0.09, 0.09, 0.06, seg(10, 6), { z: -0.16, rx: R, color: dark }), cyl(0.09, 0.09, 0.05, seg(10, 6), { z: -0.56, rx: R, color: 0x9fff6a }),
+    cyl(0.11, 0.11, 0.08, seg(12, 8), { x: -0.14, y: -0.02, z: -0.02, rz: R, color: 0x3a4a30 }), cyl(0.07, 0.07, 0.09, seg(12, 8), { x: -0.15, y: -0.02, z: -0.02, rz: R, color: 0x9fff6a }));
+  const spin = new THREE.Group(); spin.name = 'spin'; spin.position.z = -0.36; smg.add(spin);
+  spin.add(new THREE.Mesh(merge2(Array.from({ length: 6 }, (_, i) => { const a = i / 6 * Math.PI * 2; return cyl(0.022, 0.022, 0.42, 6, { x: Math.cos(a) * 0.06, y: Math.sin(a) * 0.06, rx: R, color: i % 2 ? dark : 0x8a8e9a }); })), M.vmPaint));
+  add('rocket', -0.48, // a four-tube pod bigger than the arm, warheads showing
+    box(0.32, 0.3, 0.42, { y: 0.05, z: -0.2, color: 0x4a5040 }), box(0.33, 0.05, 0.38, { y: 0.21, z: -0.2, color: 0xffcc1a }), box(0.05, 0.31, 0.3, { x: -0.16, y: 0.05, z: -0.16, color: 0x2a2e26 }),
+    ...[[-0.075, -0.02], [0.075, -0.02], [-0.075, 0.12], [0.075, 0.12]].flatMap(([x, y]) => [cyl(0.055, 0.055, 0.04, 8, { x, y, z: -0.42, rx: R, color: black }), cyl(0.04, 0.012, 0.07, 8, { x, y, z: -0.41, rx: -R, color: 0xff3b5c })]));
+  g.userData.mz = mz;
   const flash = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), M.vmFlash);
   flash.position.z = -0.52; flash.name = 'flash'; flash.visible = false; g.add(flash);
   return g;

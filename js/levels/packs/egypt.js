@@ -3,5 +3,6 @@
 // Judgment. Stages: ./egypt-*.js
 import cairo from './egypt-cairo.js';
 import pyramid from './egypt-pyramid.js';
+import sanctum from './egypt-sanctum.js';
 
-export default { id: 'egypt', name: 'EGYPT', sub: 'THE DATA DYNASTY', color: '#ffc53a', stages: [cairo, pyramid] };
+export default { id: 'egypt', name: 'EGYPT', sub: 'THE DATA DYNASTY', color: '#ffc53a', stages: [cairo, pyramid, sanctum] };

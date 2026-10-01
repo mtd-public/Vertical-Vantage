@@ -98,3 +98,33 @@ export const near = (x0, x1, z0, z1, X0, X1, Z0, Z1, m = 1.5) => x1 > X0 - m && 
 
 // A point on the ring of radius r round (cx, cz) at angle a (radians), at height y.
 export const ringPt = (cx, cz, r, a, y = 0) => ({ x: cx + Math.cos(a) * r, y, z: cz + Math.sin(a) * r });
+
+// ------------------------------------------------------------------ interiors (the inner sanctum)
+// Walls round a room x0..x1 × z0..z1: T (2) m thick, outside the room, from `base` up to `top`, split
+// round doors: [{ side: 'n' | 's' | 'w' | 'e', a0, a1 (along the wall: x for n/s, z for w/e), bot, top
+// (the opening's absolute heights) }]. n is the -Z wall. tint carries the side to the render (0 n, 1 s,
+// 2 w, 3 e) so the torches and glyphs go on the inner face.
+const SIDE = { n: 0, s: 1, w: 2, e: 3 };
+export function walls(x0, x1, z0, z1, base, top, doors = [], o = {}) {
+  const T = o.T ?? 2, out = [], style = o.style || 'eg-tombWall';
+  for (const side of o.sides || ['n', 's', 'w', 'e']) {
+    const ns = side === 'n' || side === 's';
+    const lo = ns ? x0 - T : z0, hi = ns ? x1 + T : z1;
+    const piece = (b0, b1, y0, y1) => {
+      if (b1 - b0 < 0.05 || y1 - y0 < 0.05) return;
+      const [X0, X1, Z0, Z1] = side === 'n' ? [b0, b1, z0 - T, z0] : side === 's' ? [b0, b1, z1, z1 + T] : side === 'w' ? [x0 - T, x0, b0, b1] : [x1, x1 + T, b0, b1];
+      out.push(box(X0, X1, Z0, Z1, y1, { thick: y1 - y0, style, tint: SIDE[side] }));
+    };
+    let a = lo;
+    for (const d of doors.filter((q) => q.side === side).sort((p, q) => p.a0 - q.a0)) {
+      piece(a, d.a0, base, top);
+      piece(d.a0, d.a1, base, d.bot ?? base);
+      piece(d.a0, d.a1, d.top ?? top, top);
+      a = d.a1;
+    }
+    piece(a, hi, base, top);
+  }
+  return out;
+}
+// A ceiling over x0..x1 × z0..z1 (overhanging the walls by T), its underside at `under`.
+export const ceiling = (x0, x1, z0, z1, under, o = {}) => box(x0 - (o.T ?? 2), x1 + (o.T ?? 2), z0 - (o.T ?? 2), z1 + (o.T ?? 2), under + (o.thick ?? 2), { thick: o.thick ?? 2, style: o.style || 'eg-tombCeil', tint: o.tint ?? -1 });

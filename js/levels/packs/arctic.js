@@ -1,2 +1,6 @@
-// Level pack 'arctic' (not built yet): 3 stages + a boss stage. See js/levels/packs/index.js.
-export default { id: 'arctic', name: 'ARCTIC VAULT', sub: '', stages: [] };
+// Pack 9 — ARCTIC VAULT: Svalbard, 2099. The polar night over Longyearbyen, a blizzard on the glacier
+// front, the long tunnel into the permafrost where the world's seeds and data are kept, and POLARIS,
+// the vault's polar-bear warden, in the cold-storage cavern under the mountain.
+import town from './arctic-town.js';
+
+export default { id: 'arctic', name: 'ARCTIC VAULT', sub: 'PERMAFROST ARCHIVE', color: '#9ff3ff', stages: [town] };

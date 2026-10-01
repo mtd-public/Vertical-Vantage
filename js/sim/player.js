@@ -188,9 +188,11 @@ function moveAndCollide(w, P, h, wasGround) {
     if (!push) continue;
     const prevTop = top - p.dy;
     // landing on top: we were above its (previous) top a moment ago
-    if (prevY >= prevTop - 0.03 || (P.y >= top - T.STEP_UP && P.vy <= 0.5 && (wasGround || P.ground))) {
-      // only stand if the feet are over the footprint (not just the radius grazing a side)
-      if (inside(p, P.x, P.z, R * 0.55)) {
+    const walkOn = P.y >= top - T.STEP_UP && P.vy <= 0.5 && (wasGround || P.ground); // walking onto a kerb, a step, the next deck
+    if (prevY >= prevTop - 0.03 || walkOn) {
+      // only stand if the feet are over the footprint (not just the radius grazing a side). Walking on, the
+      // radius touching it is enough: the side push below holds you a full radius out, so the feet never get closer.
+      if (inside(p, P.x, P.z, walkOn ? R : R * 0.55)) {
         P.y = top;
         if (P.vy < 0) P.vy = 0;
         stand = p;

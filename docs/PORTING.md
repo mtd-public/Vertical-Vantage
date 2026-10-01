@@ -38,6 +38,13 @@ step has consumed yet (`input.peekLook()`), so the camera never lags on a frame 
 `respawnPickup`, `bossRoar`, `bossTele`, `bossLeap`, `bossSlam{r}`, `bossCharge`, `bossLaser`, `bossCeil`,
 `bossPhase{phase}`, `bossDying`.
 
+**Bosses** are looked up by `level.boss.kind` in `sim/bosses/index.js` (`arachne` = `sim/boss.js` when no kind is
+given). Each kind has `init` / `update` / `down` and optional `stompable` / `blocks`. Each builds on
+`sim/bosses/common.js`: the standard pose, walking round solids, bolts and fans, minion spawning, and **danger
+zones**. A zone `{ x, y, z, r, t, max, dmg, knock, kind, height }` sits in `world.zones`; when `t` runs out it hits
+the player if they stand inside it (`zoneTele` / `zoneHit` events). Port `common.js` first, then each kind
+line by line. Every kind's tuning is exported in `data/tuning.json` under `BOSSES`.
+
 The boss (`sim/boss.js`) is a pose, not a physics body. Its state is: a body centre `(cx, cy, cz)`, a
 surface normal `(nx, ny, nz)` (its "up"), a heading `(fx, fz)` and a `surf` value (floor / wall / ceil /
 air). The renderer builds its orientation from those, using up = normal and forward = heading (or "up
@@ -83,6 +90,15 @@ with it; the player and the player's shots step with `DT`. Without slow-mo, `pt 
 `node tools/golden.mjs --check` also replays every trace from the JSON level files. That proves the
 JSON is complete. A port that loads the same JSON and runs the same control script must hit the same
 numbers.
+
+## Packs, turrets, orbit movers
+
+- **Packs:** `data/levels/index.json` lists the packs in order (`packs: [{ id, name, stages }]`). Each stage's JSON
+  carries `pack` and `packIdx` (0–2 normal, 3 the boss). Distant landmarks (`backdrops`) and themes are render-only.
+- **Turret:** an enemy type that runs the guard's logic (aim telegraph, burst, cool-down) without walking.
+  Its numbers are in `ENEMIES.turret`.
+- **Movers:** `move.orbit` (`'xz' | 'xy' | 'zy'`) goes round a circle of radius `amp`: offset = (amp·cos a, amp·sin a)
+  on the plane's two axes, with `a = 2π (t / period + phase)`.
 
 ## Coordinates
 

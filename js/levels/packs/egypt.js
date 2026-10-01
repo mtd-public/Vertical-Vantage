@@ -4,5 +4,6 @@
 import cairo from './egypt-cairo.js';
 import pyramid from './egypt-pyramid.js';
 import sanctum from './egypt-sanctum.js';
+import boss from './egypt-boss.js';
 
-export default { id: 'egypt', name: 'EGYPT', sub: 'THE DATA DYNASTY', color: '#ffc53a', stages: [cairo, pyramid, sanctum] };
+export default { id: 'egypt', name: 'EGYPT', sub: 'THE DATA DYNASTY', color: '#ffc53a', stages: [cairo, pyramid, sanctum, boss] };

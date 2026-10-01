@@ -12,6 +12,7 @@ import { adUV } from './ads.js';
 import { CAR_PAINT, CONTAINER_PAINT, TOWER_TINT, NEON } from './themes.js';
 import { mulberry32 } from '../sim/util.js';
 import { seg } from './retro.js';
+import { PACK_STYLES } from './packs/index.js';
 
 const _o = new THREE.Object3D(), _c = new THREE.Color();
 
@@ -96,6 +97,7 @@ function pieces(p, th, rng) {
   else if (s === 'catwalk') catwalk(K, p);
   else if (s === 'rack') rack(K, p, rng);
   else if (s === 'crate') crate(K, p);
+  else if (PACK_STYLES[s]) PACK_STYLES[s](K, p, th, rng, H);
   else deck(K, p, th);
   return K;
 }
@@ -393,3 +395,17 @@ function crate(K, p) {
 
 // A plain (untextured) quad, for glowing panels.
 function atlasQuadSolid(w, h, o) { return part(new THREE.PlaneGeometry(w, h), o); }
+
+// The helper bag handed to pack styles (render/packs/*.js): build pieces into Kit K in the
+// platform's local frame (origin at its centre, y = 0 at its top, footprint w × d or radius r).
+// Material keys for K.add(): 'flat' (vertex colours, flat-shaded: use this for most things),
+// 'paint' (smooth vertex colours), 'glow' (unlit vertex colours), 'neon' (unlit, theme-dimmed),
+// 'glass', 'facade' (tower windows; meterBox UVs), 'concrete', 'deck', 'hazard', 'helipad', 'ads', 'signs'.
+// Reuse the stock looks with H.deck / H.tower / H.helipad / H.container / H.crate / H.catwalk / H.billboard.
+export const H = {
+  THREE, Kit, box, cyl, part, prep, meterBox, atlasQuad, footprintShape, slab, bandColors, seg, faces,
+  FACADE_M, NEON, TOWER_TINT, CONTAINER_PAINT,
+  deck: (K, p, th) => deck(K, p, th), tower: (K, p, th, rng) => tower(K, p, th, rng), helipad: (K, p) => helipad(K, p),
+  container: (K, p) => container(K, p), crate: (K, p) => crate(K, p), catwalk: (K, p) => catwalk(K, p), billboard: (K, p) => billboard(K, p),
+  pier: (K, p) => pier(K, p), ship: (K, p) => ship(K, p), pagoda: (K, p) => pagoda(K, p),
+};

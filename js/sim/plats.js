@@ -38,8 +38,11 @@ export function platOffset(p, t, out) {
   let ox = 0, oy = 0, oz = 0;
   const m = p.move;
   if (m) {
-    const k = m.amp * Math.sin(TAU * (t / m.period + (m.phase || 0)));
-    if (m.dir) { ox = m.dir[0] * k; oy = m.dir[1] * k; oz = m.dir[2] * k; }
+    const a = TAU * (t / m.period + (m.phase || 0)), k = m.amp * Math.sin(a);
+    if (m.orbit) { // round a circle of radius amp in a plane: 'xz' (a carousel), 'xy' / 'zy' (a wheel)
+      const c = m.amp * Math.cos(a);
+      if (m.orbit === 'xz') { ox = c; oz = k; } else if (m.orbit === 'xy') { ox = c; oy = k; } else { oz = c; oy = k; }
+    } else if (m.dir) { ox = m.dir[0] * k; oy = m.dir[1] * k; oz = m.dir[2] * k; }
     else if (m.axis === 'x') ox = k;
     else if (m.axis === 'y') oy = k;
     else oz = k;

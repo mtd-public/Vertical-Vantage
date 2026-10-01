@@ -13,9 +13,10 @@ export const ACHIEVEMENTS = [
   { id: 'bonusFast', name: 'SPEEDRUN.EXE', desc: 'Clear a bonus round with 10 s to spare' },
   { id: 'highRise', name: 'STRATOSPHERE', desc: 'Land on something 80 m up' },
   { id: 'slowStomp', name: 'BULLET-TIME BOOT', desc: 'Stomp an enemy in slow-mo' },
-  { id: 'bossStomp', name: 'BOOT TO THE HEAD', desc: 'Stomp ARACHNE-9 five times in one fight' },
-  { id: 'boss', name: 'PEST CONTROL', desc: 'Defeat ARACHNE-9' },
-  { id: 'allClear', name: 'VANTAGE POINT', desc: 'Finish all four stages' },
+  { id: 'bossStomp', name: 'BOOT TO THE HEAD', desc: 'Stomp a boss five times in one fight' },
+  { id: 'boss', name: 'PEST CONTROL', desc: 'Defeat a boss' },
+  { id: 'bossAll', name: 'BOSS RUSH', desc: 'Defeat every boss in every pack' },
+  { id: 'allClear', name: 'VANTAGE POINT', desc: 'Clear the final stage' },
 ];
 
 export class Achievements {
@@ -26,6 +27,8 @@ export class Achievements {
   }
 
   has(id) { return !!this.got[id]; }
+  // Unlock by id from outside (returns the achievement if it's new, else null).
+  grant(id) { const out = []; this.unlock(id, out); return out[0] || null; }
 
   // per stage attempt (the bonus round counts as part of its stage)
   resetStage() { this.chain = 0; this.hurt = 0; this.bossStomps = 0; }

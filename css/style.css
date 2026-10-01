@@ -125,6 +125,11 @@ body.calm #drop.void { animation: none; }
 .btn:disabled { opacity: 0.35; }
 .how { text-align: left; font-size: 12px; line-height: 1.55; margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--mag); background: rgba(0, 0, 0, 0.25); }
 .how b { color: var(--gold); }
+.card.wide { width: min(860px, 100%); }
+.pack { margin-top: 12px; text-align: left; }
+.pack-h { font-size: 12px; font-weight: 800; letter-spacing: 0.2em; color: var(--pk, var(--cyan)); border-bottom: 1px solid var(--pk, var(--cyan)); padding-bottom: 3px; }
+.stage.boss { border-color: rgba(255, 59, 92, 0.6); }
+.stage.boss b { color: var(--red); }
 .stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 10px; }
 .stage { padding: 10px; border: 2px solid var(--line); background: rgba(0, 0, 0, 0.3); text-align: left; }
 .stage b { display: block; color: var(--gold); letter-spacing: 0.1em; }

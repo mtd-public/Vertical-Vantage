@@ -18,7 +18,7 @@ export function createWorld(level, opts = {}) {
     t: 0, time: 0, pt: 0, slow: 0, rng: mulberry32(level.seed || 1), nextId: 1, // pt: the world clock (runs slow in slow-mo)
     plats: makePlats(level.plats),
     player: null, enemies: [], shots: [], bolts: [], pickups: [], drives: [], lasers: [], exit: null, portal: null,
-    events: [], score: 0, drivesGot: 0, exitOpen: false, phase: 'play', request: null, boss: null,
+    events: [], score: 0, drivesGot: 0, exitOpen: false, phase: 'play', request: null, boss: null, zones: [],
     bonus: null, clear: null,
     stats: { kills: 0, stomps: 0, shots: 0, hits: 0, damage: 0, falls: 0 },
   };

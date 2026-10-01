@@ -20,7 +20,7 @@ const VERT = /* glsl */ `
 
 const FRAG = /* glsl */ `
   uniform vec3 uTop, uBot, uCloud, uShade, uSun, uCity, uSunDir;
-  uniform float uTime, uPower, uCloudT, uNight, uCityK, uWin, uArcC, uArcW, uStars, uBeams;
+  uniform float uTime, uPower, uCloudT, uNight, uCityK, uWin, uArcC, uArcW, uStars, uBeams, uCover, uCityH, uPyr;
   varying vec3 vDir;
   float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float noise(vec2 p) {
@@ -87,10 +87,13 @@ const FRAG = /* glsl */ `
       float band = smoothstep(lo, lo + 0.04, e) * (1.0 - smoothstep(hi - 0.1, hi, e));
       vec2 q = vec2(az * mix(7.0, 4.0, fl) + uCloudT * mix(0.05, 0.03, fl), e * mix(14.0, 9.0, fl) + fl * 7.0);
       float n = fbm(q);
-      float c = step(0.58, n) * band;
+      float c = step(0.58 - uCover * 0.32, n) * mix(band, smoothstep(-0.05, 0.1, e), uCover * 0.85);
       vec3 cc = mix(uShade, uCloud, step(0.62, fbm(q + vec2(0.0, 0.12))));
       col = mix(col, cc, c * (1.0 - uPower * 0.6) * (uNight > 0.5 ? 0.5 : 1.0));
     }
+
+    // overcast: a grey lid that flattens the gradient (Seattle, sea fog)
+    col = mix(col, mix(uShade, uBot, 0.4), uCover * 0.55 * smoothstep(-0.02, 0.25, e));
 
     // searchlights sweeping the night sky
     if (uBeams > 0.01 && e > 0.0) {
@@ -109,15 +112,15 @@ const FRAG = /* glsl */ `
       float da = abs(mod(az - uArcC + 3.14159, 6.28318) - 3.14159);
       float arc = 1.0 - smoothstep(uArcW - 0.25, uArcW, da);
       float w1, s1, w2, s2;
-      float far = skyline(u, e, 90.0, 0.10, 3.0, w1, s1) * arc;
-      float near = skyline(u + 0.37, e, 46.0, 0.16, 11.0, w2, s2) * arc;
+      float far = skyline(u, e, 90.0, 0.10 * uCityH, 3.0, w1, s1) * arc;
+      float near = skyline(u + 0.37, e, 46.0, 0.16 * uCityH, 11.0, w2, s2) * arc;
       // megastructures: two arcology pyramids and their beacons
       for (int k = 0; k < 2; k++) {
         float fk = float(k);
         float pc = fract(0.18 + fk * 0.47 + uArcC / 6.28318);
         float dx = abs(u - pc) * 6.28318;
         float py = 0.36 - dx * 1.6;
-        float pyr = step(e, py) * arc;
+        float pyr = step(e, py) * arc * uPyr;
         float stripe = step(0.5, fract(e * 40.0)) * 0.15;
         vec3 pcol = mix(uCity * 0.85, uBot, 0.25) + stripe * uNight * vec3(1.0, 0.6, 0.3);
         col = mix(col, pcol, pyr * uCityK);
@@ -161,6 +164,7 @@ export class Sky {
       uSunDir: { value: new THREE.Vector3(-0.5, 0.35, -0.8).normalize() },
       uTime: { value: 0 }, uPower: { value: 0 }, uCloudT: { value: 0 }, uNight: { value: 0 },
       uCityK: { value: 1 }, uWin: { value: 0 }, uArcC: { value: 0 }, uArcW: { value: 4 }, uStars: { value: 0 }, uBeams: { value: 0 },
+      uCover: { value: 0 }, uCityH: { value: 1 }, uPyr: { value: 1 },
     };
     const m = new THREE.ShaderMaterial({ uniforms: this.u, vertexShader: VERT, fragmentShader: FRAG, side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false });
     this.mesh = new THREE.Mesh(new THREE.SphereGeometry(300, seg(48, 24), seg(24, 16)), m);
@@ -180,6 +184,7 @@ export class Sky {
     U.uNight.value = th.night; U.uCityK.value = th.city; U.uWin.value = th.windows;
     U.uArcC.value = th.arc[0]; U.uArcW.value = th.arc[1];
     U.uStars.value = th.stars; U.uBeams.value = th.beams;
+    U.uCover.value = th.cover || 0; U.uCityH.value = th.cityH ?? 1; U.uPyr.value = th.pyramids ?? 1;
     this.base = th.power || 0;
   }
 

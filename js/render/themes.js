@@ -1,9 +1,15 @@
+import { PACK_THEMES } from './packs/index.js';
+
 // Visual themes. Render-only: the sim never reads these.
 //   sky: top / horizon colours (fog = horizon, so geometry dissolves into the skyline)
 //   fog: [near, far] linear N64-style distance fog
 //   city: skyline density 0..1; arc: [centre azimuth, half-width] of the city band (docks: across the bay)
 //   neon: emissive strength of signs / trims; windows: lit-window glow; rain; power (bonus sunburst sky)
-export const THEMES = {
+//   optional: cover (0..1 overcast: more, greyer cloud), cityH (skyline height ×, default 1),
+//   pyramids (0/1 arcology pyramids in the skyline, default 1), cloudSea (colour of a sea of cloud
+//   below the level at level.cloudY: the air fortress), water (sea colour at level.water), haze
+//   (0..1 how far backdrops fade toward the horizon colour, default 0.45)
+const BASE = {
   docks: {
     skyTop: '#2f7fe6', skyBot: '#cfe8ff', sun: '#fff3c4', sunDir: [-0.45, 0.55, -0.7], night: 0,
     fog: [90, 360], hemi: ['#eaf4ff', '#5a6a7e', 1.7], key: ['#fff1d8', 2.3],
@@ -47,6 +53,8 @@ export const THEMES = {
     water: null, rain: 0, stars: 0.6, beams: 0,
   },
 };
+
+export const THEMES = { ...BASE, ...PACK_THEMES };
 
 // Body paint for hover cars, indexed by plat.tint (0..7): police and taxi override.
 export const CAR_PAINT = ['#e8e4dc', '#d8343c', '#2a5ad8', '#1a1a22', '#f0b81a', '#20a8a0', '#8a3ad8', '#c8ccd4'];

@@ -7,6 +7,8 @@
  "music": "hedgerow",
  "seed": 22,
  "par": 300,
+ "pack": "tokyo",
+ "packIdx": 1,
  "bonus": false,
  "time": null,
  "killY": -24,

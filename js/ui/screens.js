@@ -1,6 +1,6 @@
 // Menu and result cards, rendered into #screen. Buttons carry data-go="action"; main.js handles them.
 // #screen has data-touch-allow, so normal clicks work there with the touch-zoom guard on.
-import { STAGES } from '../levels/index.js';
+import { STAGES, PACKS, packOf } from '../levels/index.js';
 import { ACHIEVEMENTS } from './achievements.js';
 
 const el = () => document.getElementById('screen');
@@ -30,7 +30,7 @@ export function title(progress, padName) {
     <div class="logo">VERTICAL<br><span>VANTAGE</span></div>
     <p class="tag">Triple-jump across hover cars and billboards above Neo-Tokyo. Recover 3 data drives, then reach the exit gate.</p>
     <div class="btns">
-      <button class="btn primary" data-go="play" data-pad-first>${progress.unlocked > 1 ? 'CONTINUE' : 'START'}</button>
+      <button class="btn primary" data-go="play" data-pad-first>${Object.keys(progress.best || {}).length ? 'CONTINUE' : 'START'}</button>
       <button class="btn" data-go="stages">STAGE SELECT</button>
       <button class="btn" data-go="records">RECORDS</button>
       <button class="btn" data-go="options">OPTIONS</button>
@@ -41,11 +41,19 @@ export function title(progress, padName) {
   </div>`, { dim: false });
 }
 
+// Stage select, pack by pack: three stages and the boss stage in each row.
 export function stages(progress) {
-  const tiles = STAGES.map((s, i) => `<button class="stage" data-go="stage:${i}" ${i < progress.unlocked ? '' : 'disabled'}>
-      <b>${i + 1}. ${esc(s.name)}</b><small>${esc(s.sub)}</small><small>BEST ${String(progress.best?.[s.id] || 0).padStart(6, '0')} · ${progress.bestTime?.[s.id] ? fmtTime(progress.bestTime[s.id]) : '-:--'} <span class="par">(PAR ${fmtTime(s.par)})</span></small></button>`).join('');
-  show(`<div class="card"><div class="big" style="font-size:30px">STAGE SELECT</div>
-    <div class="stages">${tiles}</div>
+  let i = 0;
+  const packs = PACKS.map((pk, n) => {
+    const tiles = pk.stages.map((s, k) => {
+      const idx = i++;
+      return `<button class="stage ${s.boss ? 'boss' : ''}" data-go="stage:${idx}" ${idx < progress.unlocked ? '' : 'disabled'}>
+      <b>${s.boss ? '☠ ' : `${k + 1}. `}${esc(s.name)}</b><small>${esc(s.sub)}</small><small>BEST ${String(progress.best?.[s.id] || 0).padStart(6, '0')} · ${progress.bestTime?.[s.id] ? fmtTime(progress.bestTime[s.id]) : '-:--'} <span class="par">(PAR ${fmtTime(s.par)})</span></small></button>`;
+    }).join('');
+    return `<div class="pack" style="--pk:${pk.color || '#2be8ff'}"><div class="pack-h">PACK ${n + 1} · ${esc(pk.name)}</div><div class="stages">${tiles}</div></div>`;
+  }).join('');
+  show(`<div class="card wide"><div class="big" style="font-size:30px">STAGE SELECT</div>
+    ${packs}
     <div class="btns"><button class="btn" data-go="back">◀ BACK</button></div></div>`);
 }
 
@@ -103,20 +111,21 @@ export function pause() {
 }
 
 export function intro(stage, i, bonus = false) {
+  const pk = bonus ? null : packOf(stage);
   show(`<div class="intro">
-    <div class="sub">${bonus ? 'BONUS STAGE' : `STAGE ${i + 1}`}</div>
+    <div class="sub">${bonus ? 'BONUS STAGE' : `${esc(pk.name)} · ${stage.boss ? 'BOSS' : `STAGE ${stage.packIdx + 1}`}`}</div>
     <div class="big ${bonus ? 'mag' : ''}">${esc(stage.name)}</div>
     <div class="sub">${esc(stage.sub)}</div>
-    <div class="sub" style="margin-top:10px;color:#fff">${bonus ? 'DESTROY EVERY SERVER IN 30 SECONDS' : 'RECOVER 3 DATA DRIVES · REACH THE EXIT'}</div>
+    <div class="sub" style="margin-top:10px;color:#fff">${bonus ? 'DESTROY EVERY SERVER IN 30 SECONDS' : stage.boss ? `DESTROY ${esc(stage.bossName || 'THE BOSS')}` : 'RECOVER 3 DATA DRIVES · REACH THE EXIT'}</div>
   </div>`, { dim: false });
 }
 
 const gotList = (got) => (got?.length ? `<div class="got">${got.map((a) => `<div>★ ${esc(a.name)} <small>${esc(a.desc)}</small></div>`).join('')}</div>` : '');
 
 export function clear(stage, i, w, total, last, rec = {}) {
-  const c = w.clear;
-  show(`<div class="card"><div class="sub" style="letter-spacing:.3em;color:#2be8ff">STAGE ${i + 1} · ${esc(stage.name)}</div>
-    <div class="big">STAGE CLEAR!</div>
+  const c = w.clear, pk = packOf(stage), packDone = !!stage.boss;
+  show(`<div class="card"><div class="sub" style="letter-spacing:.3em;color:#2be8ff">${esc(pk.name)} · ${esc(stage.name)}</div>
+    <div class="big">${packDone ? 'PACK CLEAR!' : 'STAGE CLEAR!'}</div>
     <div class="result">
       <div class="row"><span>TIME${rec.record ? ' <i class="rec">NEW RECORD!</i>' : ''}</span><b>${fmtTime(c.time)}</b></div>
       <div class="row"><span>BEST · PAR</span><b>${rec.best ? fmtTime(rec.best) : '-:--'} · ${fmtTime(rec.par || stage.par)}</b></div>
@@ -127,7 +136,7 @@ export function clear(stage, i, w, total, last, rec = {}) {
     </div>
     ${gotList(rec.got)}
     <div class="btns">
-      <button class="btn primary" data-go="${last ? 'ending' : 'next'}" data-pad-first>${last ? 'FINISH' : 'NEXT STAGE ▶'}</button>
+      <button class="btn primary" data-go="${last ? 'ending' : 'next'}" data-pad-first>${last ? 'FINISH' : packDone ? 'NEXT PACK ▶' : 'NEXT STAGE ▶'}</button>
       <button class="btn" data-go="title">TITLE</button>
     </div></div>`);
 }
@@ -155,7 +164,7 @@ export function over(stage) {
 
 export function ending(total) {
   show(`<div class="card"><div class="logo" style="font-size:44px">ALL DATA<br><span>RECOVERED</span></div>
-    <p class="tag">Neo-Tokyo's secrets are safe in your little robot hands. OmniCorp has been notified (they already knew).</p>
+    <p class="tag">${PACKS.length > 1 ? 'From Neo-Tokyo to the air fortress, every' : 'Neo-Tokyo\'s'} secret is safe in your little robot hands. OmniCorp has been notified (they already knew).</p>
     <div class="result"><div class="row"><span>FINAL SCORE</span><b>${String(total).padStart(6, '0')}</b></div></div>
     <div class="btns"><button class="btn primary" data-go="title" data-pad-first>TITLE</button></div></div>`);
 }

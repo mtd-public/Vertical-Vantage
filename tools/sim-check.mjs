@@ -16,6 +16,8 @@ import { createWorld, step } from '../js/sim/world.js';
 import { makePlats, platOffset, groundBelow, posePlats, pushOut } from '../js/sim/plats.js';
 import { mulberry32 } from '../js/sim/util.js';
 import { predictLanding } from '../js/sim/predict.js';
+import { bossKind } from '../js/sim/bosses/index.js';
+import { BOSS_CHECKS } from './checks/index.mjs';
 
 let fails = 0;
 const ok = (cond, msg) => { if (!cond) { fails++; console.log('  ✗ ' + msg); } return cond; };
@@ -184,7 +186,7 @@ for (const k in BONUS) checkLevel(BONUS[k], true);
 // ------------------------------------------------------------------ 4. scripted play
 console.log('scripted play');
 for (const s of STAGES) {
-  if (s.boss) { bossChecks(s); continue; }
+  if (s.boss) { if ((s.boss.kind || 'arachne') === 'arachne') bossChecks(s); genericBossChecks(s); continue; }
   const w = createWorld(s);
   // teleport onto each drive in turn (the reachability proof covers getting there)
   for (const d of w.drives) {
@@ -197,9 +199,11 @@ for (const s of STAGES) {
   ok(w.phase === 'clear', `${s.id}: walking into the open gate clears the stage`);
   // the portal requests the bonus
   const w2 = createWorld(s), o = w2.portal;
-  w2.player.x = o.x; w2.player.z = o.z; w2.player.y = o.y - 0.9;
-  step(w2, C0);
-  ok(w2.request === 'bonus', `${s.id}: the portal requests the bonus stage`);
+  if (o) { // (a portal is optional)
+    w2.player.x = o.x; w2.player.z = o.z; w2.player.y = o.y - 0.9;
+    step(w2, C0);
+    ok(w2.request === 'bonus', `${s.id}: the portal requests the bonus stage`);
+  }
   // falling costs health and respawns
   const w3 = createWorld(s);
   for (let i = 0; i < 60; i++) step(w3, C0);
@@ -230,7 +234,59 @@ for (const s of STAGES) {
   const Q = w4.player;
   ok([Q.x, Q.y, Q.z, Q.vx, Q.vy, Q.vz, Q.yaw, Q.pitch].every(Number.isFinite), `${s.id}: 120 s random play stays finite`);
 }
-// ------------------------------------------------------------------ the boss stage
+// ------------------------------------------------------------------ every boss stage
+// Whatever the boss: it wakes up and roars, it really hurts a player who stands still, its pose stays
+// finite and near its arena, 2 minutes of random play stay finite, and when it goes down it dies,
+// the exit opens and the gate clears the stage. Then the kind's own checks (tools/checks/<kind>.mjs).
+function genericBossChecks(s) {
+  const kind = s.boss.kind || 'arachne';
+  const keep = (w) => { const P = w.player; P.hp = T.HP_MAX; P.dead = false; if (w.phase === 'dead') w.phase = 'play'; };
+  const A = s.arena;
+  const near = (B) => !A || A.x0 === undefined || (B.cx > A.x0 - 20 && B.cx < A.x1 + 20 && B.cz > A.z0 - 20 && B.cz < A.z1 + 20 && B.cy > (A.floor ?? -50) - 20 && B.cy < (A.ceil ?? 200) + 40);
+  {
+    const w = createWorld(s), B = w.boss;
+    ok(B && B.type === 'boss' && B.kind === kind && B.maxHp > 0, `${s.id}: boss ${kind} spawns with health`);
+    let roar = false, hurt = 0, finite = true, inside = true;
+    for (let i = 0; i < 120 * 120; i++) {
+      step(w, C0);
+      for (const e of w.events) { if (e.type === 'bossRoar') roar = true; if (e.type === 'hurt') hurt++; }
+      w.events.length = 0; keep(w); w.player.inv = 0;
+      if (![B.cx, B.cy, B.cz, B.x, B.y, B.z].every(Number.isFinite)) { finite = false; break; }
+      if (!near(B)) inside = false;
+      if (i === 120 * 50) B.hp = B.maxHp * 0.5; // into its later phases
+      if (i === 120 * 85) B.hp = B.maxHp * 0.25;
+    }
+    ok(roar, `${s.id}: ${kind} wakes up and roars`);
+    ok(finite && inside, `${s.id}: ${kind}'s pose stays finite and in its arena`);
+    ok(hurt >= 2, `${s.id}: ${kind} really hurts a player who stands still (${hurt} hits in 2 min)`);
+  }
+  {
+    const w = createWorld(s), rng = mulberry32(11);
+    let c = { ...C0 };
+    for (let i = 0; i < 120 * 120; i++) {
+      if (i % 30 === 0) c = { mx: rng() * 2 - 1, my: rng() * 1.4 - 0.4, yaw: (rng() - 0.5) * 0.06, pitch: (rng() - 0.5) * 0.02, jump: rng() < 0.3, fire: rng() < 0.6, swap: rng() < 0.05 ? 1 : 0 };
+      else c = { ...c, jump: false, swap: 0 };
+      step(w, c); w.events.length = 0; keep(w);
+    }
+    const B = w.boss, Q = w.player;
+    ok([B.cx, B.cy, B.cz, Q.x, Q.y, Q.z].every(Number.isFinite), `${s.id}: 2 min of random play against ${kind} stays finite`);
+  }
+  {
+    const w = createWorld(s), B = w.boss;
+    for (let i = 0; i < 120 * 4; i++) { step(w, C0); keep(w); }
+    bossKind(B).down(w, B);
+    let n = 0;
+    while (!B.dead && n++ < 120 * 10) { step(w, C0); keep(w); w.player.inv = 1; }
+    ok(B.dead && w.exitOpen, `${s.id}: ${kind} goes down, dies, and the exit opens`);
+    const P = w.player; P.x = w.exit.x; P.z = w.exit.z; P.y = w.exit.y + 0.05; P.vy = 0;
+    for (let i = 0; i < 10; i++) step(w, C0);
+    ok(w.phase === 'clear', `${s.id}: then the gate clears the stage`);
+  }
+  const extra = BOSS_CHECKS[kind];
+  if (extra) extra({ s, createWorld, step, ok, T, C0, keep, mulberry32 });
+}
+
+// ------------------------------------------------------------------ ARACHNE-9's stage
 function bossChecks(s) {
   const keep = (w) => { const P = w.player; P.hp = T.HP_MAX; P.dead = false; if (w.phase === 'dead') w.phase = 'play'; };
   // 1. it chases a player who stands still

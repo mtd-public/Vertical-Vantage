@@ -249,6 +249,21 @@ export function guardModel(M, variant = 0) {
   return g;
 }
 
+// Gun turret: an armoured pedestal, a swivel head with twin barrels and a red sensor (faces -Z),
+// and a laser sight like the guard's (shown while it aims).
+export function turretModel(M) {
+  const g = new THREE.Group();
+  const K = new Kit();
+  K.add('p', cyl(0.62, 0.78, 0.5, 8, { y: 0.25, color: 0x3a3e4a }), cyl(0.5, 0.56, 0.22, 8, { y: 0.6, color: 0xffcc1a }), cyl(0.44, 0.5, 0.06, 8, { y: 0.73, color: 0x15151a }));
+  K.add('p', box(0.9, 0.5, 0.9, { y: 1.0, color: 0x5a606e }), box(0.96, 0.12, 0.96, { y: 1.28, color: 0x2a2e38 }), box(0.7, 0.2, 0.5, { y: 1.42, z: 0.12, color: 0x5a606e }));
+  for (const sx of [-1, 1]) K.add('p', cyl(0.07, 0.08, 0.9, 6, { x: sx * 0.2, y: 1.0, z: -0.85, rx: Math.PI / 2, color: 0x15151a }), cyl(0.1, 0.1, 0.14, 6, { x: sx * 0.2, y: 1.0, z: -1.25, rx: Math.PI / 2, color: 0x8a909c }));
+  g.add(new THREE.Mesh(K.build().p, M.paintFlat));
+  const eye = new THREE.Mesh(box(0.3, 0.12, 0.05, { y: 1.18, z: -0.46, color: 0xff2a3a }), M.glow); eye.name = 'eye'; g.add(eye);
+  const sight = new THREE.Mesh(box(0.03, 0.03, 1, { z: 0.5, color: 0xff2a3a }), M.glow);
+  sight.position.set(0, 1.1, -0.6); sight.name = 'sight'; sight.visible = false; g.add(sight);
+  return g;
+}
+
 export function serverModel(M) {
   const g = new THREE.Group();
   const K = new Kit();

@@ -200,6 +200,23 @@ await run('boss', { viewport: { width: 1280, height: 720 } }, async (page) => {
   check(await page.evaluate(() => !!document.querySelector('[data-go="ending"]')), 'the last stage clear leads to the ending');
 });
 
+// every other pack's boss: it wakes and fights with the gauge up, and going down opens the exit
+await run('bosses', { viewport: { width: 1280, height: 720 } }, async (page) => {
+  const list = await page.evaluate(() => GAME.STAGES.map((s, i) => ({ i, id: s.id, kind: s.boss ? (s.boss.kind || 'arachne') : null })).filter((s) => s.kind && s.kind !== 'arachne'));
+  console.log(`  ${list.length} more boss stage(s)`);
+  for (const b of list) {
+    await page.evaluate((i) => GAME.start(i), b.i);
+    await skip(page);
+    await page.waitForTimeout(2600);
+    const st = await page.evaluate(() => ({ hp: GAME.G.world.boss.hp, state: GAME.G.world.boss.state, bar: !document.getElementById('boss-hud').classList.contains('hidden') }));
+    check(st.hp > 0 && st.state !== 'intro' && st.bar, `${b.id}: ${b.kind} is up and fighting (${st.state}), gauge shown`);
+    await page.screenshot({ path: `${OUT}/boss-${b.kind}.png` });
+    await page.evaluate(() => GAME.killBoss());
+    await page.waitForTimeout(3200);
+    check((await state(page)).exitOpen, `${b.id}: ${b.kind} down → exit open`);
+  }
+});
+
 await browser.close();
 console.log(fails ? `\n${fails} check(s) FAILED` : '\nsmoke OK');
 process.exit(fails ? 1 : 0);

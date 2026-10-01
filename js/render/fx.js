@@ -59,6 +59,16 @@ export class FX {
     this.arc = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.07, 0), new THREE.MeshBasicMaterial({ color: 0x7ff6ff, transparent: true, opacity: 0.85, depthWrite: false, fog: false }), 28);
     this.arc.frustumCulled = false; this.arc.count = 0; this.arc.renderOrder = 5;
     scene.add(this.shadow, this.marker, this.close, this.arc);
+    // boss danger zones: a red ring with a disc that fills in as the hit nears
+    this.zoneMeshes = [];
+    for (let i = 0; i < 10; i++) {
+      const g = new THREE.Group();
+      const ring = new THREE.Mesh(new THREE.RingGeometry(0.9, 1, seg(40, 20)), new THREE.MeshBasicMaterial({ color: 0xff2a3a, transparent: true, opacity: 0.9, side: THREE.DoubleSide, ...decal }));
+      const fill = new THREE.Mesh(new THREE.CircleGeometry(1, seg(40, 20)), new THREE.MeshBasicMaterial({ color: 0xff3a2a, transparent: true, opacity: 0.35, side: THREE.DoubleSide, ...decal }));
+      ring.rotation.x = fill.rotation.x = -Math.PI / 2; ring.renderOrder = fill.renderOrder = 5;
+      g.add(ring, fill); g.visible = false; g.userData = { ring, fill };
+      scene.add(g); this.zoneMeshes.push(g);
+    }
     // wind streaks rushing up past you in a fast fall (a cylinder of lines around the camera)
     {
       const N = 160, pos = new Float32Array(N * 6), seed = new Float32Array(N * 2), end = new Float32Array(N * 2);
@@ -113,6 +123,19 @@ export class FX {
     }
     this.arc.count = n;
     this.arc.instanceMatrix.needsUpdate = true;
+  }
+
+  zones(list, t) {
+    for (let i = 0; i < this.zoneMeshes.length; i++) {
+      const g = this.zoneMeshes[i], Z = list[i];
+      g.visible = !!Z;
+      if (!Z) continue;
+      const k = 1 - Math.max(0, Z.t) / (Z.max || 1);
+      g.position.set(Z.x, Z.y + 0.07, Z.z);
+      g.userData.ring.scale.setScalar(Z.r);
+      g.userData.fill.scale.setScalar(Math.max(0.05, Z.r * k));
+      g.userData.ring.material.opacity = 0.6 + 0.4 * Math.sin(t * (12 + k * 30));
+    }
   }
 
   wind(k, t, camera) {

@@ -1,9 +1,17 @@
 // Game audio: dr-mow's synth (sfx-synth.js) and procedural music (music.js), plus this game's
 // sound vocabulary and the event → sound table. No sample files.
 import { Sfx, SFX } from './sfx-synth.js';
-import { Music } from './music.js';
+import { Music, SONGS } from './music.js';
 import { STAGE_SONG } from './songs.js';
+import './packs/index.js'; // the level packs' songs register themselves
 export { STAGE_SONG };
+
+// A stage's song: its own (stage.song, when that song exists), Neo-Tokyo's table, else a fallback
+// by kind (boss fights get the boss track).
+export function songFor(stage) {
+  if (stage.song && SONGS[stage.song]) return stage.song;
+  return STAGE_SONG[stage.id] || (stage.boss ? 'arachne' : ['harborBreak', 'skyway2000', 'neonHard'][(stage.packIdx || 0) % 3]);
+}
 
 Object.assign(SFX, {
   blaster: (s) => { s.tone(980, 0.07, 'square', 0.03, -620); s.burst(0.05, 3200, { q: 3, vol: 0.04, f1: 900 }); },
@@ -58,6 +66,7 @@ const EVENT_SFX = {
   bossRoar: () => 'bossRoar', bossTele: () => 'bossTele', bossLeap: () => 'bossLeap', bossSlam: () => 'bossSlam', bossCharge: () => 'bossCharge',
   bossLaser: () => 'bossLaser', bossCeil: () => 'bossCeil', bossPhase: () => 'bossPhase', bossDying: () => 'bossDying', spiked: () => 'spiked',
   slowStart: () => 'slowIn', slowEnd: () => 'slowOut',
+  zoneTele: () => 'bossTele', zoneHit: () => 'bossSlam',
 };
 
 export class Audio {

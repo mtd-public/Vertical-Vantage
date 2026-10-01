@@ -7,7 +7,8 @@ import { T, ENEMIES, ENEMY_BOLT } from './tuning.js';
 import { clamp, pointVSegDist2 } from './util.js';
 import { raycast, groundBelow, toLocal, toWorld } from './plats.js';
 import { hurtPlayer } from './player.js';
-import { initBoss, updateBoss, bossDown } from './boss.js';
+import { bossKind } from './bosses/index.js';
+import { updateZones } from './bosses/common.js';
 
 const _l = [0, 0], _w = [0, 0];
 
@@ -40,7 +41,7 @@ export function makeEnemy(w, d) {
     dir: w.rng() < 0.5 ? -1 : 1, phase: w.rng() * 6.283, t: 0,
     aimX: 0, aimY: 0, aimZ: 0, // where the laser sight / eye points (render)
   };
-  if (e.type === 'boss') initBoss(w, e, d);
+  if (e.type === 'boss') { e.kind = d.kind || 'arachne'; bossKind(e).init(w, e, d); }
   else if (e.type !== 'drone') { attach(w.plats, e, 6); if (e.host) e.ly = 0; place(e); }
   return e;
 }
@@ -53,7 +54,7 @@ export function updateEnemies(w, dt) {
     e.flash = Math.max(0, e.flash - dt);
     if (e.dead) { e.deadT += dt; continue; }
     const S = ENEMIES[e.type];
-    if (e.type === 'boss') { updateBoss(w, e, dt); if (e.state !== 'dying' && e.state !== 'intro') contact(w, e); continue; }
+    if (e.type === 'boss') { bossKind(e).update(w, e, dt); if (e.state !== 'dying' && e.state !== 'intro' && !e.noContact) contact(w, e); continue; }
     if (e.type !== 'drone') place(e);
     const dx = px - e.x, dz = pz - e.z, ey = e.y + e.top * 0.7, dy = py - ey;
     const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -69,10 +70,18 @@ export function updateEnemies(w, dt) {
     e.aimX = px; e.aimY = py; e.aimZ = pz;
     if (e.type === 'drone') drone(w, e, S, dt, dx, dz, dist);
     else if (e.type === 'walker' || e.type === 'spiker') walker(w, e, S, dt);
-    else if (e.type === 'guard') guard(w, e, S, dt, dx, dz, dist);
+    else if (e.type === 'guard' || e.type === 'turret') guard(w, e, S, dt, dx, dz, dist);
     // stomps, and contact damage (walkers bite, drones bump, guards shove)
     contact(w, e);
   }
+  if (w.zones.length) updateZones(w, dt); // boss danger zones landing
+}
+
+// Spawn a regular enemy mid-stage (boss minions). Returns it.
+export function spawnEnemy(w, d) {
+  const e = makeEnemy(w, d);
+  w.enemies.push(e);
+  return e;
 }
 
 function faceToward(e, dx, dz, rate, dt) {
@@ -165,8 +174,9 @@ function contact(w, e) {
   const dx = P.x - e.x, dz = P.z - e.z, rr = e.r + T.RADIUS * 0.8;
   if (dx * dx + dz * dz > rr * rr) return;
   const feet = P.y, top = e.y + e.top, S = ENEMIES[e.type];
-  // landing on its head / back (the boss only while it's on the floor, back up)
-  const onBack = e.type !== 'boss' || e.surf === 'floor';
+  // landing on its head / back (a boss only when its kind says so: ARACHNE-9 while it's on the floor)
+  const K = e.type === 'boss' ? bossKind(e) : null;
+  const onBack = !K || (K.stompable ? K.stompable(e) : e.surf === 'floor');
   if (P.vy < -0.5 && feet <= top + 0.4 && feet >= top - 0.75 && onBack) {
     if (S.spiked) { // spikes: it hurts, and you pop back up
       P.vy = T.SPIKE_BOUNCE; P.ground = null;
@@ -199,16 +209,21 @@ function shootBolt(w, e, x, y, z, speed) {
   w.events.push({ type: 'enemyFire', from: e.type, x, y, z });
 }
 
-export function damageEnemy(w, e, dmg, stomp = false) {
+export function damageEnemy(w, e, dmg, stomp = false, shot = null) {
   if (e.dead) return;
   if (e.type === 'boss') {
     if (e.state === 'dying' || e.state === 'intro') return;
-    dmg *= e.vuln || 1; // stunned after a slam: ×1.5
+    const K = bossKind(e);
+    if (e.vuln === 0 || (shot && K.blocks && K.blocks(w, e, shot))) { // shielded: it glances off
+      w.events.push({ type: 'impact', x: e.x, y: e.y + e.top * 0.5, z: e.z, nx: 0, ny: 1, nz: 0, kind: 'shield' });
+      return;
+    }
+    dmg *= e.vuln ?? 1; // stunned after a slam: ×1.5
   }
   e.hp -= dmg; e.flash = 0.12;
   w.stats.hits++;
   if (e.type === 'boss') {
-    if (e.hp <= 0) bossDown(w, e);
+    if (e.hp <= 0) bossKind(e).down(w, e);
     else w.events.push({ type: 'hit', kind: 'boss', x: e.x, y: e.y + e.top * 0.5, z: e.z });
     return;
   }
@@ -255,7 +270,7 @@ export function updateShots(w, dt) {
       }
       const hx = s.x + sx * bestT, hy = s.y + sy * bestT, hz = s.z + sz * bestT;
       if (target) {
-        damageEnemy(w, target, s.dmg);
+        damageEnemy(w, target, s.dmg, false, s);
         if (s.splash) explode(w, hx, hy, hz, s.splash, s.splashDmg, target);
         alive = false;
       } else if (hit) {

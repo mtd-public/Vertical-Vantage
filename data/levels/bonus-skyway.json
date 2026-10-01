@@ -7,6 +7,8 @@
  "music": "sprint",
  "seed": 202,
  "par": null,
+ "pack": null,
+ "packIdx": null,
  "bonus": true,
  "time": 30,
  "killY": -14,

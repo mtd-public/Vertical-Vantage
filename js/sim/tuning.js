@@ -71,7 +71,7 @@ export const T = {
   BONUS_FALL_PENALTY: 3, // seconds lost (instead of health) for falling off a bonus arena.
 
   // ---- scoring
-  SCORE: { drone: 100, walker: 150, spiker: 250, guard: 200, server: 250, boss: 10000, drive: 1000, stompMul: 2, bonusClear: 5000, perSecondLeft: 100, timePar: 10 },
+  SCORE: { drone: 100, walker: 150, spiker: 250, guard: 200, turret: 300, server: 250, boss: 10000, drive: 1000, stompMul: 2, bonusClear: 5000, perSecondLeft: 100, timePar: 10 },
 };
 
 // Weapons: fire straight down the view line, always (the crosshair is the muzzle).
@@ -96,6 +96,9 @@ export const ENEMIES = {
   spiker: { hp: 4, r: 0.85, top: 1.1, range: 14, patrol: 1.8, run: 3.4, stomp: 0, spiked: true },
   // Security officer in a long coat: laser-sight telegraph, then a 3-round burst. A stomp staggers him (2).
   guard: { hp: 3, r: 0.55, top: 1.85, range: 40, aim: 0.85, burst: 3, gap: 0.13, bolt: 21, cool: 2.6, stomp: 2 },
+  // Gun turret bolted to a deck (it rides the deck if that moves): swivels, laser-sight telegraph,
+  // a 4-round burst. Tougher than a guard; a stomp on its cap knocks 2 off.
+  turret: { hp: 5, r: 0.8, top: 1.5, range: 44, aim: 1.0, burst: 4, gap: 0.12, bolt: 20, cool: 2.4, stomp: 2 },
   // Bonus-stage target: a server rack. Doesn't fight back.
   server: { hp: 2, r: 0.9, top: 2.2, stomp: 2 },
   // ARACHNE-9 (numbers in BOSS). Its back is armoured but smooth: bounce off it, then shoot down.

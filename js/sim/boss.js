@@ -31,7 +31,7 @@ export function initBoss(w, e, d) {
 }
 
 // The generic enemy code (shots, explosions, stomps, contact) sees a capsule with feet at y.
-function syncGeneric(e) { e.x = e.cx; e.z = e.cz; e.y = e.cy - e.top / 2; }
+export function syncGeneric(e) { e.x = e.cx; e.z = e.cz; e.y = e.cy - e.top / 2; }
 
 const G = 30; // its own gravity: heavy, fast leaps
 
@@ -184,7 +184,7 @@ function drop(w, e) {
   w.events.push({ type: 'bossLeap', x: e.cx, y: e.cy, z: e.cz });
 }
 
-function slam(w, e) {
+export function slam(w, e) {
   const P = w.player, S = BOSS;
   w.events.push({ type: 'bossSlam', x: e.cx, y: e.cy - S.bodyH, z: e.cz, r: S.slamR });
   const dx = P.x - e.cx, dz = P.z - e.cz, d = Math.sqrt(dx * dx + dz * dz);
@@ -197,7 +197,7 @@ function slam(w, e) {
 // Walk on the current surface toward a target (x, z) — on the floor and ceiling that's the plane;
 // on a wall it only slides along x. Heading turns at a limited rate so it arcs like a creature.
 // On the floor (w given) it also slides round crates, racks and low lifts instead of through them.
-function walkToward(e, tx, tz, speed, dt, A, zMargin = BOSS.margin, w = null) {
+export function walkToward(e, tx, tz, speed, dt, A, zMargin = BOSS.margin, w = null) {
   face(e, tx, tz, 2.6, dt);
   const dx = tx - e.cx, dz = tz - e.cz, d = Math.sqrt(dx * dx + dz * dz);
   if (d < 1.2) return;
@@ -210,7 +210,7 @@ function walkToward(e, tx, tz, speed, dt, A, zMargin = BOSS.margin, w = null) {
 // Solids in its way on the floor: any platform inside the arena whose box overlaps its body band
 // (crates, racks, a lift near the bottom). The shell (floor slab, walls, ceiling, catwalks overhead)
 // is outside that band or outside the arena box, which the clamps already handle.
-function isSolid(A, p) {
+export function isSolid(A, p) {
   const top = p.h + p.oy;
   if (top <= A.floor + 0.3 || top - p.thick >= A.floor + BOSS.bodyH + 1.2) return false;
   const x = p.x + p.ox, z = p.z + p.oz;
@@ -219,7 +219,7 @@ function isSolid(A, p) {
 
 // Push its body circle out of every solid. When something pushed it, it also sidesteps along the
 // face toward (gx, gz) at `side` metres, so it works round a crate rather than stalling on it.
-function clearSolids(w, e, gx, gz, side) {
+export function clearSolids(w, e, gx, gz, side) {
   const A = w.level.arena, m = BOSS.margin;
   for (let pass = 0; pass < 2; pass++) {
     for (const p of w.plats) {
@@ -240,8 +240,8 @@ function clearSolids(w, e, gx, gz, side) {
 }
 
 // The nearest point to (x, z) where its body fits on the floor.
-const _spot = [0, 0];
-function freeSpot(w, x, z, out) {
+export const _spot = [0, 0];
+export function freeSpot(w, x, z, out) {
   const A = w.level.arena;
   out[0] = x; out[1] = z;
   for (let pass = 0; pass < 3; pass++) {
@@ -255,9 +255,9 @@ function freeSpot(w, x, z, out) {
 }
 
 // Where along a long wall it may climb: clear of the corner racks (level data), else 8 m in.
-const climbLane = (A) => A.climbX || [A.x0 + 8, A.x1 - 8];
+export const climbLane = (A) => A.climbX || [A.x0 + 8, A.x1 - 8];
 
-function face(e, tx, tz, rate, dt) {
+export function face(e, tx, tz, rate, dt) {
   const dx = tx - e.cx, dz = tz - e.cz, d = Math.sqrt(dx * dx + dz * dz);
   if (d < 1e-6) return;
   const wx = dx / d, wz = dz / d;
@@ -271,7 +271,7 @@ function face(e, tx, tz, rate, dt) {
 }
 
 // The beam leaves the eye cluster at the front of the body, aimed at you, swept by angle a round world Y.
-function aimBeam(w, e, px, py, pz, a) {
+export function aimBeam(w, e, px, py, pz, a) {
   const B = e.beam;
   B.ox = e.cx + e.fx * 1.9 + e.nx * 0.3; B.oy = e.cy + e.ny * 0.3; B.oz = e.cz + e.fz * 1.9 + e.nz * 0.3;
   let dx = px - B.ox, dy = py - B.oy, dz = pz - B.oz;
@@ -284,7 +284,7 @@ function aimBeam(w, e, px, py, pz, a) {
   B.len = hit ? hit.t : BOSS.beamLen;
 }
 
-function beamHit(w, e) {
+export function beamHit(w, e) {
   const P = w.player, B = e.beam;
   if (P.dead || P.inv > 0) return;
   // closest distance between the beam segment and the player's axis (sampled along the beam)
@@ -337,7 +337,7 @@ export function bossDown(w, e) {
   w.events.push({ type: 'bossDying', x: e.cx, y: e.cy, z: e.cz });
 }
 
-function dying(w, e, dt) {
+export function dying(w, e, dt) {
   const A = w.level.arena;
   e.timer -= dt;
   if (e.surf === 'air') { e.vy -= G * dt; e.cy += e.vy * dt; if (e.cy <= A.floor + BOSS.bodyH) { e.cy = A.floor + BOSS.bodyH; e.surf = 'floor'; e.vy = 0; } }

@@ -12,13 +12,15 @@ import { T, WEAPONS } from './sim/tuning.js';
 import { STAGES, bonusFor } from './levels/index.js';
 import { Input } from './input/input.js';
 import { MenuNav } from './input/menu-nav.js';
-import { Audio, STAGE_SONG } from './audio/audio.js';
+import { Audio, STAGE_SONG, songFor } from './audio/audio.js';
 import { Hud } from './ui/hud.js';
 import { Avatar } from './ui/avatar.js';
 import * as Screens from './ui/screens.js';
+import { bossKind } from './sim/bosses/index.js';
 import { Achievements } from './ui/achievements.js';
 
 const SKEY = 'vertical-vantage.settings', PKEY = 'vertical-vantage.progress';
+const TESTING_UNLOCK_ALL = true; // every stage of every pack is open in Stage Select (testing build)
 const DEFAULTS = {
   art: 'retro', mouseSens: 1, padSens: 1, touchSens: 1, invertY: false, autoLook: true, touch: 'auto', cannon: true, quips: false,
   musicVol: 0.8, sfxVol: 0.9, fov: 96, calm: false, lowFlash: false, fireLatch: false, quality: 'auto',
@@ -46,6 +48,7 @@ const G = {
   optionsBack: 'back', touch: false, muted: false, padMode: false, lastTouchT: 0,
 };
 
+if (TESTING_UNLOCK_ALL) G.progress.unlocked = STAGES.length;
 const ach = new Achievements(G.progress.ach, STAGES.filter((s) => s.portal).map((s) => s.id));
 
 // ------------------------------------------------------------------ settings
@@ -129,7 +132,7 @@ function startStage(i, keepScore = false) {
   G.main = null;
   const stage = STAGES[i];
   setWorld(createWorld(stage, wopts()));
-  audio.song = STAGE_SONG[stage.id] || STAGE_SONG.docks;
+  audio.song = songFor(stage);
   $('hud').classList.remove('hidden');
   G.mode = 'intro'; G.timer = 2.2; G.next = beginPlay;
   input.enabled = false; input.reset();
@@ -187,7 +190,7 @@ function leaveBonus() {
   main.score += B.score;
   G.main = null;
   setWorld(main);
-  audio.song = STAGE_SONG[STAGES[G.stageIdx].id];
+  audio.song = songFor(STAGES[G.stageIdx]);
   beginPlay();
 }
 
@@ -209,6 +212,14 @@ function stageCleared() {
   showControls();
   Screens.clear(stage, G.stageIdx, w, G.stageTotal, G.stageIdx === STAGES.length - 1, { best: P.bestTime[stage.id], record: record && !!prev, par: stage.par, got });
 }
+// A boss down: remember its kind; every boss in the game down → the BOSS RUSH achievement.
+function bossBeaten(kind) {
+  const P = G.progress;
+  (P.bosses ||= {})[kind || 'arachne'] = true;
+  const all = STAGES.filter((s) => s.boss).map((s) => s.boss.kind || 'arachne');
+  if (all.every((k) => P.bosses[k])) { const a = ach.grant('bossAll'); if (a) hud.toast(`★ ${a.name}`, 'gold'); }
+  save(PKEY, P);
+}
 // Bonus round over: best result per bonus arena (most servers, then most time left), achievements.
 function bonusDone(ok) {
   const w = G.world, P = G.progress, id = w.level.id, b = P.bonusBest[id];
@@ -224,7 +235,7 @@ function bonusDone(ok) {
 
 // ------------------------------------------------------------------ menu actions
 const ACTIONS = {
-  play: () => { audio.unlock(); G.runScore = 0; startStage(Math.max(0, G.progress.unlocked - 1)); fullscreen(); },
+  play: () => { audio.unlock(); G.runScore = 0; const i = STAGES.findIndex((s) => !G.progress.best[s.id]); startStage(i < 0 ? 0 : i); fullscreen(); }, // the first stage you haven't cleared
   stages: () => Screens.stages(G.progress),
   records: () => Screens.records(G.progress),
   options: () => { G.optionsBack = 'back'; Screens.options(G.settings, 'back'); },
@@ -301,6 +312,7 @@ function handleEvents(w) {
     switch (e.type) {
       case 'hit': hud.hitmark(); break;
       case 'kill': case 'serverDown': {
+        if (e.kind === 'boss' && w.boss) bossBeaten(w.boss.kind);
         hud.hitmark();
         const s = renderer.project(e.x, e.y + 1, e.z, wpx, hpx);
         if (s) hud.floater(s.x, s.y, (e.stomp ? 'STOMP! ' : '') + '+' + e.pts, e.type === 'serverDown' ? '#7bff4a' : null);
@@ -419,6 +431,8 @@ window.GAME = {
   G, renderer, input, STAGES,
   state: () => { const w = G.world, P = w.player; return { mode: G.mode, phase: w.phase, stage: w.level.id, drives: w.drivesGot, exitOpen: w.exitOpen, hp: P.hp, x: +P.x.toFixed(2), y: +P.y.toFixed(2), z: +P.z.toFixed(2), score: w.score, enemies: w.enemies.filter((e) => !e.dead).length }; },
   start: (i = 0) => { audio.unlock(); G.runScore = 0; startStage(i); },
+  killBoss: () => { const w = G.world, B = w && w.boss; if (B && !B.dead && B.state !== 'dying') bossKind(B).down(w, B); }, // (smoke tests)
+  stageIndex: (id) => STAGES.findIndex((s) => s.id === id),
   skipIntro: () => { if (G.next && G.mode === 'intro') { G.timer = 0; } },
   warpTo: (o) => { const P = G.world.player; P.x = P.px = o.x; P.y = P.py = o.y; P.z = P.pz = o.z; P.vx = P.vy = P.vz = 0; },
   look: (yaw, pitch) => { const P = G.world.player; P.yaw = yaw; P.pitch = pitch; },

@@ -7,6 +7,8 @@
  "music": "jumpstart",
  "seed": 9,
  "par": 240,
+ "pack": "tokyo",
+ "packIdx": 0,
  "bonus": false,
  "time": null,
  "killY": -0.6,

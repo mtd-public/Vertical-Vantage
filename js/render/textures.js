@@ -120,6 +120,21 @@ export function deckTex() { // metal deck plate with a grid of rivets / tread
   });
 }
 
+// A sea of cloud seen from above (the air fortress): soft white puffs on a pale blue-grey.
+export function cloudSeaTex() {
+  return canvasTex(128, 128, (g) => {
+    g.fillStyle = '#c8d4e4'; g.fillRect(0, 0, 128, 128);
+    const rng = mulberry32(11);
+    for (let i = 0; i < 70; i++) {
+      const x = rng() * 128, y = rng() * 128, r = 6 + rng() * 16, sh = rng();
+      for (const [dx, dy] of [[0, 0], [128, 0], [-128, 0], [0, 128], [0, -128]]) {
+        g.fillStyle = sh < 0.3 ? '#aebcd0' : sh < 0.75 ? '#e8eef6' : '#ffffff';
+        g.beginPath(); g.arc(x + dx, y + dy, r, 0, Math.PI * 2); g.fill();
+      }
+    }
+  });
+}
+
 export function waterTex() {
   return canvasTex(64, 64, (g) => {
     g.fillStyle = '#2a7fb8'; g.fillRect(0, 0, 64, 64);

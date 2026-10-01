@@ -4,7 +4,7 @@
 // Three layouts (one per stage), all built from the same pure recipe.
 import { disc, rect, bob, mv } from './kit.js';
 
-function arena(seed, o) {
+export function arena(seed, o) {
   const plats = [], servers = [], pickups = [];
   const P = (...a) => plats.push(...a);
   // centre pad (the start)
@@ -52,3 +52,16 @@ export const BONUS = {
   neon: { id: 'bonus-neon', name: 'SERVER CORE γ', sub: 'BONUS · DESTROY EVERY SERVER', theme: 'bonusNight', music: 'netdive',
     ...arena(303, { ring: 9, heights: [0, 4, 2, 6, 1, 5], twist: 0.2, upper: 4, power: 'hyper', weapon: 'rocket', movers: true }) },
 };
+
+// Every other stage with a portal gets a SERVER CORE built from the same recipe, seeded by the
+// stage (its pack may give it a theme and a song: stage.bonusStyle = { theme, music, weapon, ring, tag }).
+const WEAPONS = ['spread', 'rapid', 'rocket'];
+export function makeBonus(stage, i) {
+  const b = stage.bonusStyle || {};
+  const seed = 400 + i * 37;
+  return {
+    id: 'bonus-' + stage.id, name: 'SERVER CORE ' + (b.tag || stage.name), sub: 'BONUS · DESTROY EVERY SERVER',
+    theme: b.theme || ['bonusDay', 'bonusDusk', 'bonusNight'][i % 3], music: b.music || 'boulder',
+    ...arena(seed, { ring: b.ring || 8 + (i % 2), heights: [[0, 3, 1, 5], [2, 0, 4, 1, 6, 2], [0, 4, 2, 6, 1, 5]][i % 3], twist: (i * 0.37) % 1, upper: 3 + (i % 2), power: 'hyper', weapon: b.weapon || WEAPONS[i % 3], movers: i % 3 !== 0 }),
+  };
+}

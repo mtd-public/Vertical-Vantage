@@ -14,6 +14,9 @@ import { T } from '../sim/tuning.js';
 import { viewPitch } from '../sim/player.js';
 import { groundBelow } from '../sim/plats.js';
 import { predictLanding } from '../sim/predict.js';
+import { cloudSeaTex } from './textures.js';
+import { BOSS_VIEWS } from './bosses.js';
+import { buildBackdrop } from './backdrops.js';
 import { box, Kit } from './geo.js';
 
 const DEG = Math.PI / 180;
@@ -117,15 +120,8 @@ export class GameRenderer {
     this.scene.add(root);
     const L = { root, th, view: buildLevelView(w, th, this.M, root), enemies: new Map(), pickups: new Map(), drives: new Map(), lasers: new Map(), exit: null, portal: null, water: null };
     const M = this.M;
-    for (const e of w.enemies) {
-      const g = e.type === 'drone' ? MD.droneModel(M) : e.type === 'walker' ? MD.walkerModel(M) : e.type === 'spiker' ? MD.spikerModel(M) : e.type === 'guard' ? MD.guardModel(M, e.id) : e.type === 'boss' ? MD.bossModel(M) : MD.serverModel(M);
-      root.add(g); L.enemies.set(e, g);
-      if (e.type === 'boss') { // the laser beam lives in world space (unit box along +Z, lookAt'd and stretched)
-        L.beam = new THREE.Mesh(box(1, 1, 1, { z: 0.5 }), M.beam);
-        L.beam.visible = false; L.beam.frustumCulled = false;
-        root.add(L.beam);
-      }
-    }
+    this.level = L;
+    for (const e of w.enemies) this.addEnemy(e);
     for (const o of w.pickups) { const g = MD.pickupModel(M, o.type); root.add(g); L.pickups.set(o, g); }
     for (const o of w.drives) { const g = MD.driveModel(M); root.add(g); L.drives.set(o, g); }
     if (w.exit) { L.exit = MD.exitModel(M); root.add(L.exit); }
@@ -137,7 +133,13 @@ export class GameRenderer {
       L.water.rotation.x = -Math.PI / 2; L.water.position.y = w.level.water ?? 0;
       root.add(L.water);
     }
-    this.level = L;
+    if (th.cloudSea) { // a sea of cloud far below (the air fortress): fog melts its far edge into the sky
+      const tex = cloudSeaTex(); tex.repeat.set(26, 26);
+      L.clouds = new THREE.Mesh(new THREE.PlaneGeometry(2400, 2400), new THREE.MeshLambertMaterial({ map: tex, color: th.cloudSea }));
+      L.clouds.rotation.x = -Math.PI / 2; L.clouds.position.y = w.level.cloudY ?? -40;
+      root.add(L.clouds);
+    }
+    for (const o of w.level.backdrops || []) { const b = buildBackdrop(o, th, M); if (b) root.add(b); } // distant landmarks
     // theme
     this.sky.setTheme(th);
     this.sky.u.uBeams.value = th.beams * this.beamsK;
@@ -227,6 +229,7 @@ export class GameRenderer {
     lg.visible = !P.dead;
 
     // enemies
+    if (L.enemies.size !== w.enemies.length) for (const e of w.enemies) if (!L.enemies.has(e)) this.addEnemy(e); // spawned mid-fight
     for (const [e, g] of L.enemies) {
       if (e.type === 'boss') { this.updateBoss(e, g, dt, t, P); continue; }
       if (e.dead) { g.visible = false; continue; }
@@ -241,7 +244,7 @@ export class GameRenderer {
         eye.scale.setScalar(e.state === 'tele' ? 1.5 + Math.sin(t * 40) * 0.3 : 1);
       } else if (e.type === 'walker' || e.type === 'spiker') {
         for (let i = 0; i < 4; i++) g.getObjectByName('leg' + i).rotation.x = Math.sin(e.t * 12 + i * 1.6) * 0.35;
-      } else if (e.type === 'guard') {
+      } else if (e.type === 'guard' || e.type === 'turret') {
         const sight = g.getObjectByName('sight');
         sight.visible = e.state === 'aim' && Math.sin(t * 30) > -0.6;
         if (sight.visible) {
@@ -322,6 +325,8 @@ export class GameRenderer {
       cl.material.color.set(col); cl.material.opacity = this.voidAhead ? 0.5 + 0.4 * Math.sin(t * 20) : 0.85;
     }
     fx.setArc(land && this._path.length > 15 ? this._path : null, col);
+    fx.zones(w.zones || [], t);
+    if (L.clouds) L.clouds.material.map.offset.set(t * 0.004, t * 0.009);
     this.fx.update(dt, w, cam, t);
 
     // arm cannon: bob, sway, per-weapon recoil, a dip on swap, drops away when you look at your feet
@@ -355,12 +360,47 @@ export class GameRenderer {
     this.M.vmFlash.color.set(WEAPON_COL[P.weapon] || 0xffffff);
   }
 
-  // ARACHNE-9: stand it on its surface (up = the surface normal), pose eight legs, aim the turret,
-  // draw the beam. Orientation is smoothed so wall / ceiling transitions swing rather than snap.
+  // Bosses: each kind's view (render/bosses.js) poses its model; the laser beam and danger zones
+  // are drawn here for all of them.
   updateBoss(e, g, dt, t, P) {
     const L = this.level;
     if (e.dead) { g.visible = false; if (L.beam) L.beam.visible = false; return; }
     g.visible = true;
+    (BOSS_VIEWS[e.kind] || BOSS_VIEWS.arachne).update(this, e, g, dt, t, P);
+    // the beam (sight line while charging, the real thing while firing)
+    const B = e.beam, bm = L.beam;
+    if (!B || !bm) return;
+    bm.visible = B.on || (B.sight && (this.flashK < 1 || Math.sin(t * 35) > -0.3)); // (low flash: a steady sight line)
+    if (bm.visible) {
+      bm.position.set(B.ox, B.oy, B.oz);
+      bm.lookAt(B.ox + B.dx, B.oy + B.dy, B.oz + B.dz);
+      const th = B.on ? 0.42 + Math.sin(t * 50) * 0.06 * this.flashK : 0.05;
+      bm.scale.set(th, th, B.len);
+      this.M.beam.opacity = (B.on ? 0.9 : 0.55) * (this.flashK < 1 ? 0.7 : 1);
+    }
+  }
+
+  // Build and register an enemy's model (at stage start, or when a boss spawns one).
+  addEnemy(e) {
+    const L = this.level, M = this.M;
+    let g;
+    if (e.type === 'boss') {
+      g = (BOSS_VIEWS[e.kind] || BOSS_VIEWS.arachne).model(M, e);
+      if (!L.beam) { // the laser beam lives in world space (unit box along +Z, lookAt'd and stretched)
+        L.beam = new THREE.Mesh(box(1, 1, 1, { z: 0.5 }), M.beam);
+        L.beam.visible = false; L.beam.frustumCulled = false;
+        L.root.add(L.beam);
+      }
+    } else g = e.type === 'drone' ? MD.droneModel(M) : e.type === 'walker' ? MD.walkerModel(M) : e.type === 'spiker' ? MD.spikerModel(M) : e.type === 'guard' ? MD.guardModel(M, e.id) : e.type === 'turret' ? MD.turretModel(M) : MD.serverModel(M);
+    L.root.add(g); L.enemies.set(e, g);
+  }
+
+  // Swap a model to the white hit-flash material and back (boss views use this too).
+  flashModel(g, on) { if (on !== !!g.userData.flashing) setFlash(g, on, this.M.flash); }
+
+  // ARACHNE-9: stand it on its surface (up = the surface normal), pose eight legs, aim the turret.
+  // Orientation is smoothed so wall / ceiling transitions swing rather than snap.
+  updateArachne(e, g, dt, t, P) {
     const up = _up.set(e.nx, e.ny, e.nz);
     let fw = _fw.set(e.fx, 0, e.fz);
     if (Math.abs(up.y) < 0.5) fw.set(0, 1, 0); // on a wall it faces up the wall
@@ -393,16 +433,6 @@ export class GameRenderer {
       limb(l.thigh, l.hip, knee, 0.36, 0.42); // (children of g: body frame)
       l.knee.position.copy(knee); l.knee.quaternion.copy(l.thigh.quaternion);
       limb(l.shin, knee, foot, 0.26, 0.3);
-    }
-    // the beam (sight line while charging, the real thing while firing)
-    const B = e.beam, bm = L.beam;
-    bm.visible = B.on || (B.sight && (this.flashK < 1 || Math.sin(t * 35) > -0.3)); // (low flash: a steady sight line)
-    if (bm.visible) {
-      bm.position.set(B.ox, B.oy, B.oz);
-      bm.lookAt(B.ox + B.dx, B.oy + B.dy, B.oz + B.dz);
-      const th = B.on ? 0.42 + Math.sin(t * 50) * 0.06 * this.flashK : 0.05;
-      bm.scale.set(th, th, B.len);
-      this.M.beam.opacity = (B.on ? 0.9 : 0.55) * (this.flashK < 1 ? 0.7 : 1);
     }
   }
 
@@ -438,6 +468,7 @@ export class GameRenderer {
         case 'bossSlam': fx.shockwave(e.x, e.y + 0.05, e.z, e.r); fx.burst(e.x, e.y + 0.3, e.z, 26, 0xc8c4bc, 9, 0.3, 0.9, 10); fx.shake = Math.max(fx.shake, 0.6); break;
         case 'bossLeap': fx.burst(e.x, e.y - 1.6, e.z, 18, 0xc8c4bc, 6, 0.25, 0.6, 8); fx.shake = Math.max(fx.shake, 0.25); break;
         case 'bossDying': fx.shake = Math.max(fx.shake, 0.5); break;
+        case 'zoneHit': fx.shockwave(e.x, e.y + 0.08, e.z, e.r * 1.1, 0.7 * this.flashK); fx.burst(e.x, e.y + 0.3, e.z, 14, e.kind === 'bolt' ? 0x9fd8ff : 0xffb070, 8, 0.2, 0.7, 10); fx.shake = Math.max(fx.shake, 0.3); break;
         case 'bossPhase': case 'bossRoar': fx.shake = Math.max(fx.shake, 0.3); break;
         case 'spiked': fx.burst(e.x, e.y, e.z, 10, 0xff2a3a, 6, 0.12, 0.4); fx.shake = Math.max(fx.shake, 0.25); break;
         case 'respawnPickup': fx.burst(e.x, e.y, e.z, 12, MD.PICKUP_COL[e.kind] || 0xffffff, 3, 0.1, 0.5, -2); break;

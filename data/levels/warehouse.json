@@ -7,6 +7,8 @@
  "music": "arachne",
  "seed": 44,
  "par": 200,
+ "pack": "tokyo",
+ "packIdx": 3,
  "bonus": false,
  "time": null,
  "killY": -10,

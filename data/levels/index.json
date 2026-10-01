@@ -1,4 +1,16 @@
 {
+ "packs": [
+  {
+   "id": "tokyo",
+   "name": "NEO-TOKYO",
+   "stages": [
+    "docks",
+    "skyway",
+    "neon",
+    "warehouse"
+   ]
+  }
+ ],
  "stages": [
   "docks",
   "skyway",

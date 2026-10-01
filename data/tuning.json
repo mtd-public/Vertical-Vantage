@@ -55,6 +55,7 @@
    "walker": 150,
    "spiker": 250,
    "guard": 200,
+   "turret": 300,
    "server": 250,
    "boss": 10000,
    "drive": 1000,
@@ -164,6 +165,18 @@
    "cool": 2.6,
    "stomp": 2
   },
+  "turret": {
+   "hp": 5,
+   "r": 0.8,
+   "top": 1.5,
+   "range": 44,
+   "aim": 1,
+   "burst": 4,
+   "gap": 0.12,
+   "bolt": 20,
+   "cool": 2.4,
+   "stomp": 2
+  },
   "server": {
    "hp": 2,
    "r": 0.9,
@@ -222,6 +235,7 @@
   "turretSpeed": 19,
   "dyingTime": 2.2
  },
+ "BOSSES": {},
  "LASER": {
   "WARN": 0.6,
   "DMG": 1,

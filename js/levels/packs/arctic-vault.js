@@ -17,7 +17,7 @@
 //                                                  │ ║ │
 //                         mountainside 9 ══ [ENTRANCE WEDGE: roof 9.6 → 14.4, PORTAL on the prow]
 //                                        apron 0, START
-import { rect, disc, box, mv, lane, bob, laser } from '../kit.js';
+import { rect, disc, box, mv, laser } from '../kit.js';
 import { ground, steps, crate, sled, snowmobile, walk } from './arctic-kit.js';
 
 const plats = [];

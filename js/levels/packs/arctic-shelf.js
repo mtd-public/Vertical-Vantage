@@ -17,8 +17,8 @@
 //   ~~~~~~~~~ floes drifting on the current ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //                                             RESEARCH ICEBREAKER (bow north): mast DRIVE 1
 //   START (the landing floe)  ~~ floes ~~>   stern A-frame, aft deck
-import { rect, disc, box, mv, lane, bob, laser, chain, link, stack } from '../kit.js';
-import { ground, floe, floeR, makeFloe, sled, snowmobile, ledge, snowBridge, walk, crate } from './arctic-kit.js';
+import { rect, disc, box, mv, laser, chain, stack } from '../kit.js';
+import { floe, floeR, makeFloe, sled, snowmobile, ledge, snowBridge, walk, crate } from './arctic-kit.js';
 
 const plats = [];
 const P = (...a) => plats.push(...a);

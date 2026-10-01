@@ -6,7 +6,7 @@
 // world space: the frost-breath cone, the slide lane, the spike rings, the thrown ice blocks, and the
 // blizzard (snow round the camera, the fog closing in).
 import * as THREE from 'three';
-import { Kit, box, cyl, part } from '../geo.js';
+import { Kit, box, part } from '../geo.js';
 import { tuning as PT } from '../../sim/bosses/polaris-tuning.js';
 import { makeSnow } from './arctic-backdrops.js';
 
@@ -112,7 +112,6 @@ export function polarisModel(M) {
 // ------------------------------------------------------------------ posing
 const TELE = new Set(['rearTele', 'breathTele', 'slideTele', 'poundTele', 'hurlTele', 'lungeTele', 'blizzardTele', 'shakeTele']);
 const DIZZY = new Set(['beached', 'crash', 'dazed', 'reel']);
-const BELLY = new Set(['slideTele', 'slide', 'beached', 'crash']);
 const lerp = (a, b, k) => a + (b - a) * k;
 
 function target(e, t) {

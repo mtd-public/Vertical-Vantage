@@ -14,9 +14,8 @@
 //   ledges ↑ (north) ║  [row A houses]                      ═╬═ bridge
 //   [MINE STATION 41: DRIVE 1] ← buckets ← trestles ← [TRAM CENTRAL 13]     [CHURCH on its hill]
 //                                                                              START (south road)
-import { rect, disc, box, mv, lane, bob, laser, link, chain, stack } from '../kit.js';
-import { mulberry32 } from '../../sim/util.js';
-import { ground, house, houseRow, snowmobile, sled, floe, floeR, makeFloe, trestle, bucket, radome, steps, crate, makeSnowmobile } from './arctic-kit.js';
+import { rect, box, mv, lane, laser, chain, stack } from '../kit.js';
+import { ground, house, houseRow, snowmobile, sled, floe, floeR, makeFloe, trestle, bucket, radome, steps, crate } from './arctic-kit.js';
 
 const G = 1.0, PLAT = 34; // the valley floor and the plateau (Platåberget)
 const plats = [];
@@ -82,11 +81,7 @@ for (let i = 0; i < SPANS.length - 1; i++) {
 // ---- the plateau: the ledges up its north-east corner (the hard way up), the radome field, a mast
 const LEDGES = [[-119.5, -48, 4.6], [-116, -40, 8.2], [-119.5, -31, 11.8], [-116, -22, 15.4], [-119.5, -13, 19], [-116, -4, 22.6], [-119.5, 5, 26.2], [-117, 13, 29.8]];
 for (const [x, z, top] of LEDGES) P(rect(x, z, 5, 5, top, { thick: 2.2, style: 'arc-rockledge' }));
-const DOMES = [];
-for (const [x, z, R] of [[-160, -22, 7], [-188, -48, 8.5], [-150, -62, 5.5], [-208, -12, 6.5], [-176, 8, 5], [-218, -76, 7.5]]) {
-  const d = radome(x, z, R, PLAT, 2.4);
-  DOMES.push({ x, z, R, top: PLAT + 2.4 + R }); P(...d);
-}
+for (const [x, z, R] of [[-160, -22, 7], [-188, -48, 8.5], [-150, -62, 5.5], [-208, -12, 6.5], [-176, 8, 5], [-218, -76, 7.5]]) P(...radome(x, z, R, PLAT, 2.4));
 const OPS = box(-176, -152, -96, -84, 41, { thick: 7, style: 'arc-ops' }); // the station's operations building
 P(OPS);
 P(rect(-196, -26, 2.6, 2.6, 52, { thick: 18, style: 'arc-mast' })); // the antenna mast between the big domes

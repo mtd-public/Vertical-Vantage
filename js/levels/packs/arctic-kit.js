@@ -97,10 +97,3 @@ export function walk(x0, z0, x1, z1, top, w = 2.4, o = {}) {
 }
 // A crate of cargo / a fuel drum pallet (2.4 m).
 export const crate = (x, z, top, s = 2.4, o = {}) => rect(x, z, s, o.d ?? s, top, { thick: o.thick ?? s, yaw: o.yaw || 0, style: 'arc-crate', tint: o.tint ?? 0 });
-
-// Points round a circle: n points from angle a0 by da, radius r, rising from y0 by `rise` each.
-export function arcPts(cx, cz, r, a0, da, y0, rise, n) {
-  const out = [];
-  for (let k = 0; k < n; k++) { const a = a0 + da * k; out.push({ x: cx + Math.cos(a) * r, z: cz + Math.sin(a) * r, y: y0 + rise * k, a }); }
-  return out;
-}

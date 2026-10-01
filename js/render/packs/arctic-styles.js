@@ -18,7 +18,6 @@ const MOBILE = [0xd8302a, 0x2a6ad8, 0xf0b81a, 0x1a1d22, 0x2ab8a8, 0xe8e8ec];
 // ------------------------------------------------------------------ helpers
 const F = (K, ...g) => K.add('flat', ...g);
 const G = (K, ...g) => K.add('glow', ...g);
-const N = (K, ...g) => K.add('neon', ...g);
 
 // The block body (a box, or a cylinder for a disc) from y0 (default the top) down `thick`.
 function body(K, H, p, col, o = {}) {

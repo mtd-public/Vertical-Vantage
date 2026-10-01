@@ -3,7 +3,10 @@
 //   bits            sparks + debris: one InstancedMesh of little cubes with CPU physics
 //   booms           a few flat-shaded fireball shells, scaled and faded
 //   rain            line streaks moved in the vertex shader around the camera (night)
-//   marker          the landing ring projected onto whatever is under you (Jumping Flash's shadow)
+//   shadow          a soft dark blob straight under you (where you are)
+//   marker + close  the landing reticle at the look-ahead's touchdown point, and a ring that closes
+//                   on it as the moment arrives (where you'll land, and when)
+//   arc             dots along the predicted path down to the reticle
 import * as THREE from 'three';
 import { ringTex, glowTex } from './textures.js';
 import { seg } from './retro.js';
@@ -45,10 +48,46 @@ export class FX {
       m.visible = false; m.userData = { life: 0, max: 0.5, r: 2 };
       scene.add(m); this.booms.push(m);
     }
-    // landing marker
-    this.marker = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), new THREE.MeshBasicMaterial({ map: ringTex(), color: 0x7ff6ff, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, fog: false }));
+    // shadow, landing reticle, closing ring, arc dots
+    const decal = { transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, fog: false };
+    this.shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), new THREE.MeshBasicMaterial({ map: glowTex(), color: 0x000000, opacity: 0.6, ...decal }));
+    this.shadow.rotation.x = -Math.PI / 2; this.shadow.renderOrder = 4;
+    this.marker = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 1.6), new THREE.MeshBasicMaterial({ map: ringTex(), color: 0x7ff6ff, ...decal }));
     this.marker.rotation.x = -Math.PI / 2; this.marker.renderOrder = 5;
-    scene.add(this.marker);
+    this.close = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, seg(40, 20)), new THREE.MeshBasicMaterial({ color: 0x7ff6ff, side: THREE.DoubleSide, ...decal }));
+    this.close.rotation.x = -Math.PI / 2; this.close.renderOrder = 5;
+    this.arc = new THREE.InstancedMesh(new THREE.OctahedronGeometry(0.07, 0), new THREE.MeshBasicMaterial({ color: 0x7ff6ff, transparent: true, opacity: 0.85, depthWrite: false, fog: false }), 28);
+    this.arc.frustumCulled = false; this.arc.count = 0; this.arc.renderOrder = 5;
+    scene.add(this.shadow, this.marker, this.close, this.arc);
+    // wind streaks rushing up past you in a fast fall (a cylinder of lines around the camera)
+    {
+      const N = 160, pos = new Float32Array(N * 6), seed = new Float32Array(N * 2), end = new Float32Array(N * 2);
+      for (let i = 0; i < N; i++) {
+        const a = Math.random() * Math.PI * 2, r = 1.4 + Math.random() * 5;
+        pos.set([Math.cos(a) * r, 0, Math.sin(a) * r, Math.cos(a) * r, 0, Math.sin(a) * r], i * 6);
+        const s = Math.random(); seed.set([s, s], i * 2); end.set([0, 1], i * 2);
+      }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      g.setAttribute('seed', new THREE.BufferAttribute(seed, 1));
+      g.setAttribute('end', new THREE.BufferAttribute(end, 1));
+      const mat = new THREE.ShaderMaterial({
+        uniforms: { uT: { value: 0 }, uK: { value: 0 }, uCam: { value: new THREE.Vector3() } },
+        vertexShader: /* glsl */ `
+          attribute float seed; attribute float end; uniform float uT; uniform float uK; uniform vec3 uCam; varying float vA;
+          void main() {
+            float y = mod(seed * 16.0 + uT * (14.0 + 26.0 * uK) * (0.8 + seed * 0.4), 16.0) - 8.0;
+            vec3 p = vec3(position.x, y + end * (0.6 + 1.6 * uK), position.z) + uCam;
+            vA = (1.0 - abs(y) / 8.0) * uK;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+          }`,
+        fragmentShader: /* glsl */ `varying float vA; void main() { gl_FragColor = vec4(0.85, 0.95, 1.0, vA * 0.4); }`,
+        transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false,
+      });
+      this.windLines = new THREE.LineSegments(g, mat);
+      this.windLines.frustumCulled = false; this.windLines.visible = false;
+      scene.add(this.windLines);
+    }
     this.rain = null;
     // shockwave rings (boss slams)
     this.waves = [];
@@ -59,9 +98,33 @@ export class FX {
     }
   }
 
-  shockwave(x, y, z, r) {
+  // Arc dots along a flat [x, y, z, …] path (one point per 1/30 s), skipping the first few (they'd
+  // sit in your face) and spacing the rest out.
+  setArc(path, color) {
+    let n = 0;
+    if (path) {
+      const pts = path.length / 3;
+      for (let i = 4; i < pts - 1 && n < 28; i += 2) {
+        _o.position.set(path[i * 3], path[i * 3 + 1], path[i * 3 + 2]);
+        _o.rotation.set(0, 0, 0); _o.scale.setScalar(1 - 0.4 * (i / pts)); _o.updateMatrix();
+        this.arc.setMatrixAt(n++, _o.matrix);
+      }
+      this.arc.material.color.set(color);
+    }
+    this.arc.count = n;
+    this.arc.instanceMatrix.needsUpdate = true;
+  }
+
+  wind(k, t, camera) {
+    const W = this.windLines;
+    W.visible = k > 0.02;
+    if (!W.visible) return;
+    W.material.uniforms.uK.value = k; W.material.uniforms.uT.value = t; W.material.uniforms.uCam.value.copy(camera.position);
+  }
+
+  shockwave(x, y, z, r, alpha = 1) {
     const m = this.waves.find((q) => !q.visible) || this.waves[0];
-    m.visible = true; m.position.set(x, y, z); m.userData.life = 0; m.userData.r = r;
+    m.visible = true; m.position.set(x, y, z); m.userData.life = 0; m.userData.r = r; m.userData.a = alpha;
   }
 
   // ---- spawners
@@ -179,7 +242,7 @@ export class FX {
       const k = u.life / 0.4;
       if (k >= 1) { m.visible = false; continue; }
       m.scale.setScalar(0.3 + u.r * k);
-      m.material.opacity = 1 - k;
+      m.material.opacity = (1 - k) * (u.a ?? 1);
     }
     if (this.rain) { this.rain.material.uniforms.uT.value = t; this.rain.material.uniforms.uCam.value.copy(camera.position); this.rain.geometry.setDrawRange(0, Math.round(1400 * this.rainK) * 2); }
   }

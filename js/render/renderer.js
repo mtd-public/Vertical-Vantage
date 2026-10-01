@@ -13,6 +13,7 @@ import { adAtlas } from './ads.js';
 import { T } from '../sim/tuning.js';
 import { viewPitch } from '../sim/player.js';
 import { groundBelow } from '../sim/plats.js';
+import { predictLanding } from '../sim/predict.js';
 import { box, Kit } from './geo.js';
 
 const DEG = Math.PI / 180;
@@ -56,6 +57,9 @@ export class GameRenderer {
     this.fx = new FX(this.scene);
     this.legs = MD.legsModel(this.M);
     this.scene.add(this.legs);
+    this.hipL = this.legs.getObjectByName('hipL'); this.hipR = this.legs.getObjectByName('hipR');
+    for (const h of [this.hipL, this.hipR]) { h.userData.knee = h.getObjectByName('knee'); h.userData.foot = h.getObjectByName('foot'); h.userData.jet = h.getObjectByName('jet'); }
+    this.jumpT = 9; this.jumpStage = 0; this.jetT = 0; this.jumpKick = 0; this.rollK = 0; this.baseFov = 75; // jump / fall feedback
     // viewmodel pass
     this.vmScene = new THREE.Scene();
     this.vmCam = new THREE.PerspectiveCamera(55, 1, 0.01, 10);
@@ -64,6 +68,7 @@ export class GameRenderer {
     this.cannon = MD.cannonModel(this.M);
     this.vmScene.add(this.cannon);
     this.recoil = 0; this.flashT = 0; this.showCannon = true;
+    this._land = {}; this._path = []; this.landing = null; this.voidAhead = false; this.dropH = 0; // the landing look-ahead (HUD reads these)
     this.hfov = 96; this.motion = 1; this.flashK = 1; this.beamsK = 1; this.size = [1, 1]; // Options: FOV, reduced motion / flash, quality
     this.kick = 1; this.swapT = 0; this.held = 'blaster'; this.shown = ''; this.spinV = 0;
     this.swayX = 0; this.swayY = 0; this.lastYaw = 0; this.lastPitch = 0;
@@ -83,7 +88,7 @@ export class GameRenderer {
     // a wide, Jumping-Flash-ish view: 96° across in landscape by default (Options: 80–110°); portrait
     // keeps a sane vertical FOV
     const vf = 2 * Math.atan(Math.tan((this.hfov * DEG) / 2) / aspect);
-    this.camera.fov = Math.min(this.hfov - 8, Math.max(58, vf / DEG));
+    this.camera.fov = this.baseFov = Math.min(this.hfov - 8, Math.max(58, vf / DEG));
     this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
     this.vmCam.aspect = aspect;
@@ -164,40 +169,59 @@ export class GameRenderer {
     const dip = P.landT < 0.22 ? -0.16 * Math.sin((P.landT / 0.22) * Math.PI) * this.motion : 0;
     const sh = this.fx.shake * this.motion;
     cam.position.set(x + (Math.random() - 0.5) * sh, y + T.EYE + bob + dip + (Math.random() - 0.5) * sh, z + (Math.random() - 0.5) * sh);
-    cam.rotation.set(pitch, yaw, 0);
+    // jump / fall feedback (scaled by the comfort option): a small FOV punch and dip on takeoff, a roll
+    // wobble on the third jump, and the view widening as a fall picks up speed
+    this.jumpKick = Math.max(0, this.jumpKick - dt * 3.5); this.rollK = Math.max(0, this.rollK - dt * 2.2);
+    const fallK = P.ground || P.dead ? 0 : Math.max(0, Math.min(1, (-P.vy - 10) / 18));
+    const fov = this.baseFov + (this.jumpKick * 5 + fallK * 7) * this.motion;
+    if (Math.abs(cam.fov - fov) > 0.01) { cam.fov = fov; cam.updateProjectionMatrix(); }
+    cam.rotation.set(pitch - this.jumpKick * 0.035 * this.motion, yaw, Math.sin(t * 16) * this.rollK * 0.035 * this.motion);
     cam.updateMatrixWorld();
+    this.fx.wind(fallK * (this.motion ? 1 : 0.5), t, cam);
     this.sky.powerTarget = (P.hyper > 0 || P.over > 0 ? 0.55 : w.phase === 'clear' || w.phase === 'bonusClear' ? 1 : 0) * this.flashK;
     this.sky.update(dt, t, cam);
     L.view.update(t);
     if (L.water) L.water.material.map.offset.set(t * 0.012, t * 0.02);
 
-    // legs: run cycle on the ground; a springy tuck on each jump (deeper on the 2nd and 3rd); they
-    // dangle and trail while you fall, reach for the deck just before you land, and point straight
-    // down while you bounce off something's head
+    // legs. Ground: run cycle (feet kept flat), squash on landing. Takeoff: a quick push-off with the
+    // toes pointed; an air jump kicks both legs down as the heel jets fire. Rising: a springy tuck
+    // (deeper on the 2nd and 3rd jump) that folds back, clear of the view. Falling: they dangle and
+    // splay a little (wider when falling fast), reach for the deck in the last 1.6 m, and point
+    // straight down while you bounce off something's head.
     const lg = this.legs;
     const below = P.ground ? null : groundBelow(w.plats, x, z, y - 0.01);
     lg.position.set(x, y + bob * 0.3, z);
     lg.rotation.y = yaw;
-    const hipL = lg.getObjectByName('hipL'), hipR = lg.getObjectByName('hipR');
     const fwd = -(P.vx * Math.sin(yaw) + P.vz * Math.cos(yaw)); // forward speed
-    let hl, hr, kl, kr, squash = 0;
+    this.jumpT += dt; this.jetT = Math.max(0, this.jetT - dt * 4);
+    const fall = Math.max(0, Math.min(1, (-P.vy - 6) / 18)); // 0 … 1 as the fall gets fast
+    let hl, hr, kl, kr, ftL, ftR, spread = 0.03, squash = 0;
     if (P.ground) {
       const s = Math.sin(P.stride * 2.4) * 0.7 * Math.min(1, sp / T.RUN);
       hl = s; hr = -s; kl = -Math.max(0, -s) * 1.2 - 0.05; kr = -Math.max(0, s) * 1.2 - 0.05;
       if (P.landT < 0.25) { const k = 1 - P.landT / 0.25; hl += 0.6 * k; hr += 0.6 * k; kl -= 1.0 * k; kr -= 1.0 * k; squash = 0.12 * k; }
-    } else if (P.lockT > 0) { hl = hr = -0.08; kl = kr = 0; } // stomp: legs straight down
-    else if (P.vy > 0) {
-      const k = [1, 1, 1.25, 1.55][Math.min(3, P.jumps)];
-      hl = 0.75 * k; hr = 0.55 * k; kl = -1.5 * k; kr = -1.25 * k;
-    } else if (below && y - (below.h + below.oy) < 1.6) { hl = 0.12; hr = 0.06; kl = -0.15; kr = -0.1; } // about to land
+      ftL = -(hl + kl); ftR = -(hr + kr); // feet flat on the deck
+    } else if (P.lockT > 0) { hl = hr = -0.05; kl = kr = 0; ftL = ftR = -0.8; spread = 0.02; } // stomp
+    else if (this.jumpT < (this.jumpStage ? 0.14 : 0.08)) { // push-off / air kick
+      hl = hr = this.jumpStage ? -0.15 : 0; kl = kr = 0; ftL = ftR = -0.6; spread = 0.06;
+    } else if (P.vy > 0) {
+      const k = [1, 1, 1.18, 1.35][Math.min(3, P.jumps)];
+      hl = 0.55 * k; hr = 0.42 * k; kl = -1.25 * k; kr = -1.05 * k; ftL = ftR = -0.35; spread = 0.08;
+    } else if (below && y - (below.h + below.oy) < 1.6) { hl = 0.12; hr = 0.06; kl = -0.18; kr = -0.12; ftL = ftR = -0.02; spread = 0.06; } // about to land
     else {
-      const sw = Math.sin(t * 3.2) * 0.07, trail = Math.max(-0.3, Math.min(0.3, -fwd * 0.03));
-      hl = 0.3 + sw + trail; hr = 0.14 - sw + trail; kl = -0.4 - sw; kr = -0.22 + sw;
+      const sw = Math.sin(t * 3.2 + fall * t * 6) * (0.07 + fall * 0.05), trail = Math.max(-0.3, Math.min(0.3, -fwd * 0.03));
+      hl = 0.22 + sw + trail; hr = 0.1 - sw + trail; kl = -0.38 - sw; kr = -0.22 + sw; ftL = ftR = -0.45 + fall * 0.2; spread = 0.08 + fall * 0.14;
     }
-    for (const [hip, h, k] of [[hipL, hl, kl], [hipR, hr, kr]]) {
-      hip.rotation.x += (h - hip.rotation.x) * Math.min(1, dt * 14);
-      const knee = hip.getObjectByName('knee');
-      knee.rotation.x += (k - knee.rotation.x) * Math.min(1, dt * 14);
+    const ease = Math.min(1, dt * 16);
+    for (const [hip, h, k, f, sx] of [[this.hipL, hl, kl, ftL, -1], [this.hipR, hr, kr, ftR, 1]]) {
+      hip.rotation.x += (h - hip.rotation.x) * ease;
+      hip.rotation.z += (sx * spread - hip.rotation.z) * ease;
+      const knee = hip.userData.knee, foot = hip.userData.foot;
+      knee.rotation.x += (k - knee.rotation.x) * ease;
+      foot.rotation.x += (f - foot.rotation.x) * ease;
+      const jet = hip.userData.jet;
+      jet.visible = this.jetT > 0.02;
+      if (jet.visible) jet.scale.set(0.8 + this.jetT * 0.5, 0.35 + this.jetT * (1.1 + Math.random() * 0.35), 0.8 + this.jetT * 0.5);
     }
     lg.scale.y += (1 - squash - lg.scale.y) * Math.min(1, dt * 20);
     lg.visible = !P.dead;
@@ -270,17 +294,34 @@ export class GameRenderer {
       else if (o.state === 'warn') { const f = Math.sin(t * 45) > 0; beams.visible = f; sheet.visible = false; }
       else { beams.visible = sheet.visible = false; }
     }
-    // landing marker: where you'll come down (only in the air, over a deck)
-    const mk = this.fx.marker;
-    const g = below;
-    mk.visible = !!g && !P.dead;
-    if (g) {
-      const top = g.h + g.oy, hgt = y - top;
-      mk.position.set(x, top + 0.04, z);
-      mk.scale.setScalar(0.8 + Math.min(1.2, hgt * 0.05));
-      mk.material.color.set(hgt > 12 ? 0xffd23a : 0x7ff6ff);
-      mk.rotation.z = t * 2;
+    // where you are: a soft shadow straight under you (on the deck you stand on, or the one below)
+    const fx = this.fx, under = P.ground || below;
+    fx.shadow.visible = !!under && !P.dead;
+    if (under) {
+      const top = under.h + under.oy, hgt = Math.max(0, y - top);
+      fx.shadow.position.set(x, top + 0.03, z);
+      fx.shadow.scale.setScalar(0.85 + Math.min(0.9, hgt * 0.03));
+      fx.shadow.material.opacity = 0.5 - Math.min(0.25, hgt * 0.01);
     }
+    // where you'll land: the look-ahead's touchdown point, a ring closing on it as touchdown nears,
+    // and dots along the way. Gold over a long drop, red when the path ends in the void.
+    const air = !P.ground && !P.dead;
+    const land = air ? predictLanding(w.plats, P, this._land, { killY: w.level.killY ?? -Infinity, path: this._path, maxT: 5 }) : null;
+    this.landing = land; this.voidAhead = air && !land; this.dropH = land ? y - land.y : below ? y - (below.h + below.oy) : 0;
+    const mk = fx.marker, cl = fx.close;
+    const doomed = this.voidAhead && P.jumps >= T.JUMP_V.length; // out of air jumps, heading for the void
+    const spot = land || (doomed && below ? { x, y: below.h + below.oy, z, t: 0 } : null);
+    const col = this.voidAhead ? 0xff3a4a : this.dropH > 12 ? 0xffd23a : 0x7ff6ff;
+    mk.visible = cl.visible = !!spot;
+    if (spot) {
+      mk.position.set(spot.x, spot.y + 0.05, spot.z);
+      mk.scale.setScalar(0.85 + Math.min(0.6, Math.hypot(spot.x - x, spot.z - z, spot.y - y) * 0.015));
+      mk.material.color.set(col); mk.rotation.z = t * (this.voidAhead ? 6 : 2);
+      cl.position.set(spot.x, spot.y + 0.06, spot.z);
+      cl.scale.setScalar(mk.scale.x * (0.8 + Math.min(2.4, (spot.t || 0) * 2.2)));
+      cl.material.color.set(col); cl.material.opacity = this.voidAhead ? 0.5 + 0.4 * Math.sin(t * 20) : 0.85;
+    }
+    fx.setArc(land && this._path.length > 15 ? this._path : null, col);
     this.fx.update(dt, w, cam, t);
 
     // arm cannon: bob, sway, per-weapon recoil, a dip on swap, drops away when you look at your feet
@@ -301,7 +342,7 @@ export class GameRenderer {
     this.swayX += (tx * this.motion - this.swayX) * Math.min(1, dt * 10); this.swayY += (ty * this.motion - this.swayY) * Math.min(1, dt * 10);
     const low = pitch < -0.45 ? (-0.45 - pitch) * 0.35 : 0;
     const port = this.aspect < 1, rk = this.recoil * this.kick, sdip = Math.sin(this.swapT * Math.PI);
-    c.position.set((port ? 0.2 : 0.3) + this.swayX, -0.29 + bob * 0.5 - low + (P.ground ? 0 : 0.02) + this.swayY - sdip * 0.22, -0.95 + rk * 0.06);
+    c.position.set((port ? 0.22 : 0.33) + this.swayX, -0.31 + bob * 0.5 - low + (P.ground ? 0 : 0.02) + this.swayY - sdip * 0.22, -0.95 + rk * 0.06);
     c.scale.setScalar(0.62);
     c.rotation.set(rk * 0.3 + low * 0.6 - sdip * 0.9, 0.1 - this.swayX * 2, this.swayX * 3 + (this.held === 'rapid' ? (Math.random() - 0.5) * this.recoil * 0.08 : 0));
     c.visible = this.showCannon && !P.dead;
@@ -381,8 +422,12 @@ export class GameRenderer {
         case 'serverDown': fx.boom(e.x, e.y, e.z, 3, 0x7bff4a); fx.burst(e.x, e.y, e.z, 24, 0x2bff7a, 10, 0.16, 1, 12); break;
         case 'explode': fx.boom(e.x, e.y, e.z, e.r); break;
         case 'stomp': fx.burst(e.x, e.y, e.z, 12, 0xffffff, 7, 0.14, 0.5); fx.shake = Math.max(fx.shake, 0.18); break;
-        case 'jump': if (e.stage > 0) fx.burst(e.x, e.y, e.z, 10 + e.stage * 4, e.stage === 2 ? 0xffd23a : 0x7ff6ff, 5 + e.stage * 2, 0.12, 0.45, 2); break;
-        case 'land': fx.burst(e.x, e.y + 0.1, e.z, Math.min(16, 4 + e.impact * 0.6), 0xd8dce8, 3 + e.impact * 0.15, 0.14, 0.4, 4); fx.shake = Math.max(fx.shake, Math.min(0.2, e.impact * 0.008)); break;
+        case 'jump':
+          this.jumpT = 0; this.jumpStage = e.stage; this.jumpKick = [0.45, 0.7, 1][e.stage] || 0.5;
+          if (e.stage > 0) { this.jetT = 1; this.rollK = e.stage === 2 ? 1 : 0; }
+          if (e.stage > 0) fx.burst(e.x, e.y, e.z, 10 + e.stage * 4, e.stage === 2 ? 0xffd23a : 0x7ff6ff, 5 + e.stage * 2, 0.12, 0.45, 2); break;
+        case 'land': if (e.impact > 11) fx.shockwave(e.x, e.y + 0.06, e.z, 0.5 + Math.min(0.9, e.impact * 0.035), 0.4 * this.flashK);
+          fx.burst(e.x, e.y + 0.1, e.z, Math.min(16, 4 + e.impact * 0.6), 0xd8dce8, 3 + e.impact * 0.15, 0.14, 0.4, 4); fx.shake = Math.max(fx.shake, Math.min(0.2, e.impact * 0.008)); break;
         case 'hurt': fx.shake = Math.max(fx.shake, 0.35); break;
         case 'pickup': fx.burst(e.x, e.y, e.z, 16, MD.PICKUP_COL[e.kind] || 0xffffff, 6, 0.12, 0.6, 4); break;
         case 'drive': fx.burst(e.x, e.y, e.z, 30, 0xffd23a, 9, 0.16, 0.9, 6); fx.shake = Math.max(fx.shake, 0.1); break;
@@ -414,7 +459,7 @@ export class GameRenderer {
     cam.lookAt(A.x, A.y + 4, A.z);
     cam.updateMatrixWorld();
     this.sky.update(0, t, cam);
-    this.legs.visible = false; this.cannon.visible = false; this.fx.marker.visible = false;
+    this.legs.visible = false; this.cannon.visible = false; this.fx.marker.visible = this.fx.close.visible = this.fx.shadow.visible = false; this.fx.setArc(null);
   }
 
   // world → screen (CSS px) for floating text and target markers; null if behind
@@ -476,6 +521,7 @@ function makeMaterials() {
     laser: new THREE.MeshBasicMaterial({ color: 0xff2a3a, fog: false }),
     beam: new THREE.MeshBasicMaterial({ color: 0xff3a4a, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
     laserSheet: new THREE.MeshBasicMaterial({ color: 0xff2a3a, opacity: 0.18, ...add }),
+    jet: new THREE.MeshBasicMaterial({ color: 0x8ff8ff, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }),
     vmPaint: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, fog: false }),
     vmGlow: new THREE.MeshBasicMaterial({ color: 0x2be8ff, fog: false }),
     vmFlash: new THREE.MeshBasicMaterial({ map: glowTex(), color: 0x2be8ff, ...add }),

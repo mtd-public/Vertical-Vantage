@@ -67,6 +67,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #crosshair { transition: rotate 0.08s, scale 0.08s; }
 #crosshair.on { rotate: 45deg; scale: 1.2; } /* on a target: turns into an X, not just red */
 #crosshair.on i { background: var(--red); box-shadow: 0 0 6px var(--red); }
+#drop { position: absolute; left: 50%; top: calc(50% + 26px); translate: -50% 0; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; color: var(--cyan); white-space: nowrap; }
+#drop.far { color: var(--gold); text-shadow: 0 0 6px var(--gold), 0 2px 0 #000; }
+#drop.nudge { color: var(--gold); text-shadow: 0 0 6px var(--gold), 0 2px 0 #000; }
+#drop.void { color: var(--red); text-shadow: 0 0 8px var(--red), 0 2px 0 #000; animation: pulse 0.3s infinite alternate; }
+body.calm #drop.void { animation: none; }
 #hitmark { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; translate: -50% -50%; opacity: 0; border: 3px solid #fff; transform: rotate(45deg); }
 #hitmark.on { animation: hit 0.18s ease-out; }
 @keyframes hit { from { opacity: 1; scale: 0.7; } to { opacity: 0; scale: 1.2; } }

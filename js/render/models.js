@@ -358,17 +358,48 @@ export function portalModel(M) {
 }
 
 // ------------------------------------------------------------------ the player
-// Robot legs, seen when you look down. Pivots: hips at y 0.92.
+// Robot legs, seen when you look down. Chunky white armour with blue guards, orange joints, cyan
+// light strips, and boots with a heel jet that fires on air jumps.
+// Pivots: hip groups 'hipL'/'hipR' at y 0.9 → 'knee' 0.4 lower → 'foot' (ankle) 0.38 lower; each
+// foot has a 'jet' flame (scaled by the renderer). Set wide apart so the middle of the down view —
+// where the landing reticle is — stays clear.
 export function legsModel(M) {
-  // No pelvis: looking straight down you see two legs either side of the landing ring.
   const g = new THREE.Group();
-  const white = 0xe8ecf4, blue = 0x2a5ad8, orange = 0xff8a1a;
+  const white = 0xe8ecf4, blue = 0x2a5ad8, orange = 0xff8a1a, dark = 0x2a2e3a, steel = 0x9aa6bc;
+  const R = Math.PI / 2;
   for (const sx of [-1, 1]) {
-    const hip = new THREE.Group(); hip.position.set(sx * 0.3, 0.9, -0.14); hip.name = 'hip' + (sx < 0 ? 'L' : 'R');
-    hip.add(new THREE.Mesh(merge2([box(0.17, 0.4, 0.19, { y: -0.22, color: white }), box(0.19, 0.06, 0.21, { y: -0.03, color: 0x9aa6bc }), box(0.05, 0.3, 0.2, { x: sx * 0.07, y: -0.22, color: blue })]), M.paintFlat));
-    const knee = new THREE.Group(); knee.position.y = -0.42; knee.name = 'knee';
-    knee.add(new THREE.Mesh(merge2([box(0.15, 0.42, 0.17, { y: -0.21, color: white }), box(0.19, 0.14, 0.1, { y: 0, z: -0.1, color: orange }), box(0.26, 0.11, 0.46, { y: -0.43, z: -0.1, color: 0x3a3e4a }), box(0.24, 0.05, 0.1, { y: -0.36, z: -0.3, color: blue })]), M.paintFlat));
-    knee.add(new THREE.Mesh(box(0.04, 0.28, 0.04, { x: sx * 0.085, y: -0.2, z: -0.08, color: 0x2be8ff }), M.glow));
+    const hip = new THREE.Group(); hip.position.set(sx * 0.34, 0.9, 0.06); hip.name = 'hip' + (sx < 0 ? 'L' : 'R'); // a touch behind the eye: looking down, the boots lead and the thighs stay small
+    hip.add(new THREE.Mesh(merge2([
+      // the thigh tapers to a thin top: the hips are the closest thing to the eye, so anything wide
+      // up there fills the down view
+      cyl(0.04, 0.04, 0.06, seg(8, 6), { y: -0.03, color: steel }), // hip joint
+      cyl(0.045, 0.078, 0.34, seg(10, 8), { y: -0.22, color: white }), // thigh shell
+      cyl(0.072, 0.072, 0.02, seg(10, 8), { y: -0.28, color: dark }), // panel seam
+      box(0.08, 0.2, 0.04, { y: -0.26, z: -0.068, color: blue }), // front guard
+      box(0.025, 0.18, 0.05, { x: sx * 0.07, y: -0.26, color: steel }), // outer strut
+    ]), M.paintFlat));
+    const knee = new THREE.Group(); knee.position.y = -0.4; knee.name = 'knee';
+    knee.add(new THREE.Mesh(merge2([
+      cyl(0.072, 0.072, 0.18, seg(10, 8), { rz: R, color: orange }), // knee axle
+      box(0.12, 0.11, 0.06, { y: 0.01, z: -0.075, color: white }), // knee cap
+      cyl(0.066, 0.082, 0.34, seg(10, 8), { y: -0.2, color: white }), // shin
+      box(0.11, 0.24, 0.05, { y: -0.2, z: -0.074, color: blue }), // shin guard
+      cyl(0.022, 0.022, 0.24, 6, { y: -0.19, z: 0.07, color: dark }), // calf ram
+    ]), M.paintFlat));
+    knee.add(new THREE.Mesh(box(0.02, 0.2, 0.02, { x: sx * 0.078, y: -0.2, z: -0.035, color: 0x2be8ff }), M.glow)); // light strip
+    const foot = new THREE.Group(); foot.position.y = -0.38; foot.name = 'foot';
+    foot.add(new THREE.Mesh(merge2([
+      ball(0.06, { color: dark }, 0), // ankle
+      box(0.19, 0.1, 0.3, { y: -0.06, z: -0.05, color: white }), // boot
+      box(0.2, 0.075, 0.1, { y: -0.07, z: -0.2, color: orange }), // toe cap
+      box(0.17, 0.08, 0.08, { y: -0.07, z: 0.1, color: dark }), // heel
+      box(0.21, 0.03, 0.34, { y: -0.12, z: -0.05, color: dark }), // sole
+      cyl(0.04, 0.055, 0.05, 8, { y: -0.14, z: 0.06, color: steel }), // heel jet nozzle
+    ]), M.paintFlat));
+    const jet = new THREE.Mesh(part(new THREE.ConeGeometry(0.065, 0.42, 8), { rx: Math.PI, y: -0.21 }), M.jet);
+    jet.position.set(0, -0.16, 0.06); jet.name = 'jet'; jet.visible = false;
+    foot.add(jet);
+    knee.add(foot);
     hip.add(knee);
     g.add(hip);
   }
@@ -382,14 +413,20 @@ export function legsModel(M) {
 export function cannonModel(M) {
   const g = new THREE.Group();
   const white = 0xe8ecf4, blue = 0x2a5ad8, dark = 0x3a3e4a, black = 0x1a1c22;
+  const R = Math.PI / 2, mz = {}, orange = 0xff8a1a, steel = 0x9aa6bc;
+  // the forearm: a rounded white shell running back off-screen (it reads as your arm), a blue
+  // armour plate, a dark wrist collar, an orange band and a grip underneath
   const body = merge2([
-    box(0.16, 0.16, 0.42, { z: 0.05, color: white }), box(0.2, 0.08, 0.3, { y: 0.11, z: 0.02, color: blue }),
-    box(0.06, 0.1, 0.14, { x: -0.1, y: -0.05, z: 0.14, color: dark }), box(0.17, 0.05, 0.08, { y: -0.08, z: -0.14, color: dark }),
+    cyl(0.09, 0.115, 0.8, seg(12, 8), { z: 0.26, rx: R, color: white }), // forearm shell
+    box(0.13, 0.05, 0.3, { y: 0.085, z: 0.04, color: blue }), box(0.135, 0.012, 0.31, { y: 0.112, z: 0.04, color: 0x1a3a9a }), // armour plate + edge
+    cyl(0.1, 0.1, 0.05, seg(12, 8), { z: -0.13, rx: R, color: dark }), // wrist collar
+    cyl(0.112, 0.112, 0.05, seg(12, 8), { z: 0.26, rx: R, color: orange }), // band
+    box(0.05, 0.11, 0.1, { x: -0.04, y: -0.1, z: 0.12, color: dark }), box(0.06, 0.03, 0.06, { x: -0.04, y: -0.16, z: 0.12, color: steel }), // grip
+    box(0.03, 0.05, 0.16, { x: 0.095, y: 0.0, z: 0.05, color: steel }), // side rail
   ]);
   g.add(new THREE.Mesh(body, M.vmPaint));
-  const strip = new THREE.Mesh(merge2([box(0.02, 0.03, 0.34, { x: 0.085, y: 0.03, z: 0.02 }), box(0.02, 0.03, 0.34, { x: -0.085, y: 0.03, z: 0.02 })]), M.vmGlow);
+  const strip = new THREE.Mesh(merge2([box(0.018, 0.022, 0.3, { x: 0.075, y: 0.07, z: 0.04 }), box(0.018, 0.022, 0.3, { x: -0.075, y: 0.07, z: 0.04 }), box(0.06, 0.02, 0.02, { y: 0.1, z: 0.19 })]), M.vmGlow);
   strip.name = 'strip'; g.add(strip);
-  const R = Math.PI / 2, mz = {};
   const add = (key, tip, ...parts) => { const grp = new THREE.Group(); grp.name = 'mz-' + key; grp.add(new THREE.Mesh(merge2(parts), M.vmPaint)); grp.visible = false; g.add(grp); mz[key] = { group: grp, tip }; return grp; };
   add('blaster', -0.47,
     cyl(0.07, 0.08, 0.34, seg(10, 6), { z: -0.28, rx: R, color: dark }), cyl(0.085, 0.085, 0.06, seg(10, 6), { z: -0.44, rx: R, color: 0xff8a1a }));

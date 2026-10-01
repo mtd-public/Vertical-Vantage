@@ -1,6 +1,6 @@
 // DOM HUD. Reads a snapshot of the world (and the renderer for projections); owns no game state.
 // Throttled where it touches layout; markers and the crosshair update every frame.
-import { WEAPONS, ENEMIES } from '../sim/tuning.js';
+import { T, WEAPONS, ENEMIES } from '../sim/tuning.js';
 import { forward } from '../sim/util.js';
 import { viewPitch } from '../sim/player.js';
 
@@ -12,7 +12,7 @@ export class Hud {
       hud: $('hud'), hp: $('hp'), drives: $('drives'), objective: $('objective'), score: $('score'), clock: $('clock'),
       altFill: $('alt-fill'), altMark: $('alt-mark'), altNum: $('alt-num'), pips: $('pips'), weapon: $('weapon'), ammo: $('ammo'),
       powers: $('powers'), bonus: $('bonus-hud'), boss: $('boss-hud'), bossName: $('boss-name'), bossFill: $('boss-fill'), slow: $('slowmo'), bonusTime: $('bonus-time'), bonusCount: $('bonus-count'),
-      cross: $('crosshair'), hit: $('hitmark'), markers: $('markers'), floaters: $('floaters'), toasts: $('toasts'), vig: $('vignette'),
+      cross: $('crosshair'), hit: $('hitmark'), drop: $('drop'), markers: $('markers'), floaters: $('floaters'), toasts: $('toasts'), vig: $('vignette'),
     };
     this.cache = {};
     this.markers = new Map();
@@ -106,6 +106,18 @@ export class Hud {
       if (dot > 0 && Math.sqrt(Math.max(0, 1 - dot * dot)) * d < ENEMIES[e.type].r + 0.25) { on = true; break; }
     }
     E.cross.classList.toggle('on', on);
+    // under the crosshair while airborne: how far down the landing is, or that there's nothing there
+    const air = !P.ground && !P.dead && w.phase === 'play';
+    const left = T.JUMP_V.length - P.jumps; // air jumps still in hand
+    const dtxt = !air ? '' : R.voidAhead ? (left > 0 ? 'NO GROUND · JUMP!' : '⚠ NO GROUND') : `▼ ${Math.max(0, R.dropH).toFixed(1)} m`;
+    if (this.cache.drop !== dtxt) {
+      this.cache.drop = dtxt;
+      E.drop.textContent = dtxt;
+      E.drop.classList.toggle('hidden', !dtxt);
+      E.drop.classList.toggle('void', !!R.voidAhead && left <= 0);
+      E.drop.classList.toggle('nudge', !!R.voidAhead && left > 0);
+    }
+    E.drop.classList.toggle('far', R.dropH > 12);
     this.updateMarkers(w, R, wpx, hpx);
   }
 

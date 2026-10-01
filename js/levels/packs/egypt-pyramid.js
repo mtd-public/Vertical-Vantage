@@ -27,7 +27,7 @@ const PIT = { x0: -40, x1: 40, z0: -28, z1: -20 };
 const sand = (x0, x1, z0, z1) => box(x0, x1, z0, z1, 0, { thick: 3, style: 'eg-desert' });
 P(sand(-640, 640, PIT.z1, 640), sand(-640, 640, -640, PIT.z0), sand(-640, PIT.x0, PIT.z0, PIT.z1), sand(PIT.x1, 640, PIT.z0, PIT.z1));
 P(box(PIT.x0, PIT.x1, PIT.z0, PIT.z1, -9, { thick: 1, style: 'eg-pitFloor' })); // (far below killY: the cables glow down there)
-const BARQUE = rect(0, -24, 3.2, 12, -1.5, { thick: 1.2, yaw: Math.PI / 2, style: 'eg-barque', move: mv('x', 26, 20, 0) });
+const BARQUE = rect(0, -24, 3.2, 12, -1.5, { thick: 1.2, yaw: Math.PI / 2, style: 'eg-barque', move: mv('x', 22, 28, 0) }); // (≤ 5 m/s: you can catch it)
 P(BARQUE);
 
 // ---- the GREAT PYRAMID: 16 courses (2.1 m ledges, 2.5 m risers) to a 13 m summit at 40

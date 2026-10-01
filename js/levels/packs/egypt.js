@@ -2,5 +2,6 @@
 // data centre in a midday sandstorm, its torch-lit inner sanctum, and MECHA ANUBIS in the Hall of
 // Judgment. Stages: ./egypt-*.js
 import cairo from './egypt-cairo.js';
+import pyramid from './egypt-pyramid.js';
 
-export default { id: 'egypt', name: 'EGYPT', sub: 'THE DATA DYNASTY', color: '#ffc53a', stages: [cairo] };
+export default { id: 'egypt', name: 'EGYPT', sub: 'THE DATA DYNASTY', color: '#ffc53a', stages: [cairo, pyramid] };

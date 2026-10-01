@@ -74,9 +74,12 @@ await run('desktop', { viewport: { width: 1280, height: 800 } }, async (page) =>
   check(dc < 400, 'draw calls under budget');
 });
 
+const countFullscreen = (page) => page.evaluate(() => { window.__fs = 0; if (window.TouchZoomGuard) TouchZoomGuard.enterFullscreen = () => { window.__fs++; }; });
 for (const [name, dev] of [['phone', devices['iPhone 13']], ['phone-land', devices['iPhone 13 landscape']]]) {
   await run(name, { ...dev }, async (page) => {
+    await countFullscreen(page);
     await page.tap('[data-go="play"]');
+    check(await page.evaluate(() => window.__fs === 0), 'iPhone / iPad: no element fullscreen (Safari\'s "typing in full screen" banner)');
     await skip(page);
     check(await page.evaluate(() => !document.getElementById('touch-ui').classList.contains('hidden')), 'touch controls shown');
     const s0 = await state(page);
@@ -93,6 +96,27 @@ for (const [name, dev] of [['phone', devices['iPhone 13']], ['phone-land', devic
     await page.screenshot({ path: `${OUT}/${name}-pause.png` });
   });
 }
+
+await run('android', { ...devices['Pixel 5'] }, async (page) => {
+  await countFullscreen(page);
+  await page.tap('[data-go="play"]');
+  await skip(page);
+  check(await page.evaluate(() => window.__fs === 1), 'Android: START still goes fullscreen');
+});
+
+// a phone with a controller paired: the touch controls step aside while it's in use, a tap brings them back
+await run('phone-pad', { ...devices['iPhone 13 landscape'] }, async (page) => {
+  await page.tap('[data-go="play"]');
+  await skip(page);
+  const vis = () => page.evaluate(() => ({ ui: !document.getElementById('touch-ui').classList.contains('hidden'), body: document.body.classList.contains('touch') }));
+  const v0 = await vis();
+  await page.evaluate(() => { window.__pad.buttons[0] = 1; }); await page.waitForTimeout(150); await page.evaluate(() => { window.__pad.buttons[0] = 0; }); await page.waitForTimeout(150);
+  const v1 = await vis();
+  await page.screenshot({ path: `${OUT}/phone-pad.png` });
+  await page.touchscreen.tap(300, 200); await page.waitForTimeout(200);
+  const v2 = await vis();
+  check(v0.ui && !v1.ui && !v1.body && v2.ui && v2.body, `touch controls: shown → hidden on controller input → back on a tap (${JSON.stringify([v0, v1, v2])})`);
+}, { pad: true });
 
 await run('gamepad', { viewport: { width: 1280, height: 720 } }, async (page) => {
   const press = async (b, ms = 120) => { await page.evaluate((b) => { window.__pad.buttons[b] = 1; }, b); await page.waitForTimeout(ms); await page.evaluate((b) => { window.__pad.buttons[b] = 0; }, b); await page.waitForTimeout(80); };

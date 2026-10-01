@@ -48,6 +48,12 @@ No build step and no npm dependencies. It uses three.js r160 (vendored) through 
 | Pause | P · Esc | Menu | II |
 | Mute | M | | ♪ |
 
+On a phone or tablet, the touch controls step aside while a controller is in use, and the HUD
+switches to the controller layout. Touch the screen and they come back. Android goes fullscreen when
+you press START. iPhone and iPad don't, because Safari keeps showing "it looks like you're typing in
+full screen" in element fullscreen whenever it gets key input (a keyboard, or a paired controller).
+Add the game to the Home Screen for a true fullscreen app there.
+
 Menus work with the D-pad or stick, A and B (dr-mow's `MenuNav`). The Options screen is grouped:
 
 - **Controls:** look sensitivity per device, invert Y, auto look-down, FIRE as HOLD or TAP ON/OFF

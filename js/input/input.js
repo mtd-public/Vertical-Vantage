@@ -28,6 +28,7 @@ export class Input {
     this.onPause = null; this.onKey = null;
     // gamepad
     this.pad = null; this.padPrev = {}; this.padId = ''; this.trig = false; this.padActive = false;
+    this.padUsedT = -1; // performance.now() of the last real controller input (stick past half, or a press)
     // touch
     this.touchOn = false;
     this.stick = { id: null, bx: 0, by: 0, tx: 0, ty: 0, x: 0, y: 0, active: false };
@@ -127,7 +128,7 @@ export class Input {
     for (const k in now) if (now[k] && !was[k]) edges[k] = true;
     this.padPrev = now;
     this.pad = { lx: lx * lm, ly: ly * lm, lm, rx, ry, rm, fire: this.trig || now.rb, ...now };
-    if (lm > 0.4 || rm > 0.4 || Object.keys(edges).length) this.padActive = true;
+    if (lm > 0.4 || rm > 0.4 || this.trig || Object.keys(edges).length) { this.padActive = true; this.padUsedT = performance.now(); }
     if (this.enabled) {
       if (edges.a || edges.lb || edges.lt) this.jumpEdge = true;
       if (edges.y || edges.right) this.swapEdge = 1;

@@ -36,6 +36,11 @@ The verb count is move, look, jump, fire and swap, which means a stick plus a bu
   rumble on hits, stomps, explosions and drives.
 - Touch: a floating stick on the left 45 %, drag-to-look on the right, JUMP / FIRE / ⇄ buttons, and
   FIRE also aims while you drag it. The touch-zoom guard is on.
+- Touch on AUTO: the touch controls hide while a controller is in use (any press or stick push newer
+  than the last touch) and come back on the next touch, or when the controller disconnects.
+- Fullscreen on START happens on Android only. iOS Safari's element fullscreen shows a "typing in
+  full screen" banner on key input, including from controllers, so iOS uses the Home Screen web
+  app (`apple-mobile-web-app-capable`) instead.
 
 ## 4. Numbers (from `js/sim/tuning.js`, every value has its reason there)
 

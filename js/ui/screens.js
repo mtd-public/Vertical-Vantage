@@ -75,7 +75,7 @@ export function options(S, back = 'back') {
       <div class="opt"><span>Invert Y</span>${seg('invertY', [[false, 'OFF'], [true, 'ON']])}</div>
       <div class="opt"><span>Auto look-down (Jumping Flash)</span>${seg('autoLook', [[true, 'ON'], [false, 'OFF']])}</div>
       <div class="opt"><span>Fire (touch FIRE / trigger)</span>${seg('fireLatch', [[false, 'HOLD'], [true, 'TAP ON/OFF']])}</div>
-      <div class="opt"><span>Touch controls</span>${seg('touch', [['auto', 'AUTO'], ['on', 'ON'], ['off', 'OFF']])}</div>
+      <div class="opt"><span>Touch controls <small class="par">(AUTO hides them while a controller is in use)</small></span>${seg('touch', [['auto', 'AUTO'], ['on', 'ON'], ['off', 'OFF']])}</div>
       ${head('VIEW + COMFORT')}
       <div class="opt"><span>Field of view <b class="val">${S.fov}°</b></span>${range('fov', 80, 110, 1)}</div>
       <div class="opt"><span>Screen shake, bob + gun sway</span>${seg('calm', [[false, 'ON'], [true, 'OFF']])}</div>

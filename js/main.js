@@ -43,7 +43,7 @@ const avatar = new Avatar($('avatar'));
 const G = {
   mode: 'boot', stageIdx: 0, world: null, main: null, acc: 0, t: 0, timer: 0, next: null,
   runScore: 0, settings: migrate(load(SKEY, DEFAULTS)), progress: load(PKEY, { unlocked: 1, best: {}, bestTotal: 0, bestTime: {}, bonusBest: {}, ach: {}, portals: {} }),
-  optionsBack: 'back', touch: false, muted: false,
+  optionsBack: 'back', touch: false, muted: false, padMode: false, lastTouchT: 0,
 };
 
 const ach = new Achievements(G.progress.ach, STAGES.filter((s) => s.portal).map((s) => s.id));
@@ -68,9 +68,21 @@ function applySettings() {
   avatar.setTalk(S.quips);
   audio.setVolumes(S.musicVol, S.sfxVol);
   audio.setMuted(G.muted);
-  setTouch(S.touch === 'on' || (S.touch === 'auto' && (G.touchSeen || matchMedia('(pointer: coarse)').matches)));
+  setTouch(wantTouch());
+}
+// Touch controls: ON / OFF, or AUTO = on a touch screen, except while a controller is in use (they'd
+// only cover the view); touching the screen again brings them back.
+function wantTouch() {
+  const S = G.settings;
+  return S.touch === 'on' || (S.touch === 'auto' && !G.padMode && (G.touchSeen || matchMedia('(pointer: coarse)').matches));
+}
+function setPadMode(on) {
+  if (G.padMode === on) return;
+  G.padMode = on;
+  setTouch(wantTouch());
 }
 function setTouch(on) {
+  if (G.touch === on && document.body.classList.contains('touch') === on) { showControls(); return; }
   G.touch = on;
   input.touchOn = on;
   document.body.classList.toggle('touch', on);
@@ -81,7 +93,15 @@ function showControls() {
   $('touch-ui').classList.toggle('hidden', !(G.touch && playing));
   $('touch-zone').classList.toggle('hidden', !(G.touch && playing));
 }
-window.addEventListener('pointerdown', (e) => { if (e.pointerType === 'touch' && !G.touchSeen) { G.touchSeen = true; if (G.settings.touch === 'auto') setTouch(true); } }, { capture: true });
+window.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch') return;
+  G.lastTouchT = performance.now();
+  if (!G.touchSeen) G.touchSeen = true;
+  if (G.padMode) setPadMode(false); else if (G.settings.touch === 'auto') setTouch(wantTouch());
+}, { capture: true });
+// a controller in use (a press or a stick push, newer than the last touch) hides the touch controls;
+// unplugging the last one shows them again
+window.addEventListener('gamepaddisconnected', () => { if (![...(navigator.getGamepads?.() || [])].some((p) => p && p.connected)) setPadMode(false); });
 
 // ------------------------------------------------------------------ flow
 const wopts = () => ({ autoLook: G.settings.autoLook });
@@ -218,7 +238,12 @@ const ACTIONS = {
   ending: () => { G.runScore = G.stageTotal; G.mode = 'ending'; Screens.ending(G.runScore); },
   bonusBack: () => leaveBonus(),
 };
-function fullscreen() { if (G.touch && window.TouchZoomGuard?.enterFullscreen) try { window.TouchZoomGuard.enterFullscreen('landscape'); } catch (_) { /* ignore */ } }
+// Browser fullscreen on start, on touch devices, except iPhone / iPad: there Safari watches for
+// keyboard input in element fullscreen (a hardware keyboard, or a paired controller that iPadOS
+// maps to keys) and keeps showing "it looks like you're typing while in full screen". Add to Home
+// Screen gives a true fullscreen app there instead (manifest + apple-mobile-web-app-capable).
+const APPLE_TOUCH = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function fullscreen() { if (APPLE_TOUCH || !G.touch || !window.TouchZoomGuard?.enterFullscreen) return; try { window.TouchZoomGuard.enterFullscreen('landscape'); } catch (_) { /* ignore */ } }
 
 $('screen').addEventListener('click', (e) => {
   const b = e.target.closest('[data-go]');
@@ -326,6 +351,7 @@ function frame(now) {
   last = now;
   G.t += dt;
   const edges = input.pollPad(dt);
+  if (input.padUsedT > (G.lastTouchT || 0) && !G.padMode) setPadMode(true);
   if (G.mode === 'play') { if (edges.start || edges.view) pause('pad'); }
   else if (G.mode === 'paused' && edges.start) resume();
   else if (G.mode === 'title' && edges.start) ACTIONS.play();

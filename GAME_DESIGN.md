@@ -68,6 +68,7 @@ The verb count is move, look, jump, fire and swap, which means a stick plus a bu
 | Laser | 1.0 s sight line, then a 1.8 s sweep through you (cover blocks it) | Teaches using crates and catwalks. |
 | Climb | Phase 2+: up a long wall, a 3.2 s ceiling crawl toward you, a 0.6 s flare, then a drop | Up and down change everything (Jumping Flash's vertical theme, aimed at you). |
 | Turret | 3 / 4 / 5-bolt bursts every 2.6–3.8 s at 19 m/s, leading you by 0.25 s | Keeps you moving between the big attacks. |
+| Boss footprint | Body radius 2.2 m; pushed out of crates, racks and low lifts; it aims chases, pounces and drops at the nearest open floor; it climbs only in the wall lane x ∈ [−14, 14] | Cover stays cover; it never lands inside a crate. |
 
 **Reachability:** `tools/sim-check.mjs` builds a graph over every walkable top and samples the movers
 over 30 s. An edge exists when the gap is inside 80 % of the real jump envelope for that rise. Every
@@ -76,8 +77,12 @@ reachable from each drive and from the portal.
 
 ## 5. Cast
 
-- **The player:** a small white-and-blue robot. You see its legs when you look down and an arm cannon
-  in the corner.
+- **The player:** a small white-and-blue robot.
+  - **Legs:** you see them when you look down. They run, tuck on every jump (deeper on the 2nd and
+    3rd), dangle as you fall, reach for the deck just before landing, and point straight down
+    during a stomp.
+  - **Arm cannon:** in the corner, with a different muzzle per weapon. It sways with your look,
+    recoils per weapon, and dips on a swap.
 - **ECHO:** the onboard AI, a face on a little CRT plate. It has 15 expressions (idle glance, ^ ^,
   manic grin with tongue out, sparkle eyes, heart eyes, > <, angry with an anger mark, red-slit
   mission mode, half-lidded smug, shock, spirals, worried with a sweat drop, T T crying, derp, x x).
@@ -88,8 +93,15 @@ reachable from each drive and from the portal.
 - **Guard:** a long-coated security officer with a cyan visor and a rifle.
 - **Server:** a black rack with blinking LEDs.
 - **Spiker:** a red-domed crawler covered in spikes. Shoot it; don't land on it.
-- **ARACHNE-9:** a gunmetal spider mech. It has a red eye cluster and laser emitter, glowing knees,
-  a red underglow ring, hazard stripes and a twin-barrel turret on its back.
+- **ARACHNE-9:** an industrial spider mech in OmniCorp red.
+  - Faceted armour plates with dark seams and rivets over a gunmetal chassis.
+  - Hip actuators, a hazard band on the front plate, and a segmented rear section with glowing heat
+    vents and exhaust stacks.
+  - A wedge sensor head with an amber lens cluster (so it reads against the red), mandibles and the
+    laser emitter.
+  - Legs with armoured thighs and shins, hydraulic rams on the outside of each bend, steel knee
+    joints and claw feet.
+  - A red twin-barrel turret on its back.
 
 ## 6. HUD
 
@@ -120,9 +132,18 @@ on touch). Bonus stages add a big timer and a server count.
 
 ## 8. Progression
 
-Three stages, then the boss stage, unlock in order (Stage Select remembers them). Score carries across a run. Each stage
-has a hidden bonus portal. Best score per stage and best run are stored in localStorage (wrapped in
-try/catch).
+Three stages, then the boss stage, unlock in order (Stage Select remembers them). Score carries
+across a run. Each stage has a hidden bonus portal. localStorage stores the following (wrapped in
+try/catch):
+
+- best score per stage
+- best clear time per stage (shown against par)
+- best result per bonus arena
+- best run
+- portals found
+- 12 achievements, read from the sim's events by `js/ui/achievements.js`
+
+The RECORDS screen shows all of them.
 
 ## 9. Juice (in build order)
 
@@ -164,7 +185,8 @@ mstr-gme-dsgn-tmpt `kits/`:
 - Should a boss cap each set of stages, as in Jumping Flash? This could be a giant hover-tank on a
   barge.
 - Should there be a level editor (dr-mow's "pure `compile(design) → level`" idea)?
-- Do we want shadow maps on desktop? Today it's landing rings and fog only.
+- Do we want shadow maps on desktop? Today it's landing rings and fog only. Quality presets exist
+  now (LOW / MED / HIGH), so shadows could be HIGH-only.
 - Should there be a real-device check on iPhone or iPad for pointer and gamepad focus quirks?
 
 ## Since the initial build (delta log)
@@ -189,3 +211,27 @@ mstr-gme-dsgn-tmpt `kits/`:
   from the bounce alone. New spiked crawlers you must shoot.
 - A SLOW-MO bullet-time power-up, and respawning pickups in the boss arena.
 - A new boss track, "Arachne": breakcore × hard techno with grind stabs.
+
+### claude/red-mech-boss-and-work-items (polish pass)
+
+- ARACHNE-9 is a red industrial mech with armour plates, hydraulic rams, an amber sensor head,
+  heat vents and a red turret.
+- Its body no longer passes through racks, crates or lifts. A new sim-check proves it over a
+  3-minute hop-around fight (issue 3).
+- HUD (issue 9):
+  - stacked objective markers fan apart
+  - edge arrows stay clear of the controls, the altimeter and ECHO
+  - tighter landscape-phone layout; the objective wraps on narrow portrait
+  - no duplicate boss-name toast
+- A muzzle per weapon, plus sway, per-weapon recoil and a swap dip. New leg poses: deeper tucks,
+  dangle, a landing reach, the stomp pose and a landing squash (issue 4).
+- New options (issues 5, 6, 10):
+  - field of view
+  - shake/bob/sway off
+  - reduced flashes
+  - tap-on/off FIRE
+  - music and sound volume sliders
+  - quality presets
+  - a limiter on the mix
+  - shape-coded markers and an X crosshair on targets
+- Best times, bonus bests, 12 achievements and a RECORDS screen (issue 11).

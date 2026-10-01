@@ -43,6 +43,11 @@ surface normal `(nx, ny, nz)` (its "up"), a heading `(fx, fz)` and a `surf` valu
 air). The renderer builds its orientation from those, using up = normal and forward = heading (or "up
 the wall" while climbing).
 
+It treats any platform inside `level.arena` that overlaps its body band as solid. It pushes its body
+circle (`BOSS.bodyR`) out of these, and aims chases, pounces and drops at the nearest free spot
+(`freeSpot`). Wall climbs stay inside `arena.climbX`. All of it is plain loops over `w.plats`, with no
+generators or closures over engine state.
+
 **Slow-mo** runs a second clock, `world.pt`, at `T.SLOW_K`. Platforms, lasers, enemies and bolts step
 with it; the player and the player's shots step with `DT`. Without slow-mo, `pt === t` exactly.
 
@@ -101,6 +106,9 @@ numbers.
 ## What not to port 1:1
 
 - **The DOM HUD:** rebuild it natively. It reads `snapshot(world)`.
+- **Options and records:** these are adapter-side. FOV, comfort, flash, quality and volume never
+  touch the sim. Achievements (`js/ui/achievements.js`) only read events and clear results, so port
+  them with the UI.
 - **Pointer lock and touch-zoom guard:** these are browser-only.
 - **The canvas texture painters:** port them or bake them once to PNGs. They're deterministic
   apart from the font used for the ads' text.

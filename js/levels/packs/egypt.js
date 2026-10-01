@@ -1,2 +1,6 @@
-// Level pack 'egypt' (not built yet): 3 stages + a boss stage. See js/levels/packs/index.js.
-export default { id: 'egypt', name: 'EGYPT', sub: '', stages: [] };
+// Pack 8 — EGYPT: THE DATA DYNASTY. Neo-Cairo's rooftops at golden hour, the Great Pyramid turned
+// data centre in a midday sandstorm, its torch-lit inner sanctum, and MECHA ANUBIS in the Hall of
+// Judgment. Stages: ./egypt-*.js
+import cairo from './egypt-cairo.js';
+
+export default { id: 'egypt', name: 'EGYPT', sub: 'THE DATA DYNASTY', color: '#ffc53a', stages: [cairo] };

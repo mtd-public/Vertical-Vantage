@@ -260,7 +260,7 @@ function handleEvents(w) {
       case 'dead': avatar.react('dead', true); break;
       case 'bonusClear': avatar.react('bonusClear', true); break;
       case 'bonusTimeout': avatar.react('bonusTimeout', true); break;
-      case 'bossRoar': hud.toast(`${w.level.bossName || 'BOSS'}!`, 'red'); avatar.react('bossStart', true); input.rumble(0.6, 0.3, 400); break;
+      case 'bossRoar': hud.toast('IT\u2019S AWAKE!', 'red'); avatar.react('bossStart', true); input.rumble(0.6, 0.3, 400); break; // the intro card and the gauge already name it
       case 'bossTele': avatar.react('bossTele'); break;
       case 'bossCharge': avatar.react('bossCharge'); break;
       case 'bossSlam': input.rumble(1, 0.6, 350); break;

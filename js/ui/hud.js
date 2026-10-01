@@ -16,6 +16,7 @@ export class Hud {
     };
     this.cache = {};
     this.markers = new Map();
+    this.mkFrame = 0; this.topY = 64;
     this.hpCells = [];
     this.altMax = 60;
   }
@@ -117,7 +118,17 @@ export class Hud {
       const dx = w.portal.x - P.x, dz = w.portal.z - P.z;
       if (dx * dx + dz * dz < 25 * 25) want.push(['portal', w.portal, 'BONUS']); // a secret until you're close
     }
-    const seen = new Set();
+    // keep markers below the top-centre block (drive slots, objective, boss gauge): re-measured now and then
+    if (!(this.mkFrame++ % 30)) {
+      let b = this.el.objective.getBoundingClientRect().bottom;
+      if (!this.el.boss.classList.contains('hidden')) b = Math.max(b, this.el.boss.getBoundingClientRect().bottom);
+      this.topY = b + 20;
+    }
+    const seen = new Set(), placed = [], topY = this.topY || 64;
+    // edge arrows live in a box clear of the altimeter (left), ECHO / the weapon readout (bottom) and,
+    // on touch, the stick and the buttons
+    const touch = document.body.classList.contains('touch');
+    const L = 80, Rt = wpx - (touch ? 100 : 46), T = topY, B = Math.max(topY + 40, hpx - (touch ? 196 : 112));
     for (const [kind, o, label] of want) {
       seen.add(o);
       let m = this.markers.get(o);
@@ -128,23 +139,42 @@ export class Hud {
       const pad = 34;
       let sx, sy, edge = false;
       const s = v.z < -0.1 ? R.project(o.x, ty, o.z, wpx, hpx) : null;
-      if (s && s.x > pad && s.x < wpx - pad && s.y > pad + 40 && s.y < hpx - pad) { sx = s.x; sy = s.y; }
+      if (s && s.x > pad && s.x < wpx - pad && s.y > topY && s.y < hpx - pad) { sx = s.x; sy = s.y; }
       else {
         edge = true;
         let dx = v.x, dy = -v.y;
         if (v.z > 0 && Math.abs(dx) < 1e-3 && Math.abs(dy) < 1e-3) dy = 1;
         const l = Math.sqrt(dx * dx + dy * dy) || 1; dx /= l; dy /= l;
-        const hx = wpx / 2 - pad, hy = hpx / 2 - pad - 20;
+        const cx = (L + Rt) / 2, cy = (T + B) / 2, hx = (Rt - L) / 2, hy = (B - T) / 2;
         const t = Math.min(Math.abs(hx / (dx || 1e-6)), Math.abs(hy / (dy || 1e-6)));
-        sx = wpx / 2 + dx * t; sy = hpx / 2 + 10 + dy * t;
+        sx = cx + dx * t; sy = cy + dy * t;
         m.firstChild.style.transform = `rotate(${Math.atan2(dx, -dy)}rad)`;
       }
       m.classList.toggle('edge', edge);
       if (!edge) m.firstChild.style.transform = '';
-      m.style.left = sx.toFixed(0) + 'px'; m.style.top = sy.toFixed(0) + 'px';
+      placed.push({ m, x: sx, y: sy, edge, side: edge && (sx <= L + 1 || sx >= Rt - 1) });
       const txt = `${label} ${dist}m`;
       if (m._t !== txt) { m._t = txt; m.lastChild.textContent = txt; }
     }
+    // Two targets in a similar direction would stack their labels: fan them apart. Edge markers on
+    // the left/right edges slide along it vertically; everything else separates the shorter way.
+    const MW = 76, MH = 34;
+    const clampQ = (q) => {
+      if (q.edge) { q.x = Math.max(L, Math.min(Rt, q.x)); q.y = Math.max(T, Math.min(B, q.y)); }
+      else { q.x = Math.max(24, Math.min(wpx - 24, q.x)); q.y = Math.max(topY, Math.min(hpx - 20, q.y)); }
+    };
+    for (let it = 0; it < 8; it++) {
+      for (let i = 0; i < placed.length; i++) for (let j = i + 1; j < placed.length; j++) {
+        const a = placed[i], b = placed[j];
+        const ox = MW - Math.abs(a.x - b.x), oy = MH - Math.abs(a.y - b.y);
+        if (ox <= 0 || oy <= 0) continue;
+        const vert = a.side || b.side || !(a.edge || b.edge) || oy < ox;
+        if (vert) { const k = (a.y <= b.y ? -1 : 1) * oy / 2; a.y += k; b.y -= k; }
+        else { const k = (a.x <= b.x ? -1 : 1) * ox / 2; a.x += k; b.x -= k; }
+        clampQ(a); clampQ(b); // one pinned against the box edge? the other keeps moving next pass
+      }
+    }
+    for (const q of placed) { clampQ(q); q.m.style.left = q.x.toFixed(0) + 'px'; q.m.style.top = q.y.toFixed(0) + 'px'; }
     for (const [o, m] of this.markers) if (!seen.has(o)) { m.remove(); this.markers.delete(o); }
   }
 

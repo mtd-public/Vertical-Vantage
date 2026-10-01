@@ -25,7 +25,7 @@ import { initPose, introTick, phaseTick, pick, turnTo, pushSolids, openSpot, fan
 
 // Every number, and why it has that value. (Exported: it lands in data/tuning.json as BOSSES.anubis.)
 export const tuning = {
-  hp: 300, // ~45 s of blaster on target; the punish windows take ×1.5 and the ward eats front fire: 2–4 min.
+  hp: 320, // ~48 s of blaster on target; a perfect aimbot needs ~70 s (it sinks, the ward eats front fire): 2–4 min for a player.
   r: 2.6, top: 9.6, bodyR: 2.3, // hit capsule (shots, contact, stomps on the head at 9.6 m); its body against columns and jars.
   eyeUp: 8.5, eyeFwd: 1.4, // the eyes: 8.5 m up, 1.4 m in front of its centre (the beam and the bolts start here).
   intro: 2.4, // the hold before it howls.

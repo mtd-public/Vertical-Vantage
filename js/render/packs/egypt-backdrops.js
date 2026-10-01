@@ -74,7 +74,7 @@ export const BACKDROPS = {
   'eg-westBank'(o, th, B) {
     const K = new B.Kit(), rng = mulberry32(o.seed ?? 85), len = o.len ?? 500;
     for (let x = -len / 2; x < len / 2;) {
-      const w = 16 + rng() * 20, h = 30 + rng() * 80, zz = (rng() - 0.5) * 60;
+      const w = 16 + rng() * 20, h = (o.hMin ?? 20) + rng() * ((o.hMax ?? 56) - (o.hMin ?? 20)), zz = (rng() - 0.5) * 60;
       K.add('solid', B.box(w, h, 14 + rng() * 14, { x: x + w / 2, y: h / 2, z: zz, color: B.c(rng() < 0.5 ? '#c8b498' : '#a89880') }));
       for (let k = 1; k < h / 12; k++) K.add('glow', B.box(w * 0.85, 0.6, 0.5, { x: x + w / 2, y: k * 12, z: zz + 8, color: rng() < 0.7 ? '#ffd890' : '#8ae0ff' }));
       if (rng() < 0.3) K.add('glow', B.box(w + 0.5, 1.4, 1, { x: x + w / 2, y: h - 2, z: zz + 8, color: rng() < 0.5 ? '#ff2bd6' : '#2be8ff' }));

@@ -174,7 +174,7 @@ export default {
   backdrops: [
     { kind: 'eg-giza', x: -620, y: -2, z: 330, yaw: 0.9, s: 1.15, glow: 1 },
     { kind: 'eg-cairoRing', x: 30, y: -0.5, z: -50, r0: 190, r1: 320, n: 90, seed: 81, avoidX: [-118, -42] }, // (the Nile stays clear)
-    { kind: 'eg-westBank', x: -330, y: 0, z: -50, yaw: Math.PI / 2, len: 560, seed: 85 },
+    { kind: 'eg-westBank', x: -330, y: 0, z: -110, yaw: Math.PI / 2, len: 420, seed: 85 }, // (it leaves the view to Giza open)
     { kind: 'hills', x: 520, y: -4, z: -80, yaw: Math.PI / 2, len: 700, h: 70, n: 8, color: '#c8986a' }, // the Mokattam hills
   ],
 };

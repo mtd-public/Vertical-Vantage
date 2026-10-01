@@ -54,8 +54,9 @@ export const makeFloe = (o = {}) => (rng, x, z, top, yaw, i) => (i % 2 && !o.rec
 // The coal tramway (taubane): a timber trestle tower with a little deck on top (3 × 3), solid down to `base`
 // (tint = its height in metres, for the lattice legs). Buckets ride the cable between two towers.
 export const trestle = (x, z, top, base, o = {}) => rect(x, z, o.w ?? 3, o.d ?? 3, top, { thick: top - base, yaw: o.yaw || 0, style: 'arc-trestle', tint: Math.round(top - base) });
-// A tram bucket (the hopper you ride, 2.4 × 2.4): `move` slides it along the cable; tint = hanger length (dm).
-export const bucket = (x, z, top, move, o = {}) => rect(x, z, 2.4, 2.4, top, { thick: 1.6, yaw: o.yaw || 0, style: 'arc-bucket', tint: Math.round((o.hang ?? 3.2) * 10), move, bob: null });
+// A tram bucket (the hopper you ride, 2.4 × 2.4): `move` slides it along the cable; tint = hanger length (dm),
+// negative when the hanger rises from its -z side (o.side: the side of the trestles the cable runs on).
+export const bucket = (x, z, top, move, o = {}) => rect(x, z, 2.4, 2.4, top, { thick: 1.6, yaw: o.yaw || 0, style: 'arc-bucket', tint: Math.round((o.hang ?? 3.2) * 10) * (o.side ?? 1), move, bob: null });
 
 // A white radome on its drum: a sphere of radius R whose equator stands `drum` above `base`. Collision:
 // the drum, then thin tiers circumscribing the upper hemisphere (you stand on the dome, never in it).

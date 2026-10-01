@@ -155,5 +155,6 @@ export default {
     { kind: 'arc-aurora', x: 0, y: 0, z: 0, r: 520, seed: 931 },
     { kind: 'arc-peaks', x: 0, y: -2, z: 0, r0: 320, r1: 460, n: 20, seed: 932, skip: [1.2, 0.8] },
     { kind: 'arc-fjordview', x: 0, y: -60, z: 520, seed: 933 },
+    { kind: 'arc-snowfall', x: 0, y: 0, z: 0, n: 600, wind: 0.3, k: 0.8, zMin: 36 }, // (outside only)
   ],
 };

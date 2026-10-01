@@ -58,7 +58,7 @@ P(RIVER_SM);
 // ---- the coal tramway (taubane): TRAM CENTRAL on its trestle stilts, five timber trestles climbing
 //      west, and the MINE STATION on the plateau's edge (DRIVE 1 on its roof). A hopper bucket rides
 //      each span, on alternate sides of the trestles.
-const STATION = rect(-30, 92, 16, 12, 13, { thick: 6.5, style: 'arc-tramcentral' });
+const STATION = rect(-30, 92, 16, 12, 13, { thick: 6.5, style: 'arc-tramcentral', tint: 55 }); // tint: its trestle stilts (dm)
 P(STATION);
 P(house(-14, 98, 8, 9, G, 2, 6.5, 5), crate(-20, 90, G + 2.4, 2.4, { tint: 1 }), crate(-20, 90, G + 4.8, 2.4, { tint: 2 })); // the way up: a crate stack, a house
 const MINE = box(-144, -126, 92, 108, 41, { thick: 7, style: 'arc-minestation' });
@@ -76,7 +76,7 @@ for (let i = 0; i < SPANS.length - 1; i++) {
   const off = 2.9 * (i % 2 ? -1 : 1); // the cable runs beside the trestles' decks, alternate sides
   const y0 = ya - 0.6, y1 = yb - 1.4; // step down onto it at the low end, hop up off it at the high end
   const dx = bx - ax, dy = y1 - y0, dz = zb - za, L = Math.sqrt(dx * dx + dy * dy + dz * dz);
-  P(bucket((ax + bx) / 2, (za + zb) / 2 + off, (y0 + y1) / 2, lane(dx, dy, dz, L / 2, 9 + i * 0.6, 0.75), { hang: 3.4 }));
+  P(bucket((ax + bx) / 2, (za + zb) / 2 + off, (y0 + y1) / 2, lane(dx, dy, dz, L / 2, 9 + i * 0.6, 0.75), { hang: 3.4, side: off > 0 ? 1 : -1 }));
 }
 
 // ---- the plateau: the ledges up its north-east corner (the hard way up), the radome field, a mast
@@ -168,7 +168,8 @@ export default {
   backdrops: [
     { kind: 'arc-aurora', x: 0, y: 0, z: 0, r: 520, seed: 911 },
     { kind: 'arc-peaks', x: 0, y: -2, z: 0, r0: 300, r1: 420, n: 22, seed: 912, skip: [-2.3, -0.9] }, // mountains all round but the fjord mouth
-    { kind: 'arc-cables', x: 0, y: 0, z: 0, pts: SPANS.map(([x, y, z]) => [x, y - 1.4 + 1.6 + 3.4, z]), off: 2.9 },
+    { kind: 'arc-cables', x: 0, y: 0, z: 0, spans: SPANS, off: 2.9, hang: 3.4 },
+    { kind: 'arc-snowfall', x: 0, y: 0, z: 0, n: 500, wind: 0.15, k: 0.7 },
     { kind: 'arc-townlights', x: 0, y: 0, z: 0, seed: 913 },
     { kind: 'arc-radomes', x: -320, y: 30, z: -140, n: 9, seed: 914 },
   ],

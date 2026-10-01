@@ -143,7 +143,8 @@ export default {
     { type: 'health', x: -82, y: 14, z: -48 },
   ],
   backdrops: [
-    { kind: 'arc-snowfall', x: 0, y: 0, z: 0, n: 1800, wind: 1 },
+    { kind: 'arc-snowfall', x: 0, y: 0, z: 0, n: 1800, wind: 1, size: 1.3 },
+    { kind: 'arc-beaconlight', x: 26, y: 59.4, z: -222 }, // the camp's strobe: the one thing the whiteout can't hide
     { kind: 'arc-icefield', x: 0, y: 30, z: -560, len: 1400, h: 60, seed: 921 },
     { kind: 'arc-bergs', x: 0, y: 0, z: 0, r0: 220, r1: 420, n: 26, seed: 922 },
   ],

@@ -17,7 +17,7 @@ const P = (...a) => plats.push(...a);
 
 // the hall: its floor (the inlaid judgment floor), the pylon walls (the south gate in the middle)
 P(rect(0, -1, 72, 58, A.floor, { thick: 4, style: 'eg-judgmentFloor' }));
-P(...walls(-36, 36, -30, 28, -4, 14, [{ side: 's', a0: -6, a1: 6, bot: 0, top: 11 }], { style: 'eg-pylon' }));
+P(...walls(-36, 36, -30, 28, -4, 14, [{ side: 's', a0: -6, a1: 6, bot: 0, top: 11 }], { style: 'eg-pylon', floor: 0 }));
 // the throne of Osiris on its dais against the north wall (cover, a perch)
 P(box(-8, 8, -30, -24, 4.5, { thick: 4.5, style: 'eg-dais' }));
 // papyrus columns down both sides (perches of different heights: shoot down on it, or drop onto its head)

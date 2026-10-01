@@ -25,7 +25,7 @@ const P = (...a) => plats.push(...a);
 // ---- the plateau (sand), cut by the boat pit along the pyramid's south side
 const PIT = { x0: -40, x1: 40, z0: -28, z1: -20 };
 const sand = (x0, x1, z0, z1) => box(x0, x1, z0, z1, 0, { thick: 3, style: 'eg-desert' });
-P(sand(-170, 170, PIT.z1, 120), sand(-170, 170, -210, PIT.z0), sand(-170, PIT.x0, PIT.z0, PIT.z1), sand(PIT.x1, 170, PIT.z0, PIT.z1));
+P(sand(-640, 640, PIT.z1, 640), sand(-640, 640, -640, PIT.z0), sand(-640, PIT.x0, PIT.z0, PIT.z1), sand(PIT.x1, 640, PIT.z0, PIT.z1));
 P(box(PIT.x0, PIT.x1, PIT.z0, PIT.z1, -9, { thick: 1, style: 'eg-pitFloor' })); // (far below killY: the cables glow down there)
 const BARQUE = rect(0, -24, 3.2, 12, -1.5, { thick: 1.2, yaw: Math.PI / 2, style: 'eg-barque', move: mv('x', 26, 20, 0) });
 P(BARQUE);
@@ -87,7 +87,7 @@ const lasers = [
 export default {
   id: 'egypt-pyramid', name: 'DATA PYRAMID', sub: 'GIZA PLATEAU · 12:40 · SANDSTORM', theme: 'egyptHaze', song: 'nileBreak',
   seed: 8002, par: 320, killY: -6,
-  start: { x: 20, y: 0, z: 80, yaw: 0.12 },
+  start: { x: 4, y: 0, z: 34, yaw: 0.05 },
   plats, lasers,
   drives: [
     { x: HEAD.x + 1.6, y: MAST + 1.1, z: HEAD.z }, // the top of the Sphinx's sensor mast
@@ -98,7 +98,7 @@ export default {
   portal: { x: 89.5, y: 5.2 + 1.4, z: 20 },
   bonusStyle: { theme: 'egyptBonusHaze', weapon: 'rapid', tag: 'GIZA' },
   enemies: [
-    { type: 'guard', x: 8, y: 0, z: 40 },
+    { type: 'guard', x: -14, y: 0, z: 6 },
     { type: 'guard', x: cwAt(0.6).x, y: 2.5, z: cwAt(0.6).z },
     { type: 'turret', x: PYR.x + ledge(3), y: C[3].h, z: PYR.z + ledge(3) },
     { type: 'turret', x: PYR.x - ledge(6), y: C[6].h, z: PYR.z + ledge(6) },
@@ -114,7 +114,7 @@ export default {
     { type: 'drone', x: 76, y: 27, z: 20 },
   ],
   pickups: [
-    { type: 'health', x: 20, y: 1, z: 68 },
+    { type: 'health', x: 10, y: 1, z: 30 },
     { type: 'spread', x: cwAt(0.15).x, y: 3.5, z: cwAt(0.15).z },
     { type: 'rapid', x: 60, y: QP[0][3].h + 1, z: -104 },
     { type: 'rocket', x: -66, y: 19, z: -72 },
@@ -124,8 +124,8 @@ export default {
     { type: 'health', x: PYR.x - ledge(8), y: C[8].h + 1, z: PYR.z },
   ],
   backdrops: [
-    { kind: 'eg-khafre', x: -330, y: -2, z: 250, s: 1.25 },
-    { kind: 'eg-khafre', x: -520, y: -2, z: 470, s: 0.75, small: 1 },
+    { kind: 'eg-khafre', x: -330, y: -2, z: 250, s: 0.6 },
+    { kind: 'eg-khafre', x: -520, y: -2, z: 470, s: 0.5, small: 1 },
     { kind: 'eg-dunes', x: 0, y: -1, z: 0, r0: 260, r1: 420, n: 26, seed: 82 },
     { kind: 'eg-cairoRing', x: 700, y: -1, z: -500, r0: 0, r1: 260, n: 40, seed: 83, towers: 1 },
   ],

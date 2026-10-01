@@ -21,9 +21,12 @@ const P = (...a) => plats.push(...a);
 const Q = 1.2; // the corniche (quay) height; the river's surface is at 0
 
 // ---- the ground: the old city's streets (east bank), the corniche, the far bank
-P(box(-12, 122, -164, 64, 0, { thick: 3, style: 'eg-street' }));
-P(box(-20, -12, -164, 64, Q, { thick: 4, style: 'eg-corniche' }));
-P(box(-98, -82, -164, 64, Q, { thick: 4, style: 'eg-corniche', tint: 1 }));
+P(box(-12, 640, -640, 640, 0, { thick: 3, style: 'eg-street' }));
+P(box(-20, -12, -640, 640, Q, { thick: 4, style: 'eg-corniche' }));
+P(box(-98, -82, -640, 640, Q, { thick: 4, style: 'eg-corniche', tint: 1 }));
+P(box(-640, -98, -640, 640, 0.6, { thick: 3, style: 'eg-street', tint: 1 }));
+// the far bank: Zamalek's and Giza's tower blocks across the river (scenery)
+for (const [z, w, d, top, t] of [[-150, 14, 12, 34, 0], [-118, 12, 16, 22, 1], [-86, 16, 12, 40, 2], [-50, 12, 12, 28, 3], [-16, 14, 14, 19, 4], [22, 12, 16, 31, 5], [58, 16, 12, 25, 6]]) P(rect(-112 - (t % 2) * 6, z, w, d, top, { thick: top - 0.6, style: 'eg-modern', tint: t }));
 // houseboats moored along the east bank
 for (const z of [46, 20, -132, -152]) P(rect(-22.2, z, 3.6, 13, 1.0, { thick: 1.6, style: 'eg-houseboat', tint: Math.abs(z) % 4 }));
 
@@ -170,8 +173,8 @@ export default {
   ],
   backdrops: [
     { kind: 'eg-giza', x: -620, y: -2, z: 330, yaw: 0.9, s: 1.15, glow: 1 },
-    { kind: 'eg-cairoRing', x: 30, y: -0.5, z: -50, r0: 190, r1: 300, n: 90, seed: 81, skipW: [2.2, 0.8] },
-    { kind: 'eg-westBank', x: -150, y: 0, z: -50, yaw: Math.PI / 2, len: 260 },
+    { kind: 'eg-cairoRing', x: 30, y: -0.5, z: -50, r0: 190, r1: 320, n: 90, seed: 81, avoidX: [-118, -42] }, // (the Nile stays clear)
+    { kind: 'eg-westBank', x: -330, y: 0, z: -50, yaw: Math.PI / 2, len: 560, seed: 85 },
     { kind: 'hills', x: 520, y: -4, z: -80, yaw: Math.PI / 2, len: 700, h: 70, n: 8, color: '#c8986a' }, // the Mokattam hills
   ],
 };

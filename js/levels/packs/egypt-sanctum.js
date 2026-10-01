@@ -31,18 +31,18 @@ P(...walls(-10, 10, 0, 26, -3, 10, [
   { side: 'n', a0: -3, a1: 3, bot: 0, top: 7 }, // the ascending passage
   { side: 'w', a0: 4, a1: 10, bot: 0, top: 4.5 }, // the Queen's corridor
   { side: 'e', a0: 16, a1: 22, bot: -9, top: 4.5 }, // the descending passage
-]));
+], { floor: 0 }));
 P(ceiling(-10, 10, 0, 26, 10));
 P(rect(-7, 18, 2.2, 5, 1.6, { thick: 1.6, style: 'eg-sarcophagus', tint: 0 }), rect(7, 8, 2.2, 5, 1.6, { thick: 1.6, style: 'eg-sarcophagus', tint: 1 }), rect(-6, 3, 5, 2.2, 1.6, { thick: 1.6, style: 'eg-sarcophagus', tint: 2 }));
 
 // ---- the QUEEN'S CORRIDOR and CHAMBER: a bottomless pit across the chamber, two stone blocks
 // sliding over it; DRIVE 1 on a pedestal beyond
 P(floorBox(-22, -10, 4, 10, 0));
-P(...walls(-20, -12, 4, 10, -3, 4.5, [], { sides: ['n', 's'] }));
+P(...walls(-20, -12, 4, 10, -3, 4.5, [], { sides: ['n', 's'], floor: 0 }));
 P(ceiling(-20, -12, 4, 10, 4.5));
 const QC = { x0: -48, x1: -22, z0: -10, z1: 20, pit0: -40, pit1: -28 };
 P(floorBox(QC.pit1, QC.x1, QC.z0, QC.z1, 0, { base: DEEP }), floorBox(QC.x0, QC.pit0, QC.z0, QC.z1, 0, { base: DEEP }));
-P(...walls(QC.x0, QC.x1, QC.z0, QC.z1, DEEP, 15, [{ side: 'e', a0: 4, a1: 10, bot: 0, top: 4.5 }]));
+P(...walls(QC.x0, QC.x1, QC.z0, QC.z1, DEEP, 15, [{ side: 'e', a0: 4, a1: 10, bot: 0, top: 4.5 }], { floor: 0 }));
 P(ceiling(QC.x0, QC.x1, QC.z0, QC.z1, 15, { tint: 1 }));
 P(rect(-34, 1, 4, 5, 0, { thick: 1.4, style: 'eg-slider', move: mv('x', 4, 6, 0) }), rect(-34, 13, 4, 5, 0, { thick: 1.4, style: 'eg-slider', tint: 1, move: mv('x', 4, 6.5, 0.5) }));
 P(rect(-44, 5, 3, 3, 1.4, { thick: 1.4, style: 'eg-pedestal' }));
@@ -50,7 +50,7 @@ P(rect(-25, -5, 2.2, 5, 1.6, { thick: 1.6, style: 'eg-sarcophagus', tint: 3 }), 
 
 // ---- the ASCENDING PASSAGE: stairs 0 → 4 up to the gallery
 P(...stairs(0, -2, 0, -1, 6, 1.6, 0.4, 10, 0, { floor: -3, style: 'eg-tombStep' }));
-P(...walls(-3, 3, -18, -2, -3, 9.5, [], { sides: ['w', 'e'] }));
+P(...walls(-3, 3, -18, -2, -3, 9.5, [], { sides: ['w', 'e'], floor: 2 }));
 P(ceiling(-3, 3, -18, -2, 9.5));
 
 // ---- the GRAND GALLERY: ten floor steps (8 m long, 2.4 m up), pits at steps 3 and 6 (a stone block
@@ -74,7 +74,7 @@ P(...walls(G.x0, G.x1, G.z0, G.z1, DEEP, 46, [
 // ---- the ANTECHAMBER: three granite portcullises rise and fall (pass under while they're up)
 const AF = gf(9); // 28
 P(floorBox(-5, 5, -112, -102, AF));
-P(...walls(-5, 5, -112, -102, AF - 3, AF + 6, [], { sides: ['w', 'e'] }));
+P(...walls(-5, 5, -112, -102, AF - 3, AF + 6, [], { sides: ['w', 'e'], floor: AF }));
 P(ceiling(-5, 5, -112, -102, AF + 6));
 for (const [z, ph] of [[-104.5, 0], [-107, 0.3], [-109.5, 0.6]]) P(rect(0, z, 10, 1.0, AF + 7.4, { thick: 6, style: 'eg-portcullis', move: mv('y', 1.4, 5, ph) }));
 
@@ -85,7 +85,7 @@ P(floorBox(K.x0, K.x1, K.z0, K.z1, AF, { style: 'eg-graniteFloor' }));
 P(...walls(K.x0, K.x1, K.z0, K.z1, AF - 3, 48, [
   { side: 's', a0: -3, a1: 3, bot: AF, top: AF + 5 },
   { side: 'n', a0: -3, a1: 3, bot: AF, top: AF + 5 },
-], { style: 'eg-graniteWall' }));
+], { style: 'eg-graniteWall', floor: AF }));
 P(ceiling(K.x0, K.x1, K.z0, K.z1, 48, { style: 'eg-graniteCeil' }));
 P(rect(-9, -126, 3.6, 7.5, AF + 2.2, { thick: 2.2, style: 'eg-kingServer' }));
 const BEAMS = [[-118, 33], [-123, 36.5], [-128, 40], [-133, 43.5]].map(([z, top], i) => rect(0, z, 28, 2.0, top, { thick: 1.2, style: 'eg-beam', tint: i }));
@@ -94,24 +94,24 @@ P(...BEAMS);
 // ---- the NORTH AIR SHAFT: ledges on alternate sides all the way up; the STAR CHAMBER at the top
 const SH = { x0: -3, x1: 3, z0: -146, z1: -140 };
 P(floorBox(SH.x0, SH.x1, SH.z0, SH.z1, AF));
-P(box(-5, -3, SH.z0, SH.z1, 67, { thick: 67 - AF + 3, style: 'eg-shaftWall', tint: 3 }), box(3, 5, SH.z0, SH.z1, 67, { thick: 67 - AF + 3, style: 'eg-shaftWall', tint: 2 }));
+P(box(-5, -3, SH.z0, SH.z1, 67, { thick: 67 - AF + 3, style: 'eg-shaftWall', tint: 2 }), box(3, 5, SH.z0, SH.z1, 67, { thick: 67 - AF + 3, style: 'eg-shaftWall', tint: 3 }));
 P(box(-3, 3, -140, -138, 67, { thick: 67 - AF - 5, style: 'eg-shaftWall', tint: 1 })); // over the King's north door, up to the Star Chamber
 const LEDGES = [];
 for (let k = 0; k < 14; k++) { const s = k % 2 ? 1 : -1; LEDGES.push(rect(s * 1.7, (SH.z0 + SH.z1) / 2, 2.6, 6, 30.6 + 2.6 * k, { thick: 0.5, style: 'eg-shaftLedge', tint: k })); }
 P(...LEDGES);
 const STAR = 67;
 P(floorBox(-8, 8, -160, SH.z0, STAR, { base: AF, style: 'eg-starFloor' }), floorBox(-8, -3, SH.z0, -138, STAR, { base: AF, style: 'eg-starFloor' }), floorBox(3, 8, SH.z0, -138, STAR, { base: AF, style: 'eg-starFloor' }));
-P(...walls(-8, 8, -160, -138, STAR - 1, STAR + 9, [], { style: 'eg-starWall' }));
+P(...walls(-8, 8, -160, -138, STAR - 1, STAR + 9, [], { style: 'eg-starWall', floor: STAR }));
 P(ceiling(-8, 8, -160, -138, STAR + 9, { style: 'eg-starCeil' }));
 
 // ---- the DESCENDING PASSAGE and the SUBTERRANEAN CHAMBER (rough rock, a pit, the PORTAL on a rock)
 P(...stairs(10, 19, 1, 0, 6, 0.8, -0.4, 20, 0, { floor: -12, style: 'eg-tombStep' }));
-P(...walls(12, 28, 16, 22, -12, 5, [], { sides: ['n', 's'] }));
+P(...walls(12, 28, 16, 22, -12, 5, [], { sides: ['n', 's'], floor: -3 }));
 P(box(10, 20, 14, 24, 7, { thick: 2, style: 'eg-tombCeil' }), box(20, 28, 14, 24, 3, { thick: 2, style: 'eg-tombCeil' }));
 const SC = { x0: 28, x1: 50, z0: 4, z1: 34 };
 P(floorBox(SC.x0, 34, SC.z0, SC.z1, -8, { base: DEEP, style: 'eg-rockFloor' }), floorBox(44, SC.x1, SC.z0, SC.z1, -8, { base: DEEP, style: 'eg-rockFloor' }));
 P(floorBox(34, 44, SC.z0, 12, -8, { base: DEEP, style: 'eg-rockFloor' }), floorBox(34, 44, 26, SC.z1, -8, { base: DEEP, style: 'eg-rockFloor' }));
-P(...walls(SC.x0, SC.x1, SC.z0, SC.z1, DEEP, 2, [{ side: 'w', a0: 16, a1: 22, bot: -8, top: 1 }], { style: 'eg-rockWall' }));
+P(...walls(SC.x0, SC.x1, SC.z0, SC.z1, DEEP, 2, [{ side: 'w', a0: 16, a1: 22, bot: -8, top: 1 }], { style: 'eg-rockWall', floor: -8 }));
 P(ceiling(SC.x0, SC.x1, SC.z0, SC.z1, 2, { style: 'eg-rockCeil' }));
 const ROCK = disc(39, 19, 2.4, -4.5, { thick: 14, style: 'eg-rock' });
 P(ROCK);

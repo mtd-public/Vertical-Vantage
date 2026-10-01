@@ -102,8 +102,9 @@ export const ringPt = (cx, cz, r, a, y = 0) => ({ x: cx + Math.cos(a) * r, y, z:
 // ------------------------------------------------------------------ interiors (the inner sanctum)
 // Walls round a room x0..x1 × z0..z1: T (2) m thick, outside the room, from `base` up to `top`, split
 // round doors: [{ side: 'n' | 's' | 'w' | 'e', a0, a1 (along the wall: x for n/s, z for w/e), bot, top
-// (the opening's absolute heights) }]. n is the -Z wall. tint carries the side to the render (0 n, 1 s,
-// 2 w, 3 e) so the torches and glyphs go on the inner face.
+// (the opening's absolute heights) }]. n is the -Z wall. tint carries the side and the room's floor to
+// the render (side + 4 × (floor + 40); sides 0 n, 1 s, 2 w, 3 e) so the torches and glyphs go on the
+// inner face at a height you can see.
 const SIDE = { n: 0, s: 1, w: 2, e: 3 };
 export function walls(x0, x1, z0, z1, base, top, doors = [], o = {}) {
   const T = o.T ?? 2, out = [], style = o.style || 'eg-tombWall';
@@ -113,7 +114,7 @@ export function walls(x0, x1, z0, z1, base, top, doors = [], o = {}) {
     const piece = (b0, b1, y0, y1) => {
       if (b1 - b0 < 0.05 || y1 - y0 < 0.05) return;
       const [X0, X1, Z0, Z1] = side === 'n' ? [b0, b1, z0 - T, z0] : side === 's' ? [b0, b1, z1, z1 + T] : side === 'w' ? [x0 - T, x0, b0, b1] : [x1, x1 + T, b0, b1];
-      out.push(box(X0, X1, Z0, Z1, y1, { thick: y1 - y0, style, tint: SIDE[side] }));
+      out.push(box(X0, X1, Z0, Z1, y1, { thick: y1 - y0, style, tint: SIDE[side] + 4 * (Math.round(o.floor ?? 0) + 40) }));
     };
     let a = lo;
     for (const d of doors.filter((q) => q.side === side).sort((p, q) => p.a0 - q.a0)) {

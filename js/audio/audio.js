@@ -70,6 +70,8 @@ export class Audio {
   unlock() { this.sfx.unlock(); }
   setMuted(m) { this.sfx.setMuted(m); }
   setMusic(on) { this.musicOn = on; this.music.setEnabled(on); }
+  // Options: music and sound-effect levels, 0..1 (0 = off; music stops scheduling notes)
+  setVolumes(music, sfx) { this.music.setVolume(music); this.setMusic(music > 0); this.sfx.setFxVolume(sfx); }
   play(name) { this.sfx.play(name); }
   // Lasers and enemy noises only when near, so a stage full of curtains isn't a wall of beeps.
   events(list, near) {

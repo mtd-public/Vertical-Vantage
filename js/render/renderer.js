@@ -64,6 +64,7 @@ export class GameRenderer {
     this.cannon = MD.cannonModel(this.M);
     this.vmScene.add(this.cannon);
     this.recoil = 0; this.flashT = 0; this.showCannon = true;
+    this.hfov = 96; this.motion = 1; this.flashK = 1; this.beamsK = 1; this.size = [1, 1]; // Options: FOV, reduced motion / flash, quality
     this.kick = 1; this.swapT = 0; this.held = 'blaster'; this.shown = ''; this.spinV = 0;
     this.swayX = 0; this.swayY = 0; this.lastYaw = 0; this.lastPitch = 0;
     this.level = null;
@@ -73,19 +74,33 @@ export class GameRenderer {
 
   resize(wpx, hpx) {
     if (!wpx || !hpx) return;
+    this.size = [wpx, hpx];
     if (RETRO) { // ~240 lines on the shorter side; CSS stretches the canvas with hard pixels (dr-mow)
       const k = Math.min(wpx, hpx) / RETRO_LINES;
       this.renderer.setSize(Math.round(wpx / k), Math.round(hpx / k), false);
     } else this.renderer.setSize(wpx, hpx, false);
     const aspect = (this.aspect = wpx / hpx);
-    // a wide, Jumping-Flash-ish view: 96° across in landscape; portrait keeps a sane vertical FOV
-    const vf = 2 * Math.atan(Math.tan((96 * DEG) / 2) / aspect);
-    this.camera.fov = Math.min(88, Math.max(58, vf / DEG));
+    // a wide, Jumping-Flash-ish view: 96° across in landscape by default (Options: 80–110°); portrait
+    // keeps a sane vertical FOV
+    const vf = 2 * Math.atan(Math.tan((this.hfov * DEG) / 2) / aspect);
+    this.camera.fov = Math.min(this.hfov - 8, Math.max(58, vf / DEG));
     this.camera.aspect = aspect;
     this.camera.updateProjectionMatrix();
     this.vmCam.aspect = aspect;
     this.vmCam.fov = aspect < 1 ? 70 : 55;
     this.vmCam.updateProjectionMatrix();
+  }
+
+  // Options. fov: horizontal degrees. calm: no shake, bob, landing dip or gun sway. lowFlash: dimmer
+  // muzzle flashes, power sunburst and beam flicker. quality: 'low' | 'med' | 'high'.
+  setOptions({ fov = 96, calm = false, lowFlash = false, quality = 'high' } = {}) {
+    if (fov !== this.hfov) { this.hfov = fov; this.resize(...this.size); }
+    this.motion = calm ? 0 : 1;
+    this.flashK = lowFlash ? 0.35 : 1;
+    const Q = { low: [0.5, 0.35, 0, 1], med: [0.75, 0.65, 1, 1.5], high: [1, 1, 1, 2] }[quality] || [1, 1, 1, 2];
+    this.fx.k = Q[0]; this.fx.rainK = Q[1]; this.beamsK = Q[2];
+    if (this.theme) this.sky.u.uBeams.value = this.theme.beams * this.beamsK;
+    if (!RETRO) { this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, Q[3])); this.resize(...this.size); }
   }
 
   // ------------------------------------------------------------------ stage setup
@@ -120,6 +135,7 @@ export class GameRenderer {
     this.level = L;
     // theme
     this.sky.setTheme(th);
+    this.sky.u.uBeams.value = th.beams * this.beamsK;
     this.scene.fog = new THREE.Fog(th.skyBot, th.fog[0], th.fog[1]);
     this.hemi.color.set(th.hemi[0]); this.hemi.groundColor.set(th.hemi[1]); this.hemi.intensity = th.hemi[2];
     this.sun.color.set(th.key[0]); this.sun.intensity = th.key[1];
@@ -144,13 +160,13 @@ export class GameRenderer {
     pitch = Math.max(T.PITCH_MIN, Math.min(T.PITCH_MAX, pitch));
     // head bob + landing dip
     const sp = Math.sqrt(P.vx * P.vx + P.vz * P.vz);
-    const bob = P.ground ? Math.sin(P.stride * 2.4) * 0.05 * Math.min(1, sp / T.RUN) : 0;
-    const dip = P.landT < 0.22 ? -0.16 * Math.sin((P.landT / 0.22) * Math.PI) : 0;
-    const sh = this.fx.shake;
+    const bob = P.ground ? Math.sin(P.stride * 2.4) * 0.05 * Math.min(1, sp / T.RUN) * this.motion : 0;
+    const dip = P.landT < 0.22 ? -0.16 * Math.sin((P.landT / 0.22) * Math.PI) * this.motion : 0;
+    const sh = this.fx.shake * this.motion;
     cam.position.set(x + (Math.random() - 0.5) * sh, y + T.EYE + bob + dip + (Math.random() - 0.5) * sh, z + (Math.random() - 0.5) * sh);
     cam.rotation.set(pitch, yaw, 0);
     cam.updateMatrixWorld();
-    this.sky.powerTarget = P.hyper > 0 || P.over > 0 ? 0.55 : w.phase === 'clear' || w.phase === 'bonusClear' ? 1 : 0;
+    this.sky.powerTarget = (P.hyper > 0 || P.over > 0 ? 0.55 : w.phase === 'clear' || w.phase === 'bonusClear' ? 1 : 0) * this.flashK;
     this.sky.update(dt, t, cam);
     L.view.update(t);
     if (L.water) L.water.material.map.offset.set(t * 0.012, t * 0.02);
@@ -282,7 +298,7 @@ export class GameRenderer {
     const dpt = pitch - this.lastPitch; this.lastYaw = yaw; this.lastPitch = pitch;
     const side = P.vx * Math.cos(yaw) - P.vz * Math.sin(yaw), idt = 1 / Math.max(dt, 1 / 240);
     const tx = Math.max(-0.05, Math.min(0.05, -dyw * idt * 0.006 - side * 0.0035)), ty = Math.max(-0.04, Math.min(0.04, -dpt * idt * 0.006));
-    this.swayX += (tx - this.swayX) * Math.min(1, dt * 10); this.swayY += (ty - this.swayY) * Math.min(1, dt * 10);
+    this.swayX += (tx * this.motion - this.swayX) * Math.min(1, dt * 10); this.swayY += (ty * this.motion - this.swayY) * Math.min(1, dt * 10);
     const low = pitch < -0.45 ? (-0.45 - pitch) * 0.35 : 0;
     const port = this.aspect < 1, rk = this.recoil * this.kick, sdip = Math.sin(this.swapT * Math.PI);
     c.position.set((port ? 0.2 : 0.3) + this.swayX, -0.29 + bob * 0.5 - low + (P.ground ? 0 : 0.02) + this.swayY - sdip * 0.22, -0.95 + rk * 0.06);
@@ -294,7 +310,7 @@ export class GameRenderer {
     fl.position.z = (MZ[this.shown]?.tip ?? -0.47) - 0.05;
     fl.visible = this.flashT > 0;
     fl.rotation.z = Math.random() * 6;
-    fl.scale.setScalar(this.held === 'rocket' ? 1.6 : this.held === 'spread' ? 1.35 : this.held === 'rapid' ? 0.75 : 1);
+    fl.scale.setScalar((this.held === 'rocket' ? 1.6 : this.held === 'spread' ? 1.35 : this.held === 'rapid' ? 0.75 : 1) * (this.flashK < 1 ? 0.55 : 1));
     this.M.vmFlash.color.set(WEAPON_COL[P.weapon] || 0xffffff);
   }
 
@@ -339,13 +355,13 @@ export class GameRenderer {
     }
     // the beam (sight line while charging, the real thing while firing)
     const B = e.beam, bm = L.beam;
-    bm.visible = B.on || (B.sight && Math.sin(t * 35) > -0.3);
+    bm.visible = B.on || (B.sight && (this.flashK < 1 || Math.sin(t * 35) > -0.3)); // (low flash: a steady sight line)
     if (bm.visible) {
       bm.position.set(B.ox, B.oy, B.oz);
       bm.lookAt(B.ox + B.dx, B.oy + B.dy, B.oz + B.dz);
-      const th = B.on ? 0.42 + Math.sin(t * 50) * 0.06 : 0.05;
+      const th = B.on ? 0.42 + Math.sin(t * 50) * 0.06 * this.flashK : 0.05;
       bm.scale.set(th, th, B.len);
-      this.M.beam.opacity = B.on ? 0.9 : 0.55;
+      this.M.beam.opacity = (B.on ? 0.9 : 0.55) * (this.flashK < 1 ? 0.7 : 1);
     }
   }
 

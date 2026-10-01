@@ -18,8 +18,16 @@ import { Avatar } from './ui/avatar.js';
 import * as Screens from './ui/screens.js';
 
 const SKEY = 'vertical-vantage.settings', PKEY = 'vertical-vantage.progress';
-const DEFAULTS = { art: 'retro', mouseSens: 1, padSens: 1, touchSens: 1, invertY: false, autoLook: true, touch: 'auto', cannon: true, quips: false, music: true, sound: true };
+const DEFAULTS = {
+  art: 'retro', mouseSens: 1, padSens: 1, touchSens: 1, invertY: false, autoLook: true, touch: 'auto', cannon: true, quips: false,
+  musicVol: 0.8, sfxVol: 0.9, fov: 96, calm: false, lowFlash: false, fireLatch: false, quality: 'auto',
+};
 const load = (k, d) => { try { return { ...d, ...(JSON.parse(localStorage.getItem(k)) || {}) }; } catch (_) { return { ...d }; } };
+// First-run quality guess: phones and small machines start on Low / Med (overridable in Options).
+function autoQuality() {
+  const coarse = matchMedia('(pointer: coarse)').matches, mem = navigator.deviceMemory || 8, cores = navigator.hardwareConcurrency || 8;
+  return coarse && (mem <= 4 || cores <= 4) ? 'low' : coarse ? 'med' : 'high';
+}
 const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) { /* private mode */ } };
 
 const $ = (id) => document.getElementById(id);
@@ -33,20 +41,30 @@ const avatar = new Avatar($('avatar'));
 
 const G = {
   mode: 'boot', stageIdx: 0, world: null, main: null, acc: 0, t: 0, timer: 0, next: null,
-  runScore: 0, settings: load(SKEY, DEFAULTS), progress: load(PKEY, { unlocked: 1, best: {}, bestTotal: 0 }),
+  runScore: 0, settings: migrate(load(SKEY, DEFAULTS)), progress: load(PKEY, { unlocked: 1, best: {}, bestTotal: 0 }),
   optionsBack: 'back', touch: false, muted: false,
 };
 
 // ------------------------------------------------------------------ settings
+// Older saves had music / sound on-off switches: they become volume 0.
+function migrate(S) {
+  if (S.music === false) S.musicVol = 0;
+  if (S.sound === false) S.sfxVol = 0;
+  delete S.music; delete S.sound;
+  return S;
+}
 function applySettings() {
   const S = G.settings;
-  Object.assign(input.opts, { mouseSens: S.mouseSens, padSens: S.padSens, touchSens: S.touchSens, invertY: S.invertY });
+  Object.assign(input.opts, { mouseSens: S.mouseSens, padSens: S.padSens, touchSens: S.touchSens, invertY: S.invertY, fireLatch: S.fireLatch });
   if (G.world) G.world.opts.autoLook = S.autoLook;
   if (G.main) G.main.opts.autoLook = S.autoLook;
   renderer.showCannon = S.cannon;
+  renderer.setOptions({ fov: S.fov, calm: S.calm, lowFlash: S.lowFlash, quality: S.quality === 'auto' ? autoQuality() : S.quality });
+  document.body.classList.toggle('calm', S.calm);
+  document.body.classList.toggle('low-flash', S.lowFlash);
   avatar.setTalk(S.quips);
-  audio.setMusic(S.music);
-  audio.setMuted(!S.sound || G.muted);
+  audio.setVolumes(S.musicVol, S.sfxVol);
+  audio.setMuted(G.muted);
   setTouch(S.touch === 'on' || (S.touch === 'auto' && (G.touchSeen || matchMedia('(pointer: coarse)').matches)));
 }
 function setTouch(on) {
@@ -202,6 +220,8 @@ $('screen').addEventListener('input', (e) => {
   const k = e.target.dataset?.opt;
   if (!k) return;
   G.settings[k] = parseFloat(e.target.value); save(SKEY, G.settings); applySettings();
+  const val = e.target.closest('.opt')?.querySelector('.val');
+  if (val && k === 'fov') val.textContent = `${G.settings.fov}°`;
 });
 $('pause-btn').addEventListener('click', () => pause('button'));
 $('mute-btn').addEventListener('click', () => { G.muted = !G.muted; applySettings(); $('mute-btn').textContent = G.muted ? '×' : '♪'; });

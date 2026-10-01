@@ -15,6 +15,7 @@ export class FX {
   constructor(scene) {
     this.scene = scene;
     this.shake = 0;
+    this.k = 1; this.rainK = 1; // quality preset: particle count and rain density multipliers
     // projectiles
     const shotGeo = new THREE.BoxGeometry(0.2, 0.2, 1.8);
     this.shots = new THREE.InstancedMesh(shotGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false }), 96);
@@ -65,6 +66,7 @@ export class FX {
 
   // ---- spawners
   burst(x, y, z, n, color, speed = 6, size = 0.12, life = 0.6, grav = 12) {
+    n = Math.max(1, Math.round(n * this.k));
     _c.set(color);
     for (let k = 0; k < n; k++) {
       const b = this.bitData[this.next], i = this.next;
@@ -179,6 +181,6 @@ export class FX {
       m.scale.setScalar(0.3 + u.r * k);
       m.material.opacity = 1 - k;
     }
-    if (this.rain) { this.rain.material.uniforms.uT.value = t; this.rain.material.uniforms.uCam.value.copy(camera.position); }
+    if (this.rain) { this.rain.material.uniforms.uT.value = t; this.rain.material.uniforms.uCam.value.copy(camera.position); this.rain.geometry.setDrawRange(0, Math.round(1400 * this.rainK) * 2); }
   }
 }

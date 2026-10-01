@@ -50,19 +50,29 @@ export function stages(progress) {
 export function options(S, back = 'back') {
   const seg = (key, vals) => `<div class="seg">${vals.map(([v, l]) => `<button data-go="opt:${key}:${v}" class="${String(S[key]) === String(v) ? 'on' : ''}">${l}</button>`).join('')}</div>`;
   const range = (key, min, max, step) => `<input type="range" min="${min}" max="${max}" step="${step}" value="${S[key]}" data-opt="${key}">`;
+  const head = (t) => `<div class="opt-h">${t}</div>`;
   show(`<div class="card"><div class="big" style="font-size:30px">OPTIONS</div>
     <div class="opts">
+      ${head('CONTROLS')}
       <div class="opt"><span>Look: mouse</span>${range('mouseSens', 0.3, 3, 0.05)}</div>
       <div class="opt"><span>Look: controller</span>${range('padSens', 0.3, 3, 0.05)}</div>
       <div class="opt"><span>Look: touch</span>${range('touchSens', 0.3, 3, 0.05)}</div>
       <div class="opt"><span>Invert Y</span>${seg('invertY', [[false, 'OFF'], [true, 'ON']])}</div>
       <div class="opt"><span>Auto look-down (Jumping Flash)</span>${seg('autoLook', [[true, 'ON'], [false, 'OFF']])}</div>
+      <div class="opt"><span>Fire (touch FIRE / trigger)</span>${seg('fireLatch', [[false, 'HOLD'], [true, 'TAP ON/OFF']])}</div>
       <div class="opt"><span>Touch controls</span>${seg('touch', [['auto', 'AUTO'], ['on', 'ON'], ['off', 'OFF']])}</div>
+      ${head('VIEW + COMFORT')}
+      <div class="opt"><span>Field of view <b class="val">${S.fov}°</b></span>${range('fov', 80, 110, 1)}</div>
+      <div class="opt"><span>Screen shake, bob + gun sway</span>${seg('calm', [[false, 'ON'], [true, 'OFF']])}</div>
+      <div class="opt"><span>Flashes (hits, sunburst, beams)</span>${seg('lowFlash', [[false, 'FULL'], [true, 'REDUCED']])}</div>
       <div class="opt"><span>Arm cannon</span>${seg('cannon', [[true, 'SHOW'], [false, 'HIDE']])}</div>
       <div class="opt"><span>AI quips (speech bubble)</span>${seg('quips', [[false, 'OFF'], [true, 'ON']])}</div>
-      <div class="opt"><span>Music</span>${seg('music', [[true, 'ON'], [false, 'OFF']])}</div>
-      <div class="opt"><span>Sound</span>${seg('sound', [[true, 'ON'], [false, 'OFF']])}</div>
-      <div class="opt"><span>Graphics (reloads)</span>${seg('art', [['retro', '240p'], ['hd', '400p'], ['smooth', 'SMOOTH']])}</div>
+      ${head('AUDIO')}
+      <div class="opt"><span>Music volume</span>${range('musicVol', 0, 1, 0.05)}</div>
+      <div class="opt"><span>Sound volume</span>${range('sfxVol', 0, 1, 0.05)}</div>
+      ${head('GRAPHICS')}
+      <div class="opt"><span>Quality (particles, rain, sky)</span>${seg('quality', [['auto', 'AUTO'], ['low', 'LOW'], ['med', 'MED'], ['high', 'HIGH']])}</div>
+      <div class="opt"><span>Resolution (reloads)</span>${seg('art', [['retro', '240p'], ['hd', '400p'], ['smooth', 'SMOOTH']])}</div>
     </div>
     <div class="btns"><button class="btn" data-go="${back}">◀ BACK</button></div></div>`);
 }

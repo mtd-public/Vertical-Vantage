@@ -468,6 +468,7 @@ export function nextSong(level, current) {
 export class Music {
   constructor(sfx) { this.sfx = sfx; this.on = true; this.beat = 0; this.next = 0; this.bus = null; this.song = 'lawntape'; this.want = 'lawntape'; this.fade = 1; this.lastBass = 0; }
 
+  setVolume(v) { this.vol = v; }
   setEnabled(on) { this.on = on; if (!on && this.bus) this.bus.gain.setTargetAtTime(0, this.sfx.ctx.currentTime, 0.1); }
 
   init() {
@@ -508,7 +509,7 @@ export class Music {
     const S = SONGS[this.song];
     const rate = fast ? 1.35 : slow ? 0.72 : 1; // dr-mow slow-mo: the tape runs fast; Vertical Vantage bullet time: the tape drags
     const spb = 60 / S.bpm / 4; // seconds per 16th at normal speed
-    this.bus.gain.setTargetAtTime(want * 0.55 * this.fade, t, 0.2);
+    this.bus.gain.setTargetAtTime(want * 0.55 * this.fade * (this.vol ?? 1), t, 0.2);
     this.lp.frequency.setTargetAtTime(S.lp ?? (S.dark ? 3200 : 20000), t, 0.3);
     this.echoIn.gain.setTargetAtTime(S.echo ?? 0.12, t, 0.2);
     this.dly.delayTime.setTargetAtTime((3 * spb) / rate, t, 0.1);

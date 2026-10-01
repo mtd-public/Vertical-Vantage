@@ -64,6 +64,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 #crosshair i:nth-child(3) { top: 0; left: 14px; width: 2px; height: 9px; }
 #crosshair i:nth-child(4) { bottom: 0; left: 14px; width: 2px; height: 9px; }
 #crosshair b { position: absolute; left: 13px; top: 13px; width: 4px; height: 4px; background: #fff; }
+#crosshair { transition: rotate 0.08s, scale 0.08s; }
+#crosshair.on { rotate: 45deg; scale: 1.2; } /* on a target: turns into an X, not just red */
 #crosshair.on i { background: var(--red); box-shadow: 0 0 6px var(--red); }
 #hitmark { position: absolute; left: 50%; top: 50%; width: 26px; height: 26px; translate: -50% -50%; opacity: 0; border: 3px solid #fff; transform: rotate(45deg); }
 #hitmark.on { animation: hit 0.18s ease-out; }
@@ -72,6 +74,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .mk .gem { width: 14px; height: 14px; margin: 0 auto 2px; border: 2px solid currentColor; transform: rotate(45deg); background: rgba(0, 0, 0, 0.3); }
 .mk.edge .gem { border-width: 0; width: 0; height: 0; transform: none; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 14px solid currentColor; background: none; }
 .mk.drive { color: var(--gold); } .mk.exit { color: var(--cyan); } .mk.portal { color: var(--mag); }
+/* shapes as well as colours (colour-blind safe): drive = diamond, exit = ring, bonus = star */
+.mk.exit:not(.edge) .gem { border-radius: 50%; transform: none; border-width: 3px; }
+.mk.portal:not(.edge) .gem { border: 0; width: 18px; height: 18px; background: currentColor; transform: none; clip-path: polygon(50% 0, 62% 36%, 100% 38%, 70% 60%, 80% 96%, 50% 74%, 20% 96%, 30% 60%, 0 38%, 38% 36%); }
 #floaters .fl { position: absolute; translate: -50% -50%; font-weight: 800; font-size: 15px; color: var(--gold); animation: rise 1s ease-out forwards; }
 @keyframes rise { to { opacity: 0; transform: translateY(-46px); } }
 #toasts { position: absolute; top: 34%; left: 50%; translate: -50% 0; display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -124,7 +129,18 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .opt input[type=range] { width: 50%; }
 .opt select, .opt .seg button { background: rgba(0, 0, 0, 0.4); border: 2px solid var(--line); color: #fff; padding: 4px 8px; font: inherit; }
-.seg { display: flex; gap: 4px; }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.opt-h { margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(43, 232, 255, 0.25); font-size: 11px; letter-spacing: 0.2em; color: var(--mag); }
+.opt .val { color: var(--gold); font-variant-numeric: tabular-nums; }
+/* comfort options: calm = no pulsing / scaling motion; low-flash = gentler full-screen colour */
+body.calm .cells.crit i, body.calm #vignette.crit, body.calm .objective.open, body.calm .bonus-time.low { animation: none; }
+body.calm .toast { animation-name: toast-calm; }
+@keyframes toast-calm { 0% { opacity: 0; } 12% { opacity: 1; } 75% { opacity: 1; } 100% { opacity: 0; } }
+body.low-flash #vignette.hurt { opacity: 0.4; }
+body.low-flash #vignette.crit { opacity: 0.3; animation: none; }
+body.low-flash #hitmark.on { animation-duration: 0.12s; }
+body.low-flash .boss-hud.hurt #boss-fill { background: linear-gradient(90deg, #ff6a6a, #ffb08a); }
+.tbtn.fire.latched { background: rgba(43, 232, 255, 0.35); box-shadow: 0 0 14px var(--cyan); }
 .seg button.on { border-color: var(--gold); color: var(--gold); }
 .result { font-size: 14px; line-height: 1.8; margin: 8px 0; }
 .result .row { display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(43, 232, 255, 0.25); }

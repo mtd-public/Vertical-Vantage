@@ -29,6 +29,7 @@ export class Sfx {
     this.muted = false;
     this.rate = 1;
     this.volume = volume;
+    this.fxVol = 1; // sound-effects level (Options), under the master
     this.last = {};
     this.loops = {};
   }
@@ -50,8 +51,11 @@ export class Sfx {
     this.master.gain.value = this.muted ? 0 : this.volume;
     // slow-mo "tape": a low-pass after everything (sfx and music) that closes in while time is slowed
     this.tape = c.createBiquadFilter(); this.tape.type = 'lowpass'; this.tape.frequency.value = 20000; this.tape.Q.value = 0.8;
-    this.master.connect(this.tape).connect(c.destination);
-    this.fx = c.createGain(); this.fx.gain.value = this.fxMuted ? 0 : 1; this.fx.connect(this.master); // sound effects (music goes straight to master)
+    // a brick-wall-ish limiter last, so a slam, a rocket and the drop landing together never clip
+    this.limiter = c.createDynamicsCompressor();
+    this.limiter.threshold.value = -6; this.limiter.knee.value = 4; this.limiter.ratio.value = 20; this.limiter.attack.value = 0.002; this.limiter.release.value = 0.12;
+    this.master.connect(this.tape).connect(this.limiter).connect(c.destination);
+    this.fx = c.createGain(); this.fx.gain.value = this.fxMuted ? 0 : this.fxVol; this.fx.connect(this.master); // sound effects (music goes straight to master)
     const len = c.sampleRate * 2;
     this.noise = c.createBuffer(1, len, c.sampleRate);
     const d = this.noise.getChannelData(0);
@@ -81,7 +85,11 @@ export class Sfx {
   // Silence just the sound effects (music keeps playing).
   setFxMuted(m) {
     this.fxMuted = m;
-    if (this.fx) this.fx.gain.setTargetAtTime(m ? 0 : 1, this.ctx.currentTime, 0.05);
+    if (this.fx) this.fx.gain.setTargetAtTime(m ? 0 : this.fxVol, this.ctx.currentTime, 0.05);
+  }
+  setFxVolume(v) {
+    this.fxVol = v;
+    if (this.fx) this.fx.gain.setTargetAtTime(this.fxMuted ? 0 : v, this.ctx.currentTime, 0.05);
   }
 
   setMuted(m) {

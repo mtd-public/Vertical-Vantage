@@ -17,7 +17,8 @@ export const PAD_NAMES = ['A', 'B', 'X', 'Y', 'LB', 'RB', 'LT', 'RT', 'View', 'M
 export class Input {
   constructor(canvas) {
     this.canvas = canvas;
-    this.opts = { mouseSens: 1, padSens: 1, touchSens: 1, invertY: false };
+    this.opts = { mouseSens: 1, padSens: 1, touchSens: 1, invertY: false, fireLatch: false };
+    this.latched = false; this._latchPrev = false; // fireLatch: a tap on FIRE / RT turns fire on, another turns it off
     this.keys = new Set();
     this.mouseFire = false;
     this.lookYaw = 0; this.lookPitch = 0; // pending look (rad), consumed by control()
@@ -98,7 +99,8 @@ export class Input {
     this.stick.id = null; this.stick.active = false; this.stick.x = this.stick.y = 0;
     this.lookId = null;
     this.held.fire = this.held.jump = false;
-    for (const b of this._buttons) b.classList.remove('down');
+    this.latched = false; this._latchPrev = false;
+    for (const b of this._buttons) b.classList.remove('down', 'latched');
     this.trig = false;
   }
 
@@ -199,6 +201,7 @@ export class Input {
       if (name === 'jump') this.jumpEdge = true;
       else if (name === 'swap') this.swapEdge = 1;
       else this.held[name] = true;
+      if (name === 'fire' && this.opts.fireLatch) this.toggleLatch(); // at the press: a quick tap can fall between two sim steps
       el.classList.add('down');
       try { el.setPointerCapture(e.pointerId); } catch (_) { /* ignore */ }
     }, { passive: false });
@@ -211,6 +214,11 @@ export class Input {
     const off = (e) => { if (owner !== null && e.pointerId !== owner) return; owner = null; if (name in this.held) this.held[name] = false; el.classList.remove('down'); };
     el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off); el.addEventListener('lostpointercapture', off);
     el.addEventListener('contextmenu', (e) => e.preventDefault());
+  }
+
+  toggleLatch() {
+    this.latched = !this.latched;
+    for (const b of this._buttons) if (b.id === 'btn-fire') b.classList.toggle('latched', this.latched);
   }
 
   // ------------------------------------------------------------------ per step
@@ -229,10 +237,18 @@ export class Input {
     if (k.has('arrowright')) this.lookYaw -= 2.4 * dt;
     if (k.has('arrowup')) this.lookPitch += 1.6 * dt;
     if (k.has('arrowdown')) this.lookPitch -= 1.6 * dt;
+    // touch FIRE and the controller's trigger can latch (Options): hold-free firing for tired thumbs
+    const padFire = !!(pad && pad.fire);
+    let held = this.held.fire || padFire;
+    if (this.opts.fireLatch) {
+      if (padFire && !this._latchPrev) this.toggleLatch();
+      this._latchPrev = padFire;
+      held = this.latched;
+    }
     const c = {
       mx, my, yaw: this.lookYaw, pitch: this.lookPitch,
       jump: this.jumpEdge,
-      fire: this.mouseFire || k.has('j') || k.has('control') || k.has('z') || this.held.fire || !!(pad && pad.fire) || this.autoFire,
+      fire: this.mouseFire || k.has('j') || k.has('control') || k.has('z') || held || this.autoFire,
       swap: this.swapEdge,
     };
     this.lookYaw = this.lookPitch = 0; this.jumpEdge = false; this.swapEdge = 0;

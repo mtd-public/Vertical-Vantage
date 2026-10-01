@@ -47,15 +47,23 @@ export function stages(progress) {
   const packs = PACKS.map((pk, n) => {
     const tiles = pk.stages.map((s, k) => {
       const idx = i++;
-      return `<button class="stage ${s.boss ? 'boss' : ''}" data-go="stage:${idx}" ${idx < progress.unlocked ? '' : 'disabled'}>
-      <b>${s.boss ? '☠ ' : `${k + 1}. `}${esc(s.name)}</b><small>${esc(s.sub)}</small><small>BEST ${String(progress.best?.[s.id] || 0).padStart(6, '0')} · ${progress.bestTime?.[s.id] ? fmtTime(progress.bestTime[s.id]) : '-:--'} <span class="par">(PAR ${fmtTime(s.par)})</span></small></button>`;
+      return `<button class="stage ${s.boss ? 'boss' : ''}" data-go="stage:${idx}" title="${esc(s.sub)}" ${idx < progress.unlocked ? '' : 'disabled'}>
+      <b>${s.boss ? '☠ ' : `${k + 1}. `}${esc(s.name)}</b><small>${String(progress.best?.[s.id] || 0).padStart(6, '0')} · ${progress.bestTime?.[s.id] ? fmtTime(progress.bestTime[s.id]) : '-:--'} <span class="par">/ PAR ${fmtTime(s.par)}</span></small></button>`;
     }).join('');
     return `<div class="pack" style="--pk:${pk.color || '#2be8ff'}"><div class="pack-h">PACK ${n + 1} · ${esc(pk.name)}</div><div class="stages">${tiles}</div></div>`;
   }).join('');
-  show(`<div class="card wide"><div class="big" style="font-size:30px">STAGE SELECT</div>
-    ${packs}
-    <div class="btns"><button class="btn" data-go="back">◀ BACK</button></div></div>`);
+  show(`<div class="card wide stage-card"><div class="big" style="font-size:30px">STAGE SELECT</div>
+    <div class="packs">${packs}</div>
+    <div class="btns"><button class="btn" data-go="back">◀ BACK</button></div><div class="more-cue"></div></div>`);
+  el().querySelector('.stage-card').addEventListener('scroll', moreCue, { passive: true });
+  moreCue(); requestAnimationFrame(moreCue);
 }
+// A stage list taller than the screen (phones, tablets): say so at the bottom until you've scrolled there.
+function moreCue() {
+  const c = el().querySelector('.stage-card');
+  if (c) c.classList.toggle('more', c.scrollTop + c.clientHeight < c.scrollHeight - 8);
+}
+addEventListener('resize', moreCue, { passive: true });
 
 // Records: best time / score per stage, best bonus rounds, and the achievement wall.
 export function records(progress) {

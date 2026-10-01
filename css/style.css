@@ -135,6 +135,21 @@ body.calm #drop.void { animation: none; }
 .stage b { display: block; color: var(--gold); letter-spacing: 0.1em; }
 .stage small { display: block; font-size: 10px; opacity: 0.8; margin-top: 2px; }
 .stage:disabled { opacity: 0.35; }
+.card.stage-card { width: min(1120px, 100%); position: relative; }
+.stage-card .pack { margin-top: 5px; }
+.stage-card .stages { margin-top: 6px; gap: 6px; }
+.stage-card .stage { padding: 5px 9px; }
+.stage-card .btns { margin-top: 10px; }
+/* wide landscape (tablets, desktops): two columns of packs, each a 2 × 2 block, so every pack fits at once */
+@media (orientation: landscape) and (min-width: 900px) {
+  .stage-card .packs { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
+  .stage-card .stages { grid-template-columns: 1fr 1fr; }
+}
+/* the cue sits on the card's bottom edge while there's more to scroll to (no space of its own) */
+.more-cue { position: sticky; bottom: 0; height: 0; pointer-events: none; visibility: hidden; }
+.more-cue::before { content: ''; position: absolute; left: -20px; right: -20px; bottom: -20px; height: 72px; background: linear-gradient(rgba(6, 8, 22, 0), rgba(6, 8, 22, 0.96) 72%); }
+.more-cue::after { content: '▼ MORE PACKS ▼'; position: absolute; left: 0; right: 0; bottom: -12px; font-size: 11px; font-weight: 800; letter-spacing: 0.24em; color: var(--cyan); text-shadow: 0 0 8px var(--cyan); }
+.stage-card.more .more-cue { visibility: visible; }
 .opts { display: grid; gap: 8px; text-align: left; font-size: 13px; margin-top: 8px; }
 .opt { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .opt input[type=range] { width: 50%; }

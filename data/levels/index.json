@@ -1,0 +1,12 @@
+{
+ "stages": [
+  "docks",
+  "skyway",
+  "neon"
+ ],
+ "bonus": {
+  "docks": "bonus-docks",
+  "skyway": "bonus-skyway",
+  "neon": "bonus-neon"
+ }
+}

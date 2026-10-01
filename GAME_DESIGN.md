@@ -1,0 +1,170 @@
+# Vertical Vantage: Game Design Document
+
+**Pitch:** Jumping Flash in Ghost in the Shell's Neo-Tokyo. A small robot triple-jumps across hover
+cars and billboards, looks down at its own feet to land, and shoots straight ahead at all times.
+It has to grab 3 data drives and reach the exit beam.
+
+**Classic it riffs on:** Jumping Flash! (1995) and Jumping Flash! 2 (1996). The aesthetic is Ghost in
+the Shell, Blade Runner and Perfect Dark Zero, rendered like a PS1 game (as dr-mow does).
+
+## 1. Pillars
+
+1. **Up is the game.** Every stage is vertical: 0 to 92 m of islands. The triple jump is the verb, and
+   you are always choosing which height to aim for.
+2. **Look at your feet.** The camera tips down as you fall, a ring marks your landing spot, and you
+   can see your legs. You can always shoot where you look, including straight down.
+3. **A city made of ads.** Floating billboards and ad decks are both platforms and set dressing. The
+   satire is on screen all the time (parody brands only).
+4. **Arcade-short, readable, fair.** Three drives and one exit. Every hazard is telegraphed: a drone's
+   eye flares, an officer shows a laser sight, a laser wall flickers before it lights.
+
+## 2. Core loop
+
+Land → scan for the next island (drive markers clamp to the screen edge) → triple-jump → look down →
+land or stomp → shoot what shoots back → grab drive → … → 3 drives → the exit's beam turns cyan →
+reach the gate → score card (time and integrity bonus) → next stage. Optional: find the portal →
+a 30-second server-smash bonus round → back where you left off with full integrity if you cleared it.
+
+## 3. Controls
+
+The verb count is move, look, jump, fire and swap, which means a stick plus a button pad
+(template doc 04). Full table in the README.
+
+- Keyboard and mouse use pointer lock. Arrow keys also look, for keyboard-only play.
+- Gamepad (Xbox standard mapping): LB and LT also jump, so you can triple-jump without taking your
+  right thumb off the look stick. RT has hysteresis (fires at 0.35, releases at 0.2). There is
+  rumble on hits, stomps, explosions and drives.
+- Touch: a floating stick on the left 45 %, drag-to-look on the right, JUMP / FIRE / ⇄ buttons, and
+  FIRE also aims while you drag it. The touch-zoom guard is on.
+
+## 4. Numbers (from `js/sim/tuning.js`, every value has its reason there)
+
+| Thing | Value | Why |
+|---|---|---|
+| Sim step | 1/120 s fixed | Deterministic, so golden traces match in ports (dr-mow). |
+| Run speed | 8.5 m/s | Big leaps (16 m by the third jump's apex), but slow enough to aim while moving. |
+| Gravity | 21 m/s² | Floaty: hang time to look down and line up a landing. |
+| Jump launch speeds | 11, 13.5, 16 m/s | +2.9, +4.3, +6.1 m: each air jump is stronger (Jumping Flash). |
+| Coyote / buffer | 0.10 s / 0.14 s | Edge-forgiving. |
+| Auto look-down | to −66° once vy < 2.5 m/s, blend 2.4/s in, 6/s out | Puts the landing ring in view; a deliberate look (> 0.06 rad) takes over until you land. |
+| Integrity | 8 cells; bolt −1, fall −2, laser −1 | Careless fights cost half a bar, not the run. |
+| Invulnerability | 1.1 s blink | Doc 10. |
+| Stomp | 3 damage, 12 m/s bounce, refunds the air jumps | Stomp chains feel great. |
+| Pickup radius | 1.5 m (drives 1.8) | Generous (doc 14 #53). |
+| Blaster | 0.15 s, 1 dmg, 75 m/s, ∞ | Always something to shoot with. |
+| Spread | 5 pellets in a fixed fan, 0.42 s, 24 shots | Close-range crowd clearing. |
+| Pulse SMG | 0.065 s, 160 shots | Hose drones. |
+| Rockets | 0.75 s, 4 dmg + 3 splash in 4.5 m, 12 shots | Groups and servers. |
+| Drone | 2 HP, 34 m range, 0.5 s eye flare, 13 m/s bolt every 1.8–2.8 s | A slow bolt you can dodge in the air. |
+| Walker | 3 HP, patrol 2.2 m/s, chase 4 m/s on its own deck | A platform hazard you stomp. |
+| Guard | 3 HP, 40 m, 0.85 s laser sight, 3 × 21 m/s bolts, 2.6 s cooldown | Fair, readable, dangerous. |
+| Laser walls | lit ≤ 60 % of a 2.2–4.4 s cycle, 0.6 s flicker warning | Always a ≥ 1 s gap (sim-check proves it). |
+| Bonus | 30 s, 12–17 servers, TIME+ adds 5 s, falling costs 3 s | Jumping Flash bonus-round pressure. |
+
+**Reachability:** `tools/sim-check.mjs` builds a graph over every walkable top and samples the movers
+over 30 s. An edge exists when the gap is inside 80 % of the real jump envelope for that rise. Every
+drive, the portal, the exit and every server must be reachable from the start, and the exit must be
+reachable from each drive and from the portal.
+
+## 5. Cast
+
+- **The player:** a small white-and-blue robot. You see its legs when you look down and an arm cannon
+  in the corner.
+- **ECHO:** the onboard AI, a face on a little CRT plate. It has 15 expressions (idle glance, ^ ^,
+  manic grin with tongue out, sparkle eyes, heart eyes, > <, angry with an anger mark, red-slit
+  mission mode, half-lidded smug, shock, spirals, worried with a sweat drop, T T crying, derp, x x).
+  Its chaotic, sugar-rush sidekick energy is original, with no borrowed designs. Speech bubbles are
+  off by default.
+- **Drone:** a white orb with a dark ring, side rotors and a red eye.
+- **Walker:** an orange dome on four legs with a cyan eye-bar.
+- **Guard:** a long-coated security officer with a cyan visor and a rifle.
+- **Server:** a black rack with blinking LEDs.
+
+## 6. HUD
+
+Health cells (top left, red pulse at ≤ 2), drive slots and the objective (top centre), score and
+time (top right), the altimeter with jump pips (left edge: how many air jumps remain), weapon and
+ammo (bottom right). Objective markers sit on screen at the target or pin to the edge as an arrow
+with the distance. The crosshair turns red over an enemy. There are a hit marker, floating score
+numbers, toasts for moments, and a damage vignette. ECHO sits in the bottom-left corner (top-right
+on touch). Bonus stages add a big timer and a server count.
+
+## 7. Art direction
+
+- **Retro:** PS1 at 240 lines (or 400p / smooth), vertex snapping, 15-bit dither, point-sampled
+  canvas textures, linear distance fog in the horizon colour, and Lambert / flat shading.
+- **Palette:**
+  - Day: saturated blue sky with hard-edged cartoon clouds and a warm, hazy horizon.
+  - Night: deep indigo with a purple light-pollution horizon, lit windows, searchlights and rain.
+  - Neon: magenta, cyan, yellow and a few hot oranges.
+  - Reserved colours: red = danger, green = health, gold = drives and the primary action,
+    magenta = bonus.
+- **City:**
+  - Real towers drop into the fog.
+  - A procedural skyline in the sky dome has two layers, arcology pyramids, and needle spires with
+    blinking aviation lights.
+  - Blade-Runner blade signs carry pseudo-kanji (procedural glyphs, so no CJK font is needed).
+  - Poster ads cover the facades.
+- **Ads:** 18 original parody brands painted into one atlas (`js/render/ads.js`).
+
+## 8. Progression
+
+Three stages unlock in order (Stage Select remembers them). Score carries across a run. Each stage
+has a hidden bonus portal. Best score per stage and best run are stored in localStorage (wrapped in
+try/catch).
+
+## 9. Juice (in build order)
+
+1. Triple-jump boings rise in pitch.
+2. Air-jump puffs (gold on the third).
+3. Landing dust, a camera dip and a leg squash.
+4. Stomp burst, shake and bounce.
+5. Hit marker and enemy hit-flash.
+6. Explosions bigger than the thing that died.
+7. The drive's beam and halo, and a 30-particle burst on pickup.
+8. Exit-open burst and sound; the beam flips red → cyan.
+9. The power sunburst sky during HYPER / OVERDRIVE, bonus stages and the clear card.
+10. ECHO's reactions.
+11. Rumble and haptics.
+
+## 10. Performance budget
+
+| | Target | Measured |
+|---|---|---|
+| Draw calls | ≤ 400 | ~40–120 (static geometry is merged per material, hover cars are instanced per kind, FX are instanced) |
+| Render resolution | 240 lines (retro) | cheap fill on phones |
+| DPR | ≤ 2 (smooth mode) | |
+| Lights | hemisphere + one directional | no per-projectile lights |
+| Sim | 120 Hz, ~100 platforms brute force | trivial |
+
+## 11. Reuse plan
+
+See the README's lineage table. New and reusable pieces worth copying back into
+mstr-gme-dsgn-tmpt `kits/`:
+- the multi-section song extension to `music.js`
+- the yawed-box platform physics with riding (`plats.js` + `player.js`)
+- the reachability prover in `sim-check.mjs`
+- the satirical ad atlas painter
+- the ECHO face
+- golden traces with JSON replay parity
+
+## 12. Open questions
+
+- Should a boss cap each set of stages, as in Jumping Flash? This could be a giant hover-tank on a
+  barge.
+- Should there be a level editor (dr-mow's "pure `compile(design) → level`" idea)?
+- Do we want shadow maps on desktop? Today it's landing rings and fog only.
+- Should there be a real-device check on iPhone or iPad for pointer and gamepad focus quirks?
+
+## Since the initial build (delta log)
+
+### claude/wizardly-hopper-ftczx9 (first build)
+
+- Everything above.
+- Mid-build requests that were folded in:
+  - the dr-mow retro look
+  - dr-mow's level vocabulary and blocks for platforms
+  - satirical floating billboards as platforms
+  - on/off laser walls
+  - breakcore, Y2K and hard-techno music with multiple loops per song
+  - the reacting AI face: expressions only, with GIR-like energy but an original design

@@ -1,0 +1,72 @@
+name: Check & deploy (GitHub Pages)
+
+# Every push: the headless proof (levels completable, movement numbers, data/ fresh, golden traces
+# replay from the exported JSON) and the browser smoke test. Deploy only from main: the
+# github-pages environment admits main only, so branch deploys would turn PRs red
+# (mstr-gme-dsgn-tmpt docs/14 #60).
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Sim proof (reachability, movement, scripted play)
+        run: node tools/sim-check.mjs
+      - name: Exported level / tuning JSON is up to date
+        run: node tools/export-levels.mjs --check
+      - name: Golden traces (and their replay from the JSON levels)
+        run: node tools/golden.mjs --check
+
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Playwright + Chromium
+        run: npm install --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
+      - name: Smoke test (desktop, phone, gamepad, bonus + clear flow)
+        run: |
+          python3 -m http.server 4180 &
+          sleep 1
+          CI=1 BASE=http://localhost:4180/ node tools/smoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: smoke-shots, path: shots, retention-days: 7 }
+
+  deploy:
+    needs: [check, smoke]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble site (only what the game serves)
+        run: |
+          mkdir -p _site
+          cp -r index.html manifest.webmanifest css js assets touch-zoom-guard _site/
+          rm -rf _site/touch-zoom-guard/test
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+        with: { enablement: true }
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: _site }
+      - id: deployment
+        uses: actions/deploy-pages@v4

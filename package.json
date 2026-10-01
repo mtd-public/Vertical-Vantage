@@ -1,0 +1,12 @@
+{
+  "name": "vertical-vantage",
+  "private": true,
+  "type": "module",
+  "description": "Retro first-person platform shooter: triple-jump across hover cars and billboards above a neon future city. No build step.",
+  "scripts": {
+    "serve": "python3 -m http.server 4180",
+    "check": "node tools/sim-check.mjs && node tools/export-levels.mjs --check && node tools/golden.mjs --check",
+    "export": "node tools/export-levels.mjs && node tools/golden.mjs",
+    "smoke": "BASE=http://localhost:4180/ node tools/smoke.mjs"
+  }
+}

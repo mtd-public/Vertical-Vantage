@@ -5,4 +5,6 @@ import './sanfran.js';
 import './seattle.js';
 import './shanghai.js';
 import './euro.js';
+import './egypt.js';
+import './arctic.js';
 import './fortress.js';

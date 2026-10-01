@@ -6,6 +6,8 @@ import tremor from './tremor.mjs';
 import stormcrow from './stormcrow.mjs';
 import dragon from './dragon.mjs';
 import centurion from './centurion.mjs';
+import anubis from './anubis.mjs';
+import polaris from './polaris.mjs';
 import dreadnought from './dreadnought.mjs';
 
-export const BOSS_CHECKS = { kraken, taurus, tremor, stormcrow, dragon, centurion, dreadnought };
+export const BOSS_CHECKS = { kraken, taurus, tremor, stormcrow, dragon, centurion, anubis, polaris, dreadnought };

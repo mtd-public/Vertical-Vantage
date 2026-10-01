@@ -8,6 +8,8 @@ import sanfran from './sanfran.js';
 import seattle from './seattle.js';
 import shanghai from './shanghai.js';
 import euro from './euro.js';
+import egypt from './egypt.js';
+import arctic from './arctic.js';
 import fortress from './fortress.js';
 
-export const PACKS = [tokyo, ocean, chicago, sanfran, seattle, shanghai, euro, fortress].filter((p) => p && p.stages && p.stages.length);
+export const PACKS = [tokyo, ocean, chicago, sanfran, seattle, shanghai, euro, egypt, arctic, fortress].filter((p) => p && p.stages && p.stages.length);

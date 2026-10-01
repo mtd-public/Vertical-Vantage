@@ -12,8 +12,10 @@ import tremor from './tremor.js';
 import stormcrow from './stormcrow.js';
 import dragon from './dragon.js';
 import centurion from './centurion.js';
+import anubis from './anubis.js';
+import polaris from './polaris.js';
 import dreadnought from './dreadnought.js';
 
 const arachne = { init: initBoss, update: updateBoss, down: bossDown, stompable: (e) => e.surf === 'floor' };
-export const BOSS_KINDS = Object.fromEntries(Object.entries({ arachne, kraken, taurus, tremor, stormcrow, dragon, centurion, dreadnought }).filter(([, v]) => v));
+export const BOSS_KINDS = Object.fromEntries(Object.entries({ arachne, kraken, taurus, tremor, stormcrow, dragon, centurion, anubis, polaris, dreadnought }).filter(([, v]) => v));
 export const bossKind = (e) => BOSS_KINDS[e.kind] || arachne;

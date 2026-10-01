@@ -9,9 +9,11 @@ import sanfran from './sanfran.js';
 import seattle from './seattle.js';
 import shanghai from './shanghai.js';
 import euro from './euro.js';
+import egypt from './egypt.js';
+import arctic from './arctic.js';
 import fortress from './fortress.js';
 
-const ALL = [ocean, chicago, sanfran, seattle, shanghai, euro, fortress];
+const ALL = [ocean, chicago, sanfran, seattle, shanghai, euro, egypt, arctic, fortress];
 const merge = (key) => Object.assign({}, ...ALL.map((p) => (p && p[key]) || {}));
 export const PACK_THEMES = merge('themes');
 export const PACK_STYLES = merge('styles');

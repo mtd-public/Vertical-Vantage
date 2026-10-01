@@ -197,7 +197,8 @@ await run('boss', { viewport: { width: 1280, height: 720 } }, async (page) => {
   await page.screenshot({ path: `${OUT}/boss-down.png` });
   await page.evaluate(() => { const e = GAME.G.world.exit; GAME.warpTo({ x: e.x, y: e.y + 0.05, z: e.z }); });
   await page.waitForTimeout(2000);
-  check(await page.evaluate(() => !!document.querySelector('[data-go="ending"]')), 'the last stage clear leads to the ending');
+  const last = await page.evaluate(() => GAME.G.stageIdx === GAME.STAGES.length - 1);
+  check(await page.evaluate((last) => !!document.querySelector(last ? '[data-go="ending"]' : '[data-go="next"]'), last), last ? 'the last stage clear leads to the ending' : 'a pack\'s boss clear leads on to the next pack');
 });
 
 // every other pack's boss: it wakes and fights with the gauge up, and going down opens the exit

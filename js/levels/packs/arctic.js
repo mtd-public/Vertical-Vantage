@@ -4,5 +4,6 @@
 import town from './arctic-town.js';
 import shelf from './arctic-shelf.js';
 import vault from './arctic-vault.js';
+import boss from './arctic-boss.js';
 
-export default { id: 'arctic', name: 'ARCTIC VAULT', sub: 'PERMAFROST ARCHIVE', color: '#9ff3ff', stages: [town, shelf, vault] };
+export default { id: 'arctic', name: 'ARCTIC VAULT', sub: 'PERMAFROST ARCHIVE', color: '#9ff3ff', stages: [town, shelf, vault, boss] };

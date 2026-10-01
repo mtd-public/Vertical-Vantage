@@ -145,7 +145,7 @@ on touch). Bonus stages add a big timer and a server count.
 
 ## 8. Progression
 
-The game is 8 level packs (`js/levels/packs/`), each three stages and a boss stage around one theme: NEO-TOKYO, OCEAN CORE, NEO CHICAGO, NEW SAN FRANCISCO, SEATTLE, SHANGHAI, NEO EURO and AIR FORTRESS. Stages unlock in order and Stage Select groups them by pack; a pack's boss clear leads on to the next pack, and the last one leads to the ending. For testing, `TESTING_UNLOCK_ALL` in `js/main.js` unlocks everything (turn it off before a real release). `docs/PACK_GUIDE.md` is the contract for building a pack. Score carries
+The game is 10 level packs (`js/levels/packs/`), each three stages and a boss stage around one theme: NEO-TOKYO, OCEAN CORE, NEO CHICAGO, NEW SAN FRANCISCO, SEATTLE, SHANGHAI, NEO EURO, EGYPT, ARCTIC VAULT and AIR FORTRESS (the finale). Stages unlock in order and Stage Select groups them by pack; a pack's boss clear leads on to the next pack, and the last one leads to the ending. For testing, `TESTING_UNLOCK_ALL` in `js/main.js` unlocks everything (turn it off before a real release). `docs/PACK_GUIDE.md` is the contract for building a pack. Score carries
 across a run. Each stage has a hidden bonus portal. localStorage stores the following (wrapped in
 try/catch):
 
@@ -290,3 +290,17 @@ mstr-gme-dsgn-tmpt `kits/`:
 - New achievements: PEST CONTROL (beat a boss) and BOSS RUSH (beat every boss).
 - Not yet done: songs for NEW SAN FRANCISCO and SEATTLE (they fall back to the stock tracks), and
   playtesting and balance of the new packs. These are tracked as GitHub issues.
+
+### claude/wizardly-hopper-ftczx9 (EGYPT and ARCTIC VAULT)
+
+- Two more packs, before the AIR FORTRESS finale:
+  - EGYPT: CAIRO, DATA PYRAMID, INNER SANCTUM and MECHA ANUBIS in the HALL OF JUDGMENT, with three songs
+    (Nile Break, Tomb Raid, Weighing of the Heart).
+  - ARCTIC VAULT: LONGYEAR, ICE SHELF, THE VAULT and POLARIS in COLD STORAGE, with two songs (Permafrost,
+    Polaris).
+- Movement fix: walking into a kerb, a stair or the seam between two decks of the same height (anything up
+  to STEP_UP, 0.4 m) now steps you up onto it. Before, the side push held your feet too far out to stand, so
+  you stalled. Jumps and falls are unchanged. Golden traces were regenerated.
+- Stage select: two columns of packs on wide landscape screens, so all 10 fit on a tablet without
+  scrolling; on phones a MORE PACKS cue shows until you've scrolled to the end.
+- Every pack boss's phase 2 toast now says IT'S ADAPTING! (only ARACHNE-9 climbs the walls).

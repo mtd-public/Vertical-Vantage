@@ -71,6 +71,26 @@
    ]
   },
   {
+   "id": "egypt",
+   "name": "EGYPT",
+   "stages": [
+    "egypt-cairo",
+    "egypt-pyramid",
+    "egypt-sanctum",
+    "egypt-boss"
+   ]
+  },
+  {
+   "id": "arctic",
+   "name": "ARCTIC VAULT",
+   "stages": [
+    "arctic-town",
+    "arctic-shelf",
+    "arctic-vault",
+    "arctic-boss"
+   ]
+  },
+  {
    "id": "fortress",
    "name": "AIR FORTRESS",
    "stages": [
@@ -110,6 +130,14 @@
   "euro-amalfi",
   "euro-venice",
   "euro-boss",
+  "egypt-cairo",
+  "egypt-pyramid",
+  "egypt-sanctum",
+  "egypt-boss",
+  "arctic-town",
+  "arctic-shelf",
+  "arctic-vault",
+  "arctic-boss",
   "fortress-deck",
   "fortress-hull",
   "fortress-bay",
@@ -137,6 +165,12 @@
   "euro-pisa": "bonus-euro-pisa",
   "euro-amalfi": "bonus-euro-amalfi",
   "euro-venice": "bonus-euro-venice",
+  "egypt-cairo": "bonus-egypt-cairo",
+  "egypt-pyramid": "bonus-egypt-pyramid",
+  "egypt-sanctum": "bonus-egypt-sanctum",
+  "arctic-town": "bonus-arctic-town",
+  "arctic-shelf": "bonus-arctic-shelf",
+  "arctic-vault": "bonus-arctic-vault",
   "fortress-deck": "bonus-fortress-deck",
   "fortress-hull": "bonus-fortress-hull",
   "fortress-bay": "bonus-fortress-bay"

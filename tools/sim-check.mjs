@@ -15,6 +15,7 @@ import { T, BOSS } from '../js/sim/tuning.js';
 import { createWorld, step } from '../js/sim/world.js';
 import { makePlats, platOffset, groundBelow, posePlats, pushOut } from '../js/sim/plats.js';
 import { mulberry32 } from '../js/sim/util.js';
+import { predictLanding } from '../js/sim/predict.js';
 
 let fails = 0;
 const ok = (cond, msg) => { if (!cond) { fails++; console.log('  ✗ ' + msg); } return cond; };
@@ -311,6 +312,49 @@ function bossChecks(s) {
     ok(wallT > 0 && laneBad === 0, `${s.id}: it climbs only in the lane clear of the racks (${wallT} wall steps, ${laneBad} outside)`);
     ok(floorT > 120 * 60, `${s.id}: …and still spends most of the fight on the floor (${(floorT / 120).toFixed(0)} s)`);
   }
+}
+
+// ------------------------------------------------------------------ the look-down and the landing look-ahead
+{
+  // the auto look-down starts mid-rise on every jump of a triple (before each apex)
+  const flat = { start: { x: 0, y: 0, z: 0 }, killY: -50, plats: [{ kind: 'rect', x: 0, z: 0, w: 60, d: 60, h: 0, thick: 2 }] };
+  const w = createWorld(flat, { autoLook: true }), P = w.player;
+  for (let i = 0; i < 10; i++) step(w, C0);
+  const early = [];
+  for (let j = 0; j < 3; j++) {
+    step(w, { ...C0, jump: true });
+    P.auto = 0; let tStart = null, tApex = null;
+    for (let i = 0; i < 240 && P.vy > -1; i++) { step(w, C0); const t = i * T.DT; if (tStart === null && P.auto > 0.05) tStart = t; if (tApex === null && P.vy <= 0) tApex = t; }
+    early.push(tStart !== null && tApex !== null && tStart < tApex * 0.75 ? 'ok' : `stage ${j}: starts ${tStart} apex ${tApex}`);
+  }
+  ok(early.every((x) => x === 'ok'), `the auto look-down starts mid-rise on each of the three jumps (${early.join(', ')})`);
+  // the landing look-ahead: seeded random jumps on every stage; it must agree with the real outcome
+  let n = 0, bad = 0, worst = 0, note = '';
+  for (const s of STAGES) {
+    const rng = mulberry32(99);
+    for (let k = 0; k < 40; k++) {
+      const v = createWorld(s, { autoLook: true });
+      for (let i = 0; i < 20; i++) step(v, C0);
+      const c = { ...C0, mx: rng() * 2 - 1, my: rng() * 2 - 1, yaw: 0 };
+      step(v, { ...c, yaw: rng() * 6.28 - 3.14 });
+      const jumps = 1 + Math.floor(rng() * 3), at = Math.floor(rng() * 40);
+      for (let j = 0; j < jumps; j++) { step(v, { ...c, jump: true }); for (let i = 0; i < 25; i++) step(v, c); }
+      for (let i = 0; i < at; i++) step(v, c);
+      const Q = v.player;
+      if (Q.ground || Q.dead) continue;
+      const out = {}, pr = predictLanding(v.plats, Q, out, { killY: s.killY, maxT: 6 });
+      let falls = 0, steps = 0;
+      while (!Q.ground && steps++ < 120 * 8) { step(v, c); if (v.events.some((e) => e.type === 'fall' || e.type === 'stomp' || e.type === 'spiked')) falls++; v.events.length = 0; if (falls) break; }
+      if (falls && !pr) { n++; continue; } // predicted the void (or an enemy's head), and so it was
+      if (falls || !Q.ground) continue; // bounced off something moving: not a fair test
+      n++;
+      const err = pr ? Math.sqrt((out.x - Q.x) ** 2 + (out.z - Q.z) ** 2) + Math.abs(out.y - Q.y) : Infinity;
+      if (err > worst) { worst = err; note = `${s.id} #${k}`; }
+      if (err > 1.0) bad++;
+    }
+  }
+  console.log(`look-ahead\n  ${n} random jumps: ${bad} off by > 1 m, worst ${Number.isFinite(worst) ? worst.toFixed(2) + ' m' : 'missed'} (${note})`);
+  ok(n > 60 && bad <= Math.ceil(n * 0.1), `the landing look-ahead matches where you really land (${n} jumps, ${bad} off by > 1 m, worst ${Number.isFinite(worst) ? worst.toFixed(2) + ' m' : 'missed'} at ${note})`);
 }
 
 // ------------------------------------------------------------------ stomps, spikes, slow-mo, respawns

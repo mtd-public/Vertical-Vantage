@@ -33,9 +33,10 @@ export const T = {
   PITCH_MIN: -1.5, // nearly straight down: the signature "look at your feet" Jumping Flash view.
   PITCH_MAX: 1.2,
   AUTO_PITCH: -1.15, // ~66° down: where the camera tips while you fall, so the landing ring is in view.
-  AUTO_IN: 2.4, // blend rate into the auto look-down after the apex (reaches ~90 % in ~1 s).
+  AUTO_IN: 3.2, // blend rate into the auto look-down (reaches ~90 % in ~0.7 s).
   AUTO_OUT: 6, // blend rate back to your own pitch after landing (fast: you want to aim again).
-  AUTO_VY: 2.5, // start tipping once vertical speed drops below this (just before the apex).
+  AUTO_RISE: 0.5, // start tipping once you've lost half of this jump's launch speed: mid-rise on every jump,
+  //                 so the landing reticle is already in view at the apex (walking off an edge: at once).
 
   // ---- health
   HP_MAX: 8, // cells. Enemy bolts cost 1, so a careless fight costs half a bar, not the run.

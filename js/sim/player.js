@@ -21,6 +21,7 @@ export function makePlayer(start) {
     weapon: 'blaster', ammo: { spread: 0, rapid: 0, rocket: 0 }, cool: 0, shotN: 0,
     hyper: 0, over: 0,
     stride: 0, // walk-cycle phase for the legs
+    steer: 0, tvx: 0, tvz: 0, // stick held (1/0) and the horizontal velocity it asks for: the landing look-ahead uses them
     safe: null, safeT: 0, // { pid, lx, lz } last solid footing, for respawns
     hurtT: 9, // seconds since last hurt (HUD flash)
   };
@@ -81,6 +82,7 @@ export function updatePlayer(w, c, dt) {
   if (m > 1) { wx /= m; wz /= m; m = 1; }
   const grounded = !!P.ground;
   const tx = wx * T.RUN, tz = wz * T.RUN;
+  P.steer = m > 0.05 ? 1 : 0; P.tvx = tx; P.tvz = tz;
   if (grounded) {
     const rate = m > 0.05 ? T.GROUND_ACCEL : T.GROUND_FRICTION;
     approach(P, tx, tz, rate * dt);
@@ -147,8 +149,9 @@ export function updatePlayer(w, c, dt) {
   }
   P.landT += dt;
 
-  // ---- auto look-down (Jumping Flash): tip the view toward your feet while you fall
-  const wantAuto = w.opts.autoLook && !P.ground && !P.autoOff && P.vy < T.AUTO_VY && P.air > 0.15;
+  // ---- auto look-down (Jumping Flash): tip the view toward your feet, starting mid-rise on every jump
+  const launch = T.JUMP_V[clamp(P.jumps - 1, 0, T.JUMP_V.length - 1)] * (P.hyper > 0 ? T.HYPER_K : 1);
+  const wantAuto = w.opts.autoLook && !P.ground && !P.autoOff && P.vy < launch * T.AUTO_RISE && P.air > 0.12;
   if (P.lock) { /* the stomp lock owns the view */ }
   else if (wantAuto) P.auto = Math.min(1, P.auto + (1 - P.auto) * Math.min(1, T.AUTO_IN * dt));
   else P.auto = Math.max(0, P.auto - P.auto * Math.min(1, T.AUTO_OUT * dt) - (P.ground ? dt * 0.2 : 0));

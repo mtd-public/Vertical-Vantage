@@ -11,7 +11,7 @@
 //   south wall (it climbs here) ─────────────────────────────
 import { rect, bob, mv } from './kit.js';
 
-const A = { x0: -30, x1: 30, z0: -26, z1: 26, floor: 0, ceil: 22 };
+const A = { x0: -30, x1: 30, z0: -26, z1: 26, floor: 0, ceil: 22, climbX: [-14, 14] }; // climbX: wall lane clear of the corner racks
 const plats = [];
 const P = (...a) => plats.push(...a);
 const crate = (x, z, top, s = 2.4, tint = 0) => rect(x, z, s, s, top, { thick: s, style: 'crate', tint });

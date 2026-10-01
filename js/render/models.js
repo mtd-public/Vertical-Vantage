@@ -125,39 +125,99 @@ export function spikerModel(M) {
 // ARACHNE-9: the spider-mech boss. A low armoured hull, an eye cluster and laser emitter up front,
 // a twin-barrel turret on its back, eight two-segment legs posed every frame by the renderer
 // (unit boxes stretched between hip, knee and foot). Origin = body centre, faces -Z, up +Y.
+// ARACHNE-9: an industrial spider mech in OmniCorp red. Faceted armour plates with dark seams and
+// rivets over a gunmetal chassis, hip actuators, a segmented abdomen with heat vents and exhausts,
+// a wedge sensor head with mandibles, and eight legs whose thighs and shins carry hydraulic rams.
+const BOSS_COL = { red: 0xe0313a, redHi: 0xff5a52, redDk: 0x8e1820, gun: 0x353843, steel: 0x8a909c, chrome: 0xd2d6de, black: 0x15151a, hazard: 0xffcc1a, strut: 0x5c616e };
 export function bossModel(M) {
+  const C = BOSS_COL;
   const g = new THREE.Group();
   const body = new THREE.Group(); body.name = 'body'; g.add(body);
   const K = new Kit();
-  const gun = 0x6a7488, dark = 0x2a2c36, plate = 0xa4aec0;
-  K.add('p', part(new THREE.CylinderGeometry(1.7, 2.1, 1.1, 8), { sz: 1.35, color: gun }));
-  K.add('p', part(new THREE.CylinderGeometry(1.2, 1.7, 0.5, 8), { y: 0.8, sz: 1.3, color: plate }));
-  K.add('p', part(new THREE.CylinderGeometry(1.5, 1.2, 0.5, 8), { y: -0.8, sz: 1.3, color: dark }));
-  for (let k = -2; k <= 2; k++) K.add('p', box(0.5, 0.06, 2.6, { x: k * 0.55, y: 1.06, color: k % 2 ? 0xffcc1a : 0x15151a })); // hazard stripes on its back
-  K.add('p', box(1.5, 0.95, 1.1, { y: 0.05, z: -2.25, color: gun }), box(1.2, 0.3, 0.9, { y: 0.6, z: -2.2, color: plate })); // head
-  K.add('p', cyl(0.22, 0.28, 0.7, 8, { y: -0.3, z: -2.85, rx: Math.PI / 2, color: dark })); // laser emitter
-  K.add('p', box(0.3, 0.3, 0.3, { x: 1.85, y: 0.25, z: 0.8, color: dark }), box(0.3, 0.3, 0.3, { x: -1.85, y: 0.25, z: 0.8, color: dark }));
+  const P = (...a) => K.add('p', ...a);
+  // chassis: a gunmetal frame under the armour, with the hip ring the legs bolt onto
+  P(box(2.9, 0.55, 3.2, { y: -0.45, color: C.gun }), box(2.4, 0.25, 2.6, { y: -0.82, color: C.black }));
+  P(cyl(1.25, 1.25, 0.18, 8, { y: -0.98, color: C.steel })); // underside turntable
+  // thorax armour: spine plate, two angled flank plates, a front glacis and a rear apron
+  P(box(1.5, 0.22, 3.0, { y: 0.92, color: C.red }), box(0.34, 0.08, 2.9, { y: 1.06, color: C.redDk })); // spine + ridge
+  for (const sx of [-1, 1]) {
+    P(box(1.15, 0.2, 2.9, { x: sx * 1.12, y: 0.62, rz: -sx * 0.52, color: C.red })); // flank plate
+    P(box(0.9, 0.16, 2.7, { x: sx * 1.68, y: 0.06, rz: -sx * 1.25, color: C.redDk })); // side skirt
+    P(box(0.05, 0.05, 2.92, { x: sx * 0.76, y: 0.86, color: C.black })); // panel seam
+    for (const z of [-1.2, -0.4, 0.4, 1.2]) P(box(0.1, 0.06, 0.1, { x: sx * 1.36, y: 0.48, z, color: C.chrome })); // rivets
+    // running lights on the skirts are glow (below)
+  }
+  P(box(2.4, 0.2, 0.95, { y: 0.55, z: -1.75, rx: 0.62, color: C.redHi })); // glacis
+  for (let k = -2; k <= 2; k++) P(box(0.36, 0.05, 0.5, { x: k * 0.44, y: 0.72, z: -1.85, rx: 0.62, color: k % 2 ? C.hazard : C.black })); // hazard band on the glacis
+  P(box(2.2, 0.2, 0.7, { y: 0.55, z: 1.7, rx: -0.55, color: C.red }));
+  // turret mount: a steel collar with bolts
+  P(cyl(0.78, 0.86, 0.22, 8, { y: 1.12, color: C.steel }));
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; P(box(0.1, 0.08, 0.1, { x: Math.cos(a) * 0.8, y: 1.24, z: Math.sin(a) * 0.8, color: C.chrome })); }
+  // hip actuators: a housing and a red cap at every leg root
+  for (const sx of [-1, 1]) for (const z of [-1.3, -0.45, 0.45, 1.3]) {
+    P(cyl(0.3, 0.34, 0.6, 6, { x: sx * 1.55, y: 0.1, z, color: C.gun }), cyl(0.33, 0.33, 0.12, 6, { x: sx * 1.55, y: 0.44, z, color: C.red }));
+    P(box(0.5, 0.18, 0.18, { x: sx * 1.3, y: -0.3, z, color: C.steel })); // drive link
+  }
+  // abdomen: three tapering plates trailing behind, dark gaps between them
+  for (const [i, z, w, h] of [[0, 2.45, 2.3, 1.15], [1, 3.25, 1.9, 0.95], [2, 3.95, 1.4, 0.72]]) {
+    P(box(w, h, 0.72, { y: 0.22 - i * 0.12, z, rx: -0.12, color: i === 1 ? C.redDk : C.red }));
+    P(box(w * 0.86, h * 0.84, 0.12, { y: 0.22 - i * 0.12, z: z + 0.42, color: C.black }));
+  }
+  for (const sx of [-1, 1]) P(cyl(0.12, 0.15, 1.0, 6, { x: sx * 0.62, y: 1.0, z: 2.6, rx: -0.5, color: C.gun })); // exhaust stacks
+  // head: an armoured wedge with a dark sensor visor, mandibles and the laser emitter
+  P(box(1.6, 0.9, 1.15, { y: 0.0, z: -2.3, color: C.gun }));
+  P(box(1.7, 0.28, 1.2, { y: 0.55, z: -2.3, rx: 0.18, color: C.red }), box(1.3, 0.2, 0.5, { y: 0.48, z: -2.95, rx: 0.45, color: C.redHi })); // brow armour
+  P(box(1.36, 0.48, 0.1, { y: 0.12, z: -2.88, color: C.black })); // visor
+  for (const sx of [-1, 1]) {
+    P(box(0.2, 0.2, 0.75, { x: sx * 0.42, y: -0.55, z: -2.95, rx: 0.35, ry: -sx * 0.25, color: C.steel })); // mandible
+    P(box(0.14, 0.32, 0.16, { x: sx * 0.5, y: -0.82, z: -3.2, rx: -0.4, color: C.red })); // mandible tip
+    P(box(0.1, 0.5, 0.1, { x: sx * 0.74, y: 0.95, z: -2.2, rz: sx * 0.2, color: C.black })); // antenna
+  }
+  P(cyl(0.22, 0.3, 0.7, 8, { y: -0.32, z: -2.9, rx: Math.PI / 2, color: C.black }), cyl(0.3, 0.3, 0.1, 8, { y: -0.32, z: -3.12, rx: Math.PI / 2, color: C.steel }));
   body.add(new THREE.Mesh(K.build().p, M.paintFlat));
+  // glow: sensor lenses (hot amber, so they read against the red) and the emitter, as their own mesh
+  // centred on the visor so the telegraph flare scales them in place
   const E = new Kit();
-  for (const [x, y, r] of [[-0.45, 0.25, 0.16], [0.45, 0.25, 0.16], [-0.2, 0.42, 0.1], [0.2, 0.42, 0.1], [-0.6, 0.0, 0.09], [0.6, 0.0, 0.09]]) E.add('e', ball(r, { x, y, z: -2.82, color: 0xff2a3a }, 0));
-  E.add('e', cyl(0.12, 0.12, 0.08, 8, { y: -0.3, z: -3.22, rx: Math.PI / 2, color: 0xff6a3a }));
-  for (const sx of [-1, 1]) E.add('e', box(0.08, 0.12, 3.2, { x: sx * 1.95, y: 0.1, color: 0xff2a3a })); // side strips
-  E.add('e', part(new THREE.TorusGeometry(1.5, 0.08, 3, seg(16, 10)), { rx: Math.PI / 2, y: -1.05, sz: 1.3, color: 0xff3a4a })); // underglow ring
-  const eyes = new THREE.Mesh(E.build().e, M.glow); eyes.name = 'eye'; body.add(eyes);
+  for (const [x, y, r] of [[-0.42, 0.08, 0.15], [0.42, 0.08, 0.15], [-0.17, 0.17, 0.09], [0.17, 0.17, 0.09], [-0.6, -0.08, 0.08], [0.6, -0.08, 0.08]]) E.add('e', ball(r, { x, y, color: 0xffd86a }, 0));
+  E.add('e', cyl(0.13, 0.13, 0.08, 8, { y: -0.42, z: -0.33, rx: Math.PI / 2, color: 0xff5a2a }));
+  const eyes = new THREE.Mesh(E.build().e, M.glow); eyes.name = 'eye'; eyes.position.set(0, 0.1, -2.95); body.add(eyes);
+  // running lights, exhaust glow, heat vents and the thruster ring
+  const L = new Kit();
+  for (const sx of [-1, 1]) {
+    for (const z of [-1.1, -0.35, 0.35, 1.1]) L.add('l', box(0.06, 0.1, 0.32, { x: sx * 1.98, y: -0.2, z, color: 0xffb02b }));
+    L.add('l', cyl(0.1, 0.1, 0.06, 6, { x: sx * 0.62, y: 1.44, z: 2.86, rx: -0.5, color: 0xff7a1a }));
+  }
+  for (const [z, w, y] of [[2.86, 1.7, 0.22], [3.66, 1.4, 0.1]]) for (let k = 0; k < 3; k++) L.add('l', box(w, 0.05, 0.04, { y: y - 0.25 + k * 0.2, z, color: 0xff6a1a }));
+  L.add('l', part(new THREE.TorusGeometry(1.45, 0.07, 3, seg(16, 10)), { rx: Math.PI / 2, y: -1.08, sz: 1.3, color: 0xff4a1a }));
+  const lights = new THREE.Mesh(L.build().l, M.glow); lights.name = 'lights'; body.add(lights);
   // turret on its back (barrels along +Z so lookAt() aims it)
-  const turret = new THREE.Group(); turret.name = 'turret'; turret.position.y = 1.25; body.add(turret);
+  const turret = new THREE.Group(); turret.name = 'turret'; turret.position.y = 1.3; body.add(turret);
   const TK = new Kit();
-  TK.add('t', cyl(0.55, 0.65, 0.4, 8, { color: plate }), box(0.7, 0.4, 0.8, { y: 0.35, color: gun }));
-  TK.add('t', box(0.12, 0.12, 1.1, { x: -0.18, y: 0.38, z: 0.75, color: dark }), box(0.12, 0.12, 1.1, { x: 0.18, y: 0.38, z: 0.75, color: dark }));
+  TK.add('t', cyl(0.58, 0.66, 0.3, 8, { color: C.gun }), box(0.86, 0.44, 0.9, { y: 0.34, color: C.red }), box(0.9, 0.12, 0.5, { y: 0.6, z: -0.1, color: C.redDk }));
+  TK.add('t', box(0.3, 0.3, 0.42, { x: 0.58, y: 0.3, z: -0.1, color: C.gun })); // ammo feed
+  for (const sx of [-1, 1]) {
+    TK.add('t', cyl(0.07, 0.07, 1.25, 6, { x: sx * 0.2, y: 0.38, z: 0.9, rx: Math.PI / 2, color: C.black }));
+    TK.add('t', cyl(0.11, 0.11, 0.2, 6, { x: sx * 0.2, y: 0.38, z: 1.5, rx: Math.PI / 2, color: C.steel })); // muzzle brake
+  }
   turret.add(new THREE.Mesh(TK.build().t, M.paintFlat));
-  // legs: 8 × (thigh, shin) of a shared unit box
-  const unit = prep(new THREE.BoxGeometry(1, 1, 1), 0xffffff);
-  const kneeGeo = prep(new THREE.IcosahedronGeometry(0.22, 0), 0xff3a3a);
+  // legs: 8 × (thigh, shin, knee hub). Thigh and shin are unit segments (y −0.5 → +0.5 from root to
+  // tip, z = the outer side of the bend) that the renderer stretches between joints.
+  const thighGeo = merge2([
+    box(1, 0.9, 1, { color: C.red }), box(1.06, 0.06, 1.06, { y: 0.1, color: C.redDk }), // armour shell + seam band
+    box(0.62, 1.0, 0.62, { color: C.gun }), // the frame showing at both ends
+    cyl(0.2, 0.2, 0.5, 6, { z: 0.82, y: -0.2, color: C.gun }), cyl(0.1, 0.1, 0.42, 6, { z: 0.82, y: 0.24, color: C.chrome }), // hydraulic ram
+  ]);
+  const shinGeo = merge2([
+    box(1.2, 0.5, 1.2, { y: -0.24, color: C.red }), box(1.24, 0.05, 1.24, { y: -0.04, color: C.redDk }),
+    box(0.62, 0.5, 0.62, { y: 0.2, color: C.strut }),
+    cyl(0.16, 0.16, 0.36, 6, { z: 0.78, y: -0.2, color: C.gun }), cyl(0.08, 0.08, 0.34, 6, { z: 0.78, y: 0.12, color: C.chrome }),
+    part(new THREE.ConeGeometry(0.42, 0.12, 4), { y: 0.5, rx: Math.PI, color: C.steel }), // the claw
+  ]);
+  const kneeGeo = merge2([cyl(0.28, 0.28, 0.5, 8, { rz: Math.PI / 2, color: C.gun }), cyl(0.2, 0.2, 0.54, 8, { rz: Math.PI / 2, color: C.chrome })]);
   const legs = [];
   const zs = [-1.3, -0.45, 0.45, 1.3];
   for (const side of [-1, 1]) zs.forEach((z, i) => {
-    const thigh = new THREE.Mesh(unit, M.legThigh), shin = new THREE.Mesh(unit, M.legShin);
-    const knee = new THREE.Mesh(kneeGeo, M.glow);
+    const thigh = new THREE.Mesh(thighGeo, M.paintFlat), shin = new THREE.Mesh(shinGeo, M.paintFlat), knee = new THREE.Mesh(kneeGeo, M.paintFlat);
     g.add(thigh, shin, knee);
     legs.push({ side, i, hip: new THREE.Vector3(side * 1.55, 0.1, z), rest: new THREE.Vector3(side * 3.6, 0, z * 1.7), thigh, shin, knee });
   });

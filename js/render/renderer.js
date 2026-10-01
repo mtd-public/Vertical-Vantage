@@ -20,12 +20,21 @@ const _v = new THREE.Vector3(), _c = new THREE.Color();
 const _up = new THREE.Vector3(), _fw = new THREE.Vector3(), _bk = new THREE.Vector3(), _rt = new THREE.Vector3(), _ft = new THREE.Vector3(), _kn = new THREE.Vector3(), _d = new THREE.Vector3();
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _Y = new THREE.Vector3(0, 1, 0);
 // Stretch a unit box between a and b (in the parent's frame), thickness th.
-function seg3(mesh, a, b, th) {
+// A unit segment stretched a → b with a stable roll: local y along the segment, local x across the
+// leg's plane (so a knee hub's axle lines up), local z on the outer side of the bend (rams sit there).
+const _sx = new THREE.Vector3(), _sz = new THREE.Vector3(), _sm = new THREE.Matrix4(), _Z = new THREE.Vector3(0, 0, 1);
+function limb(mesh, a, b, tx, tz) {
   _d.subVectors(b, a);
   const len = _d.length() || 1e-3;
   mesh.position.copy(a).addScaledVector(_d, 0.5);
-  mesh.quaternion.setFromUnitVectors(_Y, _d.multiplyScalar(1 / len));
-  mesh.scale.set(th, len, th);
+  _d.multiplyScalar(1 / len);
+  _sx.crossVectors(_d, _Y);
+  if (_sx.lengthSq() < 1e-6) _sx.crossVectors(_d, _Z);
+  _sx.normalize();
+  _sz.crossVectors(_sx, _d);
+  _sm.makeBasis(_sx, _d, _sz);
+  mesh.quaternion.setFromRotationMatrix(_sm);
+  mesh.scale.set(tx, len, tz);
 }
 const WEAPON_COL = { blaster: 0x2be8ff, spread: 0xff7a2b, rapid: 0x9fff6a, rocket: 0xff3b5c };
 
@@ -296,8 +305,9 @@ export class GameRenderer {
       if (e.state === 'leap' || e.state === 'drop') foot.set(l.rest.x * 0.8, -bodyH * 0.5, l.rest.z * 1.2); // legs splay mid-air
       const knee = _kn.copy(l.hip).add(foot).multiplyScalar(0.5);
       knee.y += 1.5; knee.x += l.side * 0.4;
-      seg3(l.thigh, l.hip, knee, 0.32); seg3(l.shin, knee, foot, 0.24); // (children of g: body frame)
-      l.knee.position.copy(knee);
+      limb(l.thigh, l.hip, knee, 0.36, 0.42); // (children of g: body frame)
+      l.knee.position.copy(knee); l.knee.quaternion.copy(l.thigh.quaternion);
+      limb(l.shin, knee, foot, 0.26, 0.3);
     }
     // the beam (sight line while charging, the real thing while firing)
     const B = e.beam, bm = L.beam;
@@ -318,7 +328,7 @@ export class GameRenderer {
         case 'fire': this.recoil = 1; this.flashT = 0.05; break;
         case 'impact': fx.burst(e.x, e.y, e.z, e.kind === 'bolt' ? 5 : 6, e.kind === 'bolt' ? 0xff3a8a : 0xbff8ff, 5, 0.09, 0.35, 10); break;
         case 'hit': fx.burst(e.x, e.y, e.z, 8, 0xffb040, 6, 0.1, 0.4); break;
-        case 'kill': fx.boom(e.x, e.y, e.z, e.kind === 'boss' ? 7 : e.kind === 'guard' ? 2.2 : 2.6); fx.burst(e.x, e.y, e.z, 16, e.kind === 'walker' ? 0xff8a1a : e.kind === 'guard' ? 0x3a3a44 : 0xe8ecf4, 8, 0.22, 1.2, 14); break;
+        case 'kill': fx.boom(e.x, e.y, e.z, e.kind === 'boss' ? 7 : e.kind === 'guard' ? 2.2 : 2.6); fx.burst(e.x, e.y, e.z, 16, e.kind === 'walker' ? 0xff8a1a : e.kind === 'guard' ? 0x3a3a44 : e.kind === 'boss' ? 0xe0313a : 0xe8ecf4, 8, 0.22, 1.2, 14); break;
         case 'serverDown': fx.boom(e.x, e.y, e.z, 3, 0x7bff4a); fx.burst(e.x, e.y, e.z, 24, 0x2bff7a, 10, 0.16, 1, 12); break;
         case 'explode': fx.boom(e.x, e.y, e.z, e.r); break;
         case 'stomp': fx.burst(e.x, e.y, e.z, 12, 0xffffff, 7, 0.14, 0.5); fx.shake = Math.max(fx.shake, 0.18); break;
@@ -416,8 +426,6 @@ function makeMaterials() {
     portalSwirl: new THREE.MeshBasicMaterial({ map: swirlPink, opacity: 0.9, ...add }),
     laser: new THREE.MeshBasicMaterial({ color: 0xff2a3a, fog: false }),
     beam: new THREE.MeshBasicMaterial({ color: 0xff3a4a, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
-    legThigh: new THREE.MeshLambertMaterial({ color: 0x8a92a6, flatShading: true }),
-    legShin: new THREE.MeshLambertMaterial({ color: 0x4e5466, flatShading: true }),
     laserSheet: new THREE.MeshBasicMaterial({ color: 0xff2a3a, opacity: 0.18, ...add }),
     vmPaint: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, fog: false }),
     vmGlow: new THREE.MeshBasicMaterial({ color: 0x2be8ff, fog: false }),

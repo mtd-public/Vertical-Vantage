@@ -11,7 +11,7 @@
 //   phases by health: 1 (> 60 %), 2 (> 30 %: climbs, faster), 3 (frantic)
 import { T, BOSS } from './tuning.js';
 import { clamp } from './util.js';
-import { raycast } from './plats.js';
+import { raycast, pushOut } from './plats.js';
 import { hurtPlayer } from './player.js';
 
 export function initBoss(w, e, d) {
@@ -57,8 +57,9 @@ export function updateBoss(w, e, dt) {
 
   switch (e.state) {
     case 'intro': if (e.timer <= 0) { e.state = 'chase'; e.timer = 1.5; w.events.push({ type: 'bossRoar', x: e.cx, y: e.cy, z: e.cz }); } break;
-    case 'chase': {
-      walkToward(e, px, pz, speed, dt, A);
+    case 'chase': { // to the open floor nearest you (up on a crate, it waits beside it)
+      freeSpot(w, px, pz, _spot);
+      walkToward(e, _spot[0], _spot[1], speed, dt, A, S.margin, w);
       if (e.timer <= 0) decide(w, e);
       break;
     }
@@ -72,7 +73,7 @@ export function updateBoss(w, e, dt) {
       e.vy -= G * dt;
       e.cx += e.vx * dt; e.cy += e.vy * dt; e.cz += e.vz * dt;
       e.cx = clamp(e.cx, A.x0 + S.margin, A.x1 - S.margin); e.cz = clamp(e.cz, A.z0 + S.margin, A.z1 - S.margin);
-      if (e.cy <= A.floor + S.bodyH && e.vy < 0) { e.cy = A.floor + S.bodyH; e.vx = e.vy = e.vz = 0; e.surf = 'floor'; e.nx = 0; e.ny = 1; e.nz = 0; slam(w, e); }
+      if (e.cy <= A.floor + S.bodyH && e.vy < 0) { e.cy = A.floor + S.bodyH; e.vx = e.vy = e.vz = 0; e.surf = 'floor'; e.nx = 0; e.ny = 1; e.nz = 0; clearSolids(w, e, 0, 0, 0); slam(w, e); }
       break;
     }
     case 'recover': e.vuln = 1.5; e.crouch = 0.6; if (e.timer <= 0) { e.state = 'chase'; e.timer = 1.2 + w.rng() * 1.2; } break;
@@ -93,8 +94,9 @@ export function updateBoss(w, e, dt) {
     case 'cool': if (e.timer <= 0) { e.state = 'chase'; e.timer = 1.4 + w.rng() * 1.2; } break;
     case 'toWall': {
       const tz = e.wallZ - Math.sign(e.wallZ - (A.z0 + A.z1) / 2) * (S.bodyH + 0.05);
-      walkToward(e, clamp(px, A.x0 + 8, A.x1 - 8), tz, speed * 1.2, dt, A, S.bodyH);
-      if (Math.abs(e.cz - tz) < 1.3) { // onto the wall: up becomes the wall's inward normal
+      walkToward(e, clamp(px, ...climbLane(A)), tz, speed * 1.2, dt, A, S.bodyH, w); // up a lane clear of the racks
+      const lane = climbLane(A);
+      if (Math.abs(e.cz - tz) < 1.3 && e.cx > lane[0] - 0.5 && e.cx < lane[1] + 0.5) { // onto the wall: up becomes the wall's inward normal
         e.surf = 'wall'; e.nz = e.wallZ < 0 ? 1 : -1; e.nx = 0; e.ny = 0;
         e.cz = e.wallZ + e.nz * S.bodyH; e.state = 'climb';
       }
@@ -102,7 +104,7 @@ export function updateBoss(w, e, dt) {
     }
     case 'climb': {
       e.cy += speed * 1.1 * dt;
-      e.cx += clamp(px - e.cx, -1, 1) * speed * 0.5 * dt;
+      e.cx = clamp(e.cx + clamp(px - e.cx, -1, 1) * speed * 0.5 * dt, ...climbLane(A));
       if (e.cy >= A.ceil - S.bodyH) { // over the lip onto the ceiling
         e.cy = A.ceil - S.bodyH; e.surf = 'ceil'; e.nx = 0; e.ny = -1; e.nz = 0;
         e.cz = e.wallZ + (e.wallZ < 0 ? 1 : -1) * (S.bodyH + 0.3);
@@ -111,8 +113,9 @@ export function updateBoss(w, e, dt) {
       }
       break;
     }
-    case 'ceil': {
-      walkToward(e, px, pz, speed * 1.15, dt, A);
+    case 'ceil': { // it hangs over open floor near you, never over a rack or crate it would drop into
+      freeSpot(w, px, pz, _spot);
+      walkToward(e, _spot[0], _spot[1], speed * 1.15, dt, A);
       const dx = px - e.cx, dz = pz - e.cz;
       if (e.timer <= 0 || (dx * dx + dz * dz < 6 && e.timer < S.ceilTime - 1)) {
         if (w.rng() < 0.35 && e.phase >= 2 && !e.didCeilLaser) { e.didCeilLaser = true; startCharge(w, e); }
@@ -120,9 +123,10 @@ export function updateBoss(w, e, dt) {
       }
       break;
     }
-    case 'dropTele': e.crouch = 1; walkToward(e, px, pz, speed * 0.4, dt, A); if (e.timer <= 0) drop(w, e); break;
+    case 'dropTele': e.crouch = 1; freeSpot(w, px, pz, _spot); walkToward(e, _spot[0], _spot[1], speed * 0.4, dt, A); if (e.timer <= 0) drop(w, e); break;
     default: e.state = 'chase'; e.timer = 1;
   }
+  if (e.surf === 'floor') clearSolids(w, e, 0, 0, 0); // e.g. a lift coming down on it
   // the back turret: bursts at you on its own clock
   turret(w, e, dt);
   e.gait += (e.state === 'chase' || e.state === 'toWall' || e.state === 'climb' || e.state === 'ceil' ? speed : e.state === 'charge' ? 1 : 0) * dt;
@@ -162,7 +166,8 @@ function goWall(w, e) {
 function leap(w, e, A) {
   const P = w.player;
   // lead the target a little: it springs at where you're going
-  const tx = clamp(P.x + P.vx * 0.35, A.x0 + BOSS.margin, A.x1 - BOSS.margin), tz = clamp(P.z + P.vz * 0.35, A.z0 + BOSS.margin, A.z1 - BOSS.margin);
+  freeSpot(w, clamp(P.x + P.vx * 0.35, A.x0 + BOSS.margin, A.x1 - BOSS.margin), clamp(P.z + P.vz * 0.35, A.z0 + BOSS.margin, A.z1 - BOSS.margin), _spot);
+  const tx = _spot[0], tz = _spot[1]; // lands beside a crate, not in it
   const dx = tx - e.cx, dz = tz - e.cz, d = Math.sqrt(dx * dx + dz * dz);
   const Tf = clamp(d / 15, 0.7, 1.25);
   e.vx = dx / Tf; e.vz = dz / Tf; e.vy = 0.5 * G * Tf;
@@ -173,7 +178,8 @@ function leap(w, e, A) {
 function drop(w, e) {
   const P = w.player;
   e.state = 'drop'; e.surf = 'air';
-  e.vx = clamp(P.x - e.cx, -4, 4); e.vz = clamp(P.z - e.cz, -4, 4); e.vy = -2;
+  freeSpot(w, P.x, P.z, _spot);
+  e.vx = clamp(_spot[0] - e.cx, -4, 4); e.vz = clamp(_spot[1] - e.cz, -4, 4); e.vy = -2;
   e.nx = 0; e.ny = 1; e.nz = 0; // it flips over on the way down
   w.events.push({ type: 'bossLeap', x: e.cx, y: e.cy, z: e.cz });
 }
@@ -190,14 +196,66 @@ function slam(w, e) {
 
 // Walk on the current surface toward a target (x, z) — on the floor and ceiling that's the plane;
 // on a wall it only slides along x. Heading turns at a limited rate so it arcs like a creature.
-function walkToward(e, tx, tz, speed, dt, A, zMargin = BOSS.margin) {
+// On the floor (w given) it also slides round crates, racks and low lifts instead of through them.
+function walkToward(e, tx, tz, speed, dt, A, zMargin = BOSS.margin, w = null) {
   face(e, tx, tz, 2.6, dt);
   const dx = tx - e.cx, dz = tz - e.cz, d = Math.sqrt(dx * dx + dz * dz);
   if (d < 1.2) return;
   const m = BOSS.margin;
   e.cx = clamp(e.cx + e.fx * speed * dt, A.x0 + m, A.x1 - m);
   if (e.surf !== 'wall') e.cz = clamp(e.cz + e.fz * speed * dt, A.z0 + zMargin, A.z1 - zMargin);
+  if (w && e.surf === 'floor') clearSolids(w, e, dx / d, dz / d, speed * dt * 0.7);
 }
+
+// Solids in its way on the floor: any platform inside the arena whose box overlaps its body band
+// (crates, racks, a lift near the bottom). The shell (floor slab, walls, ceiling, catwalks overhead)
+// is outside that band or outside the arena box, which the clamps already handle.
+function isSolid(A, p) {
+  const top = p.h + p.oy;
+  if (top <= A.floor + 0.3 || top - p.thick >= A.floor + BOSS.bodyH + 1.2) return false;
+  const x = p.x + p.ox, z = p.z + p.oz;
+  return x >= A.x0 && x <= A.x1 && z >= A.z0 && z <= A.z1;
+}
+
+// Push its body circle out of every solid. When something pushed it, it also sidesteps along the
+// face toward (gx, gz) at `side` metres, so it works round a crate rather than stalling on it.
+function clearSolids(w, e, gx, gz, side) {
+  const A = w.level.arena, m = BOSS.margin;
+  for (let pass = 0; pass < 2; pass++) {
+    for (const p of w.plats) {
+      if (!isSolid(A, p)) continue;
+      const r = pushOut(p, e.cx, e.cz, BOSS.bodyR);
+      if (!r) continue;
+      const nx = r[0], nz = r[1];
+      e.cx += nx * r[2]; e.cz += nz * r[2];
+      if (side > 0) {
+        let tx = -nz, tz = nx;
+        if (tx * gx + tz * gz < 0) { tx = -tx; tz = -tz; }
+        e.cx += tx * side; e.cz += tz * side;
+        side = 0;
+      }
+    }
+    e.cx = clamp(e.cx, A.x0 + m, A.x1 - m); e.cz = clamp(e.cz, A.z0 + BOSS.bodyH, A.z1 - BOSS.bodyH);
+  }
+}
+
+// The nearest point to (x, z) where its body fits on the floor.
+const _spot = [0, 0];
+function freeSpot(w, x, z, out) {
+  const A = w.level.arena;
+  out[0] = x; out[1] = z;
+  for (let pass = 0; pass < 3; pass++) {
+    for (const p of w.plats) {
+      if (!isSolid(A, p)) continue;
+      const r = pushOut(p, out[0], out[1], BOSS.bodyR + 0.3);
+      if (r) { out[0] += r[0] * r[2]; out[1] += r[1] * r[2]; }
+    }
+  }
+  return out;
+}
+
+// Where along a long wall it may climb: clear of the corner racks (level data), else 8 m in.
+const climbLane = (A) => A.climbX || [A.x0 + 8, A.x1 - 8];
 
 function face(e, tx, tz, rate, dt) {
   const dx = tx - e.cx, dz = tz - e.cz, d = Math.sqrt(dx * dx + dz * dz);

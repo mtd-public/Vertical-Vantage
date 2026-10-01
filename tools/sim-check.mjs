@@ -11,9 +11,9 @@
 //  4. Scripted play: stomp, shoot, collect three drives → exit opens → clear; bonus timer runs out
 //     and clears; a fall respawns with damage; 120 s of seeded random input never produces NaN.
 import { STAGES, BONUS } from '../js/levels/index.js';
-import { T } from '../js/sim/tuning.js';
+import { T, BOSS } from '../js/sim/tuning.js';
 import { createWorld, step } from '../js/sim/world.js';
-import { makePlats, platOffset, groundBelow, posePlats } from '../js/sim/plats.js';
+import { makePlats, platOffset, groundBelow, posePlats, pushOut } from '../js/sim/plats.js';
 import { mulberry32 } from '../js/sim/util.js';
 
 let fails = 0;
@@ -285,6 +285,31 @@ function bossChecks(s) {
     P.x = w.exit.x; P.z = w.exit.z; P.y = w.exit.y + 0.05; P.vy = 0;
     for (let i = 0; i < 10; i++) step(w, C0);
     ok(w.phase === 'clear', `${s.id}: then the gate clears the stage`);
+  }
+  // 5. it never walks, lands or climbs through the racks, crates or lifts. You hop between perches,
+  //    crate tops and the floor beside them for 3 minutes, in phase 2 so it climbs and drops too.
+  {
+    const w = createWorld(s), B = w.boss, A = s.arena, lane = A.climbX || [A.x0 + 8, A.x1 - 8];
+    const spots = [[-23, 11, -21.5], [23, 11, 21.5], [-11, 2.4, 9], [12, 2.4, 12], [-24.6, 4.8, -11.5], [17, 0, -21.5], [-17, 0, 21.5], [-11, 0, 12], [0, 0, 18], [21, 0, -2], [-27.6, 8, 0], [10, 0, -13]];
+    let worst = 0, where = '', laneBad = 0, floorT = 0, wallT = 0;
+    B.hp = B.maxHp * 0.5;
+    for (let i = 0; i < 120 * 180; i++) {
+      if (i % (120 * 6) === 0) { const [x, y, z] = spots[(i / (120 * 6)) % spots.length]; const P = w.player; P.x = x; P.y = y; P.z = z; P.vx = P.vy = P.vz = 0; }
+      step(w, C0); w.events.length = 0; keep(w); w.player.inv = 1;
+      if (B.dead) break;
+      if (B.surf === 'floor') {
+        floorT++;
+        for (const p of w.plats) {
+          const top = p.h + p.oy, x = p.x + p.ox, z = p.z + p.oz;
+          if (top <= A.floor + 0.3 || top - p.thick >= A.floor + BOSS.bodyH + 1.2 || x < A.x0 || x > A.x1 || z < A.z0 || z > A.z1) continue;
+          const r = pushOut(p, B.cx, B.cz, BOSS.bodyR);
+          if (r && r[2] > worst) { worst = r[2]; where = `${B.state} at (${B.cx.toFixed(1)}, ${B.cz.toFixed(1)}) in a ${p.style} at (${x}, ${z})`; }
+        }
+      } else if (B.surf === 'wall') { wallT++; if (B.cx < lane[0] - 0.01 || B.cx > lane[1] + 0.01) laneBad++; }
+    }
+    ok(worst < 0.25, `${s.id}: ARACHNE-9 stays out of racks, crates and lifts (worst overlap ${worst.toFixed(2)} m${where ? ': ' + where : ''})`);
+    ok(wallT > 0 && laneBad === 0, `${s.id}: it climbs only in the lane clear of the racks (${wallT} wall steps, ${laneBad} outside)`);
+    ok(floorT > 120 * 60, `${s.id}: …and still spends most of the fight on the floor (${(floorT / 120).toFixed(0)} s)`);
   }
 }
 

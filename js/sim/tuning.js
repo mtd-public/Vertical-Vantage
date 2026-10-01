@@ -105,6 +105,7 @@ export const ENEMIES = {
 export const BOSS = {
   hp: 240, r: 2.4, top: 3.0, // ~36 s of blaster on target; weapons and OVERDRIVE cut that hard.
   bodyH: 1.8, margin: 3.5, // body centre above its surface; how close to the walls it walks.
+  bodyR: 2.2, // body + hip ring: what it can't walk through (the thin legs may brush past a crate).
   speed: [4.5, 5.6, 6.6], // m/s by phase: you outrun it (8.5) but not by much.
   crouch: [0.8, 0.65, 0.5], // pounce telegraph by phase (it squats and its eyes flare).
   slamR: 6, crushR: 2.8, recover: 1.2, // landing shockwave (jump it), direct hit, then a stunned window (×1.5 damage).

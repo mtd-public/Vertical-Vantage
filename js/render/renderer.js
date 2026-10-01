@@ -23,6 +23,7 @@ const DEG = Math.PI / 180;
 const _v = new THREE.Vector3(), _c = new THREE.Color();
 const _up = new THREE.Vector3(), _fw = new THREE.Vector3(), _bk = new THREE.Vector3(), _rt = new THREE.Vector3(), _ft = new THREE.Vector3(), _kn = new THREE.Vector3(), _d = new THREE.Vector3();
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _Y = new THREE.Vector3(0, 1, 0);
+const _white = new THREE.Color(0xffffff), _hot = new THREE.Color();
 // Stretch a unit box between a and b (in the parent's frame), thickness th.
 // A unit segment stretched a → b with a stable roll: local y along the segment, local x across the
 // leg's plane (so a knee hub's axle lines up), local z on the outer side of the bend (rams sit there).
@@ -329,14 +330,16 @@ export class GameRenderer {
     if (L.clouds) L.clouds.material.map.offset.set(t * 0.004, t * 0.009);
     this.fx.update(dt, w, cam, t);
 
-    // arm cannon: bob, sway, per-weapon recoil, a dip on swap, drops away when you look at your feet
+    // arm cannon: bob, sway, per-weapon recoil, the petals (close on a swap, re-open in the new
+    // colour, kick on each shot), heat fins, the ammo screen; drops away when you look at your feet
     const c = this.cannon, MZ = c.userData.mz;
     if (P.weapon !== this.held) { this.held = P.weapon; this.swapT = 1; }
-    this.swapT = Math.max(0, this.swapT - dt * 4);
-    const show = this.swapT > 0.5 ? this.shown || this.held : this.held; // the new muzzle comes up from below
+    this.swapT = Math.max(0, this.swapT - dt * 3.2);
+    const show = this.swapT > 0.5 ? this.shown || this.held : this.held; // the new weapon appears as the petals reopen
     if (show !== this.shown) { for (const k in MZ) MZ[k].group.visible = k === show; this.shown = show; }
     this.recoil = Math.max(0, this.recoil - dt * (this.kick > 1.5 ? 5 : 9));
     this.flashT = Math.max(0, this.flashT - dt);
+    this.heat = Math.max(0, (this.heat || 0) - dt * 0.55);
     this.spinV *= Math.exp(-dt * 2.5);
     const spin = MZ.rapid.group.getObjectByName('spin'); spin.rotation.z += this.spinV * dt;
     // sway: the gun lags your look and leans with strafing
@@ -347,11 +350,30 @@ export class GameRenderer {
     this.swayX += (tx * this.motion - this.swayX) * Math.min(1, dt * 10); this.swayY += (ty * this.motion - this.swayY) * Math.min(1, dt * 10);
     const low = pitch < -0.45 ? (-0.45 - pitch) * 0.35 : 0;
     const port = this.aspect < 1, rk = this.recoil * this.kick, sdip = Math.sin(this.swapT * Math.PI);
-    c.position.set((port ? 0.22 : 0.33) + this.swayX, -0.31 + bob * 0.5 - low + (P.ground ? 0 : 0.02) + this.swayY - sdip * 0.22, -0.95 + rk * 0.06);
+    c.position.set((port ? 0.22 : 0.33) + this.swayX, -0.31 + bob * 0.5 - low + (P.ground ? 0 : 0.02) + this.swayY - sdip * 0.06, -0.95 + rk * 0.06);
     c.scale.setScalar(0.62);
-    c.rotation.set(rk * 0.3 + low * 0.6 - sdip * 0.9, 0.1 - this.swayX * 2, this.swayX * 3 + (this.held === 'rapid' ? (Math.random() - 0.5) * this.recoil * 0.08 : 0));
+    c.rotation.set(rk * 0.3 + low * 0.6 - sdip * 0.25, 0.1 - this.swayX * 2, this.swayX * 3 + (this.held === 'rapid' ? (Math.random() - 0.5) * this.recoil * 0.08 : 0) + sdip * 0.5);
     c.visible = this.showCannon && !P.dead;
-    this.M.vmGlow.color.set(WEAPON_COL[P.weapon] || 0xffffff);
+    // petals: closed at the middle of a swap, open to the weapon's spread, kicked by each shot
+    const f = this.swapT > 0.5 ? (this.swapT - 0.5) * 2 : 1 - this.swapT * 2;
+    const open = (MD.CANNON_OPEN[show] ?? 0.1) * f + rk * 0.07;
+    c.userData.petals.forEach((pg, k) => { pg.rotation.x += (open + (show === 'rapid' ? Math.sin(this.spinV * 0.2 + k) * 0.01 * this.spinV / 30 : 0) - pg.rotation.x) * Math.min(1, dt * 24); });
+    // core: the shown weapon's colour, flaring white on a shot
+    const wcol = WEAPON_COL[show] || 0xffffff;
+    this.M.vmGlow.color.set(wcol).lerp(_white, Math.min(1, this.flashT * 10));
+    this.M.vmHeat.color.set(0x3a3e48).lerp(_hot.set(0xff6a1a), Math.min(1, this.heat)).lerp(_white, Math.max(0, this.heat - 1) * 0.5);
+    // ammo screen (redrawn only when it changes)
+    const ammo = P.weapon === 'blaster' ? '∞' : String(P.ammo[P.weapon] ?? 0).padStart(3, '0'), key = show + ammo;
+    const scr = c.userData.screen;
+    if (scr.key !== key) {
+      scr.key = key;
+      const x = scr.cv.getContext('2d');
+      x.fillStyle = '#05070c'; x.fillRect(0, 0, 64, 32);
+      x.fillStyle = '#' + new THREE.Color(wcol).getHexString(); x.fillRect(0, 0, 64, 2); x.fillRect(0, 30, 64, 2);
+      x.font = 'bold 9px monospace'; x.textBaseline = 'top'; x.fillText(({ blaster: 'BLSTR', spread: 'SPRD', rapid: 'PULSE', rocket: 'RCKT' })[show] || '', 3, 4);
+      x.font = 'bold 15px monospace'; x.fillText(ammo, 3, 14);
+      scr.tex.needsUpdate = true;
+    }
     const fl = c.getObjectByName('flash');
     fl.position.z = (MZ[this.shown]?.tip ?? -0.47) - 0.05;
     fl.visible = this.flashT > 0;
@@ -395,6 +417,38 @@ export class GameRenderer {
     L.root.add(g); L.enemies.set(e, g);
   }
 
+  // ARACHNE-9's electrics: a few jagged arcs between the coil, the capacitors, the hip insulators and
+  // the antennae, re-rolled ~18 times a second; a storm of them while it telegraphs or dies.
+  sparkArcs(g, e, dt) {
+    const arcs = g.getObjectByName('arcs');
+    if (!arcs) return;
+    const U = arcs.userData;
+    U.t -= dt;
+    if (U.t > 0) return;
+    U.t = 0.055;
+    const A = MD.ARC_ANCHORS, pos = arcs.geometry.attributes.position.array, S = U.segs;
+    const angry = e.state === 'charge' || e.state === 'crouch' || e.state === 'dropTele' || e.state === 'dying' || e.flash > 0;
+    const n = Math.min(U.max, (angry ? 6 : 2) + (Math.random() < 0.5 ? 1 : 0));
+    const pickOf = (l) => l[Math.floor(Math.random() * l.length)];
+    let o = 0;
+    for (let k = 0; k < n; k++) {
+      const r = Math.random();
+      const a = r < 0.45 ? A.coil : r < 0.75 ? pickOf(A.caps) : pickOf(A.hips);
+      const b = r < 0.45 ? pickOf(A.caps) : r < 0.75 ? pickOf(A.hips) : r < 0.9 ? pickOf(A.antennae) : A.coil;
+      const dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], j = Math.sqrt(dx * dx + dy * dy + dz * dz) * 0.14;
+      let px = a[0], py = a[1], pz = a[2];
+      for (let s = 1; s <= S; s++) {
+        const f = s / S, end = s === S;
+        const qx = a[0] + dx * f + (end ? 0 : (Math.random() - 0.5) * j * 2), qy = a[1] + dy * f + (end ? 0 : (Math.random() - 0.3) * j * 2), qz = a[2] + dz * f + (end ? 0 : (Math.random() - 0.5) * j * 2);
+        pos[o++] = px; pos[o++] = py; pos[o++] = pz; pos[o++] = qx; pos[o++] = qy; pos[o++] = qz;
+        px = qx; py = qy; pz = qz;
+      }
+    }
+    arcs.geometry.setDrawRange(0, n * S * 2);
+    arcs.geometry.attributes.position.needsUpdate = true;
+    arcs.material.opacity = 0.95 * this.flashK + (1 - this.flashK) * 0.4;
+  }
+
   // Swap a model to the white hit-flash material and back (boss views use this too).
   flashModel(g, on) { if (on !== !!g.userData.flashing) setFlash(g, on, this.M.flash); }
 
@@ -417,6 +471,7 @@ export class GameRenderer {
     // eyes flare on every telegraph
     const tele = e.state === 'crouch' || e.state === 'charge' || e.state === 'dropTele';
     g.getObjectByName('eye').scale.setScalar(tele ? 1.3 + Math.sin(t * 40) * 0.25 : 1);
+    this.sparkArcs(g, e, dt);
     // turret tracks you (barrels along +Z: lookAt aims them)
     const tur = g.getObjectByName('turret');
     tur.lookAt(P.x, P.y + 1, P.z);
@@ -443,6 +498,7 @@ export class GameRenderer {
         case 'fire': {
           const k = { blaster: 1, spread: 1.5, rapid: 0.45, rocket: 2.2 }[e.weapon] ?? 1;
           this.kick = k; this.recoil = 1; this.flashT = e.weapon === 'rocket' ? 0.08 : 0.05;
+          this.heat = Math.min(1.6, (this.heat || 0) + ({ blaster: 0.07, spread: 0.22, rapid: 0.045, rocket: 0.4 }[e.weapon] ?? 0.07));
           if (e.weapon === 'rapid') this.spinV = Math.min(60, this.spinV + 18);
           break;
         }
@@ -553,8 +609,10 @@ function makeMaterials() {
     beam: new THREE.MeshBasicMaterial({ color: 0xff3a4a, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }),
     laserSheet: new THREE.MeshBasicMaterial({ color: 0xff2a3a, opacity: 0.18, ...add }),
     jet: new THREE.MeshBasicMaterial({ color: 0x8ff8ff, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }),
+    arc: new THREE.LineBasicMaterial({ color: 0xc8f6ff, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending }),
     vmPaint: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, fog: false }),
     vmGlow: new THREE.MeshBasicMaterial({ color: 0x2be8ff, fog: false }),
+    vmHeat: new THREE.MeshBasicMaterial({ color: 0x3a3e48, fog: false }),
     vmFlash: new THREE.MeshBasicMaterial({ map: glowTex(), color: 0x2be8ff, ...add }),
   };
 }

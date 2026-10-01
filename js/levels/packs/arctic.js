@@ -2,5 +2,6 @@
 // front, the long tunnel into the permafrost where the world's seeds and data are kept, and POLARIS,
 // the vault's polar-bear warden, in the cold-storage cavern under the mountain.
 import town from './arctic-town.js';
+import shelf from './arctic-shelf.js';
 
-export default { id: 'arctic', name: 'ARCTIC VAULT', sub: 'PERMAFROST ARCHIVE', color: '#9ff3ff', stages: [town] };
+export default { id: 'arctic', name: 'ARCTIC VAULT', sub: 'PERMAFROST ARCHIVE', color: '#9ff3ff', stages: [town, shelf] };

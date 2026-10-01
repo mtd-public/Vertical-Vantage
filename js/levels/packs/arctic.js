@@ -3,5 +3,6 @@
 // the vault's polar-bear warden, in the cold-storage cavern under the mountain.
 import town from './arctic-town.js';
 import shelf from './arctic-shelf.js';
+import vault from './arctic-vault.js';
 
-export default { id: 'arctic', name: 'ARCTIC VAULT', sub: 'PERMAFROST ARCHIVE', color: '#9ff3ff', stages: [town, shelf] };
+export default { id: 'arctic', name: 'ARCTIC VAULT', sub: 'PERMAFROST ARCHIVE', color: '#9ff3ff', stages: [town, shelf, vault] };

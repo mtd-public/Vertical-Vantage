@@ -38,7 +38,7 @@ P(disc(SCALE.x - SCALE.span, SCALE.z, 3.0, 5, { thick: 0.6, style: 'eg-scalePan'
 P(disc(SCALE.x + SCALE.span, SCALE.z, 3.0, 5, { thick: 0.6, style: 'eg-scalePan', tint: 1, move: mv('y', 3, 7, 0.5) }));
 
 export default {
-  id: 'egypt-boss', name: 'HALL OF JUDGMENT', sub: 'THE DUAT · THE HOUR OF MAAT · BOSS', theme: 'egyptDuat', song: 'weighingHeart',
+  id: 'egypt-boss', name: 'HALL OF JUDGMENT', sub: 'THE DUAT · 00:00 · THE HOUR OF MAAT · BOSS', theme: 'egyptDuat', song: 'weighingHeart',
   seed: 8004, par: 240, killY: -10, objective: 'boss', bossName: 'MECHA ANUBIS',
   arena: A,
   start: { x: 0, y: A.floor, z: 19, yaw: 0 },

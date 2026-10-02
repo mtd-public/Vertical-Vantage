@@ -89,6 +89,26 @@ function icicles(K, H, p, rng, y, n, maxLen = 1.4, col = COL.ice) {
   }
 }
 
+// ------------------------------------------------------------------ the polar night's light
+const N = (K, ...g) => K.add('neon', ...g);
+const LED = [COL.cyan, COL.magenta, 0x8ad8ff, 0x8a6aff, 0x2be8d0];
+// LED strips round the top edge of a block (rect: four bars; disc: a ring), a little below the top.
+function ledEdge(K, H, p, col, y = -0.08, t = 0.08, grow = 0.04, key = 'neon') {
+  if (p.kind === 'disc') K.add(key, H.part(new THREE.TorusGeometry(p.r + grow, t * 0.6, 3, H.seg(24, 14)), { rx: Math.PI / 2, y, color: col }));
+  else for (const f of H.faces(p.w, p.d)) K.add(key, H.box(f.tx ? f.width + grow * 2 : t, t, f.tz ? f.width + grow * 2 : t, { x: f.nx * (f.half + grow), y, z: f.nz * (f.half + grow), color: col }));
+}
+// A floodlight fixture at (x, y, z) aimed along (dx, dz), tilted down by tilt.
+function flood(K, H, x, y, z, dx, dz, col = 0xf4f8ff, tilt = 0.5) {
+  const a = Math.atan2(dx, dz);
+  F(K, H.box(0.8, 0.55, 0.4, { x, y, z, ry: a, rx: tilt, color: COL.steelDk }));
+  G(K, H.box(0.64, 0.4, 0.06, { x: x + Math.sin(a) * 0.22, y: y - Math.sin(tilt) * 0.2, z: z + Math.cos(a) * 0.22, ry: a, rx: tilt, color: col }));
+}
+// A marker pole (the route across the ice): a thin pole, a light on top.
+function marker(K, H, x, y, z, col, h = 1.4) {
+  F(K, H.box(0.07, h, 0.07, { x, y: y + h / 2, z, color: COL.black }));
+  G(K, H.box(0.2, 0.2, 0.2, { x, y: y + h + 0.1, z, color: col }));
+}
+
 // ------------------------------------------------------------------ the styles
 export const STYLES = {
   'arc-hidden'() {}, // collision only (a radome's tiers, a crane's counterweight…): drawn by its neighbour
@@ -115,6 +135,10 @@ export const STYLES = {
         F(K, H.box(f.tx ? w : 1.6, h, f.tz ? w : 1.6, { x: f.nx * (f.half + 0.5) + f.tx * off, y: -1.4 - h / 2, z: f.nz * (f.half + 0.5) + f.tz * off, color: k % 3 ? COL.rockLt : COL.snowSh }));
       }
     }
+    if (th.night > 0.5) { // the cliff's edge marked with an LED line and marker lights, so you see where the snow ends
+      ledEdge(K, H, p, COL.cyan, -0.3, 0.14, 0.28);
+      for (const f of H.faces(p.w, p.d)) for (let off = -f.width / 2 + 4; off < f.width / 2 - 2; off += 12) marker(K, H, f.nx * (f.half - 0.6) + f.tx * off, 0, f.nz * (f.half - 0.6) + f.tz * off, (Math.round(off / 12) % 2) ? COL.magenta : COL.cyan, 1.0);
+    }
   },
   'arc-rockledge'(K, p, th, rng, H) {
     F(K, lumpy(H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.rockLt }), rng, 0.6));
@@ -138,8 +162,19 @@ export const STYLES = {
     F(K, H.box(p.w + 0.5, 0.35, p.d + 0.5, { y: -0.18, color: COL.offwhite })); // the eaves trim
     cap(K, H, p, COL.snow, 0.14, 0.3); // snow on the flat roof
     F(K, H.box(p.w + 0.6, 0.12, 0.3, { y: -0.36, z: p.d / 2 + 0.2, color: COL.snowSh }), H.box(p.w + 0.6, 0.12, 0.3, { y: -0.36, z: -p.d / 2 - 0.2, color: COL.snowSh }));
-    windows(K, H, p, [0, 1], [-h * 0.42, -h * 0.78].filter((y) => y > -h + 0.9), 2.2, { w: 1.0, h: 1.1 });
-    windows(K, H, p, [2, 3], [-h * 0.5], 2.6, { w: 0.9, h: 1.0 });
+    windows(K, H, p, [0, 1], [-h * 0.42, -h * 0.78].filter((y) => y > -h + 0.9), 2.2, { w: 1.0, h: 1.1, on: 4, lit: [COL.warm, COL.warm, 0x9ad8ff, 0xffb8e8][(p.tint >= 0 ? p.tint : 0) % 4] });
+    windows(K, H, p, [2, 3], [-h * 0.5], 2.6, { w: 0.9, h: 1.0, on: 4 });
+    // LED-lined: the eaves, the corners, and a glow under the floor between the stilts
+    const led = LED[(p.tint >= 0 ? p.tint : 0) % LED.length];
+    for (const f of fs) N(K, H.box(f.tx ? f.width + 0.6 : 0.12, 0.14, f.tz ? f.width + 0.6 : 0.12, { x: f.nx * (f.half + 0.29), y: -0.38, z: f.nz * (f.half + 0.29), color: led }));
+    for (const [cx, cz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) N(K, H.box(0.12, h - 0.5, 0.12, { x: cx * (p.w / 2 + 0.05), y: -h / 2 - 0.2, z: cz * (p.d / 2 + 0.05), color: led }));
+    if (stilt > 0.3) G(K, H.box(p.w - 0.8, 0.03, p.d - 0.8, { y: -h - 0.02, color: [0x1a4a6a, 0x4a1a5a, 0x1a3a6a][(p.tint >= 0 ? p.tint : 0) % 3] }));
+    if (rng() < 0.4 && h > 3.5) { // a neon sign on the street side: a dark panel, a frame, its name in light
+      const f = fs[rng() < 0.5 ? 0 : 1], w = Math.min(4.2, f.width - 1.6), y = -0.95, sc = LED[Math.floor(rng() * LED.length)];
+      const at = (u, v, ww, hh, c, o2, key = 'glow') => K.add(key, H.part(new THREE.PlaneGeometry(ww, hh), { x: f.nx * (f.half + o2) + f.tx * u, y: y + v, z: f.nz * (f.half + o2) + f.tz * u, ry: f.ry, color: c }));
+      at(0, 0, w, 0.8, 0x0a0e20, 0.1); at(0, 0.42, w + 0.1, 0.07, sc, 0.12, 'neon'); at(0, -0.42, w + 0.1, 0.07, sc, 0.12, 'neon');
+      for (let u = -w / 2 + 0.3; u < w / 2 - 0.25;) { const l = 0.18 + rng() * 0.5; if (u + l > w / 2 - 0.2) break; at(u + l / 2, (rng() - 0.5) * 0.12, l, 0.3, rng() < 0.7 ? 0xf2f6ff : sc, 0.13); u += l + 0.12; }
+    }
     // the stilts (permafrost: the house never touches the ground) and a stair up to the door
     const sx = p.w / 2 - 0.5, sz = p.d / 2 - 0.5;
     for (const x of [-sx, 0, sx]) for (const z of [-sz, sz]) F(K, H.box(0.32, stilt + 0.4, 0.32, { x, y: -h - stilt / 2 + 0.2, z, color: COL.woodDk }));
@@ -158,7 +193,11 @@ export const STYLES = {
     G(K, H.box(p.w - 4, 2.4, 0.1, { y: -p.thick + 1.6, z: p.d / 2 + 0.06, color: 0xffe0a8 }), H.box(0.1, 2.4, p.d - 6, { x: p.w / 2 + 0.06, y: -p.thick + 1.6, color: 0xffe0a8 }));
     F(K, H.box(10, 1.6, 0.4, { y: -2.2, z: p.d / 2 + 0.3, color: COL.black }));
     G(K, H.box(9.2, 1.0, 0.1, { y: -2.2, z: p.d / 2 + 0.52, color: COL.cyan }));
-    windows(K, H, p, [0, 3], [-4.2], 3, { w: 1.6, h: 1.2 });
+    windows(K, H, p, [0, 3], [-4.2], 3, { w: 1.6, h: 1.2, on: 4 });
+    ledEdge(K, H, p, COL.magenta, -0.62, 0.1, 0.32);
+    N(K, H.box(10.4, 0.1, 0.1, { y: -1.35, z: p.d / 2 + 0.55, color: COL.magenta }), H.box(10.4, 0.1, 0.1, { y: -3.05, z: p.d / 2 + 0.55, color: COL.magenta }));
+    G(K, H.box(0.1, 3.4, 6, { x: -p.w / 2 - 0.08, y: -3.6, z: 2, color: 0x0a1a3a })); // a big screen on the west wall
+    for (let k = 0; k < 6; k++) G(K, H.box(0.12, 0.3, 4.8 - (k % 3) * 1.2, { x: -p.w / 2 - 0.14, y: -2.4 - k * 0.45, z: 2 - (k % 2) * 0.6, color: k % 2 ? COL.cyan : 0xfff0c0 }));
   },
   'arc-church'(K, p, th, rng, H) { // Svalbard kirke: red timber, white trim, a steep roof line
     body(K, H, p, 0x9a2a22, { thick: p.thick });
@@ -167,6 +206,8 @@ export const STYLES = {
     for (const f of H.faces(p.w, p.d)) for (const s of [-1, 1]) F(K, H.box(0.3, p.thick, 0.3, { x: f.nx * f.half + f.tx * s * (f.width / 2), y: -p.thick / 2, z: f.nz * f.half + f.tz * s * (f.width / 2), color: COL.white }));
     windows(K, H, p, [2, 3], [-3.5], 3.2, { w: 1.1, h: 2.4, frame: COL.white, on: 4 });
     windows(K, H, p, [1], [-4.8], 3.4, { w: 1.4, h: 1.4, frame: COL.white });
+    ledEdge(K, H, p, 0xffd48a, -0.22, 0.08, 0.27);
+    for (const f of H.faces(p.w, p.d)) flood(K, H, f.nx * (f.half + 2.5), -p.thick + 0.3, f.nz * (f.half + 2.5), -f.nx, -f.nz, 0xffe8c0, -0.6); // floodlit from the hill
   },
   'arc-churchtower'(K, p, th, rng, H) {
     body(K, H, p, 0x9a2a22);
@@ -176,12 +217,16 @@ export const STYLES = {
     for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) F(K, H.part(new THREE.ConeGeometry(0.45, 1.6, 4), { x: sx * (p.w / 2 - 0.3), y: 0.8, z: sz * (p.d / 2 - 0.3), ry: Math.PI / 4, color: 0x9a2a22 }));
     G(K, H.box(0.5, 0.5, 0.5, { x: p.w / 2 - 0.3, y: 1.9, z: p.d / 2 - 0.3, color: COL.warm }));
     windows(K, H, p, [0, 1, 2, 3], [-5, -9], 2, { w: 0.8, h: 1.6, frame: COL.white, on: 2 });
+    for (const f of H.faces(p.w, p.d)) G(K, H.box(f.tx ? 1.2 : 0.06, 1.0, f.tz ? 1.2 : 0.06, { x: f.nx * (f.half + 0.25), y: -1.4, z: f.nz * (f.half + 0.25), color: 0xffc070 })); // the belfry lit
+    G(K, H.box(0.3, 0.3, 0.3, { y: 1.9, color: COL.beacon }));
+    ledEdge(K, H, p, 0xffd48a, -2.55, 0.07, 0.17);
   },
   'arc-steps'(K, p, th, rng, H) { body(K, H, p, COL.woodDk); cap(K, H, p, COL.snow, 0.06, 0.02); F(K, H.box(p.w, 0.06, 0.12, { y: -0.03, z: -p.d / 2 + 0.06, color: COL.yellow })); },
   'arc-bridge'(K, p, th, rng, H) {
     body(K, H, p, COL.steel);
     cap(K, H, p, COL.snowSh, 0.08);
     rails(K, H, p, COL.yellow, p.w > p.d ? [0, 1] : [2, 3], 1.0);
+    for (const f of H.faces(p.w, p.d)) if (p.w > p.d ? f.tx : f.tz) N(K, H.box(f.tx ? f.width : 0.06, 0.06, f.tz ? f.width : 0.06, { x: f.nx * (f.half - 0.06), y: 1.06, z: f.nz * (f.half - 0.06), color: COL.cyan }), H.box(f.tx ? f.width : 0.08, 0.08, f.tz ? f.width : 0.08, { x: f.nx * (f.half + 0.04), y: -0.2, z: f.nz * (f.half + 0.04), color: COL.magenta }));
     for (const x of [-p.w / 2 + 1, p.w / 2 - 1]) for (const z of [-p.d / 2 + 1, p.d / 2 - 1]) F(K, H.box(0.6, 3, 0.6, { x, y: -p.thick - 1.5, z, color: COL.concreteDk }));
     G(K, H.box(0.3, 0.3, 0.3, { x: 0, y: 1.6, z: p.d / 2 - 0.1, color: COL.warm }));
   },
@@ -206,6 +251,7 @@ export const STYLES = {
     for (const s of [-1, 1]) F(K, H.box(0.18, 0.12, p.d + 0.5, { x: s * (p.w / 2 - 0.1), y: -p.thick + 0.06, z: -0.1, color: COL.steelDk }));
     G(K, H.box(0.5, 0.2, 0.06, { y: -0.35, z: -p.d / 2 - 0.02, color: COL.warm }), H.box(0.9, 0.12, 0.06, { y: -0.3, z: p.d / 2 + 0.02, color: COL.beacon }));
     jets(K, H, [[0, -p.d * 0.3], [0, p.d * 0.3]], -p.thick - 0.02, 0.38);
+    for (const s of [-1, 1]) N(K, H.box(0.06, 0.06, p.d, { x: s * (p.w / 2 + 0.03), y: -p.thick * 0.5, color: [COL.cyan, COL.magenta][(p.tint >= 0 ? p.tint : 0) % 2] }));
   },
   'arc-sled'(K, p, th, rng, H) {
     F(K, H.box(p.w, 0.3, p.d, { y: -0.15, color: COL.woodLt }));
@@ -215,6 +261,7 @@ export const STYLES = {
     F(K, H.box(0.2, 0.2, 1.6, { y: -0.5, z: -p.d / 2 - 0.8, color: COL.steelDk }));
     G(K, H.box(p.w * 0.6, 0.1, 0.06, { y: -0.2, z: p.d / 2 + 0.02, color: COL.beacon }));
     jets(K, H, [[-p.w * 0.25, -p.d * 0.3], [p.w * 0.25, -p.d * 0.3], [-p.w * 0.25, p.d * 0.3], [p.w * 0.25, p.d * 0.3]], -p.thick - 0.02);
+    ledEdge(K, H, p, COL.cyan, -0.18, 0.06, 0.03);
   },
   'arc-crate'(K, p, th, rng, H) {
     const col = CRATE[(p.tint >= 0 ? p.tint : 0) % 8];
@@ -237,7 +284,8 @@ export const STYLES = {
       for (let k = 0; k < n; k++) F(K, H.box(f.tx ? f.width / n : 0.4, 0.06, f.tz ? f.width / n : 0.4, { x: f.nx * (f.half - 0.2) + f.tx * (-f.width / 2 + (k + 0.5) * f.width / n), y: 0.04, z: f.nz * (f.half - 0.2) + f.tz * (-f.width / 2 + (k + 0.5) * f.width / n), color: k % 2 ? COL.black : COL.yellow }));
       for (let k = 0; k < Math.floor(f.width / 6); k++) F(K, H.cyl(0.6, 0.6, 1.2, 8, { x: f.nx * (f.half + 0.3) + f.tx * (-f.width / 2 + 3 + k * 6), y: -1.4, z: f.nz * (f.half + 0.3) + f.tz * (-f.width / 2 + 3 + k * 6), rz: f.tz ? Math.PI / 2 : 0, rx: f.tx ? Math.PI / 2 : 0, color: COL.black }));
     }
-    for (const [x, z] of [[-p.w / 2 + 1.5, -p.d / 2 + 4], [p.w / 2 - 1.5, -p.d / 2 + 14], [-p.w / 2 + 1.5, p.d / 2 - 10]]) { F(K, H.box(0.2, 6, 0.2, { x, y: 3, z, color: COL.steelDk })); G(K, H.box(0.9, 0.3, 0.6, { x, y: 6, z, color: COL.warm })); }
+    for (const [x, z] of [[-p.w / 2 + 1.5, -p.d / 2 + 4], [p.w / 2 - 1.5, -p.d / 2 + 14], [-p.w / 2 + 1.5, p.d / 2 - 10]]) { F(K, H.box(0.2, 6, 0.2, { x, y: 3, z, color: COL.steelDk })); G(K, H.box(0.9, 0.3, 0.6, { x, y: 6, z, color: COL.warm })); G(K, H.cyl(2.4, 2.4, 0.02, 8, { x, y: 0.012, z, color: 0x3a3e4a })); }
+    ledEdge(K, H, p, COL.cyan, -0.2, 0.1, 0.05);
   },
 
   // ---- the coal tramway
@@ -252,6 +300,9 @@ export const STYLES = {
     for (let x = -p.w / 2 + 0.5; x <= p.w / 2; x += (p.w - 1) / 3) for (const z of [-p.d / 2 + 0.5, p.d / 2 - 0.5]) leg(x, z);
     for (let y = -p.thick - 1.5; y > -p.thick - stilt; y -= 2.2) for (const z of [-p.d / 2 + 0.5, p.d / 2 - 0.5]) F(K, H.box(p.w - 1, 0.2, 0.2, { y, z, rz: 0.25, color: COL.woodLt }));
     G(K, H.box(0.5, 0.5, 0.5, { x: p.w / 2 - 0.4, y: 0.6, z: p.d / 2 - 0.4, color: COL.beacon }));
+    ledEdge(K, H, p, COL.magenta, -0.3, 0.1, 0.42);
+    for (const sz of [-1, 1]) N(K, H.box(p.w, 0.08, 0.08, { y: -p.thick + 0.05, z: sz * (p.d / 2 + 0.05), color: COL.cyan }));
+    G(K, H.box(0.32, 3.6, 4.6, { x: -p.w / 2 - 0.15, y: -3.4, color: 0x1a2a48 }), H.box(0.34, 0.12, 4.6, { x: -p.w / 2 - 0.16, y: -1.7, color: COL.cyan })); // the cable mouth, lit inside
   },
   'arc-minestation'(K, p, th, rng, H) { // the mine's top station, half buried in the mountain snow
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.woodDk }));
@@ -262,6 +313,8 @@ export const STYLES = {
     F(K, H.box(p.w + 1.5, 1.6, p.d + 1.5, { y: -p.thick + 0.6, color: COL.snowSh })); // drifted snow round its foot
     F(K, H.box(4, 0.8, 1.2, { y: -1.0, z: -p.d / 2 - 0.4, color: COL.white }), H.box(3.4, 0.4, 0.06, { y: -1.0, z: -p.d / 2 - 1.02, color: COL.black }));
     G(K, H.box(3.2, 0.25, 0.08, { y: -1.0, z: -p.d / 2 - 1.06, color: COL.warm }));
+    ledEdge(K, H, p, COL.cyan, -0.3, 0.1, 0.42);
+    for (const [cx, cz] of [[-1, -1], [1, 1]]) { F(K, H.box(0.1, 4, 0.1, { x: cx * (p.w / 2 - 0.5), y: 2, z: cz * (p.d / 2 - 0.5), color: COL.steelDk })); G(K, H.box(0.3, 0.3, 0.3, { x: cx * (p.w / 2 - 0.5), y: 4.1, z: cz * (p.d / 2 - 0.5), color: COL.beacon })); }
   },
   'arc-trestle'(K, p, th, rng, H) { // a timber trestle of the coal tramway, the deck on top, the cable arm above it
     const Ht = Math.max(4, p.tint), spread = 0.09 * Ht;
@@ -282,6 +335,9 @@ export const STYLES = {
     F(K, H.box(0.4, 2.6, 0.4, { y: 1.3, color: COL.woodDk }), H.box(0.4, 0.4, 7.2, { y: 2.5, color: COL.woodDk }));
     for (const s of [-1, 1]) F(K, H.cyl(0.45, 0.45, 0.2, 10, { y: 2.2, z: s * 2.9, rz: Math.PI / 2, color: COL.steelDk }));
     G(K, H.box(0.3, 0.3, 0.3, { y: 2.9, color: COL.warm }));
+    ledEdge(K, H, p, COL.cyan, -0.1, 0.07, 0.05);
+    for (const s of [-1, 1]) { G(K, H.box(0.18, 0.18, 0.18, { y: 2.75, z: s * 3.5, color: COL.magenta })); N(K, H.box(0.06, 0.06, 7.0, { y: 2.72, color: COL.cyan })); } // the cross-arm's lights
+    for (let y = -2.5; y > -Ht + 0.5; y -= 6.4) for (const [sx, sz] of [[-1, -1], [1, 1]]) G(K, H.box(0.16, 0.16, 0.16, { x: sx * (p.w / 2 + spread * (-y / Ht)), y, z: sz * (p.d / 2 + spread * (-y / Ht)), color: COL.beacon }));
   },
   'arc-bucket'(K, p, th, rng, H) { // a coal hopper hanging from the cable (you ride in its coal)
     const hang = Math.abs(p.tint) / 10, side = p.tint < 0 ? -1 : 1;
@@ -293,6 +349,8 @@ export const STYLES = {
     const hz = side * (p.d / 2 + 0.15);
     F(K, H.box(0.14, hang, 0.14, { y: hang / 2, z: hz, color: COL.steelDk }), H.box(0.14, 0.14, Math.abs(hz), { y: hang, z: hz / 2, color: COL.steelDk }));
     F(K, H.box(1.6, 0.4, 0.3, { y: hang + 0.1, color: COL.steelDk }));
+    ledEdge(K, H, p, COL.magenta, -0.14, 0.07, 0.04);
+    G(K, H.box(0.24, 0.24, 0.24, { y: hang + 0.4, color: COL.beacon }));
     for (const s of [-1, 1]) F(K, H.cyl(0.25, 0.25, 0.12, 8, { x: s * 0.6, y: hang + 0.3, rx: Math.PI / 2, color: COL.steel }));
   },
 
@@ -305,6 +363,11 @@ export const STYLES = {
     F(K, H.box(1.4, 2.2, 0.3, { y: -R - drum + 1.1, z: R + 0.2, color: COL.steelDk })); // the door
     G(K, H.box(0.35, 0.35, 0.35, { y: 0.2, color: COL.beacon }));
     G(K, H.box(0.6, 0.2, 0.2, { y: -R - drum + 2.4, z: R + 0.3, color: COL.warm }));
+    // lit for the polar night: LED rings round the dome (it reads as a lit sphere you can land on), a lit drum band, uplights
+    for (const [k, c] of [[0.0, COL.cyan], [0.42, COL.magenta], [0.75, COL.cyan]]) { const rr = R * Math.sqrt(1 - k * k) + 0.06; N(K, H.part(new THREE.TorusGeometry(rr, 0.07, 3, H.seg(28, 16)), { rx: Math.PI / 2, y: -R + R * k, color: c })); }
+    G(K, H.cyl(R + 0.27, R + 0.27, 0.35, H.seg(24, 14), { y: -R - drum * 0.45, color: 0x1a3a6a }));
+    N(K, H.cyl(R + 0.29, R + 0.29, 0.08, H.seg(24, 14), { y: -R - drum * 0.45 + 0.2, color: COL.cyan }));
+    for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2 + 0.6; flood(K, H, Math.cos(a) * (R + 1.6), -R - drum + 0.3, Math.sin(a) * (R + 1.6), -Math.cos(a), -Math.sin(a), 0xd8f0ff, -0.8); }
   },
   'arc-ops'(K, p, th, rng, H) {
     body(K, H, p, COL.offwhite);
@@ -312,6 +375,8 @@ export const STYLES = {
     bands(K, H, p, -0.6, -p.thick, 2.8, COL.concreteDk, 0.2);
     windows(K, H, p, [0, 1, 2, 3], [-2.2, -5.0], 2.4, { w: 1.6, h: 1.0, lit: 0x9ad8ff, frame: COL.steelDk });
     for (const [x, z] of [[-p.w / 2 + 1.5, -p.d / 2 + 1.5], [p.w / 2 - 1.5, p.d / 2 - 1.5]]) { F(K, H.box(0.12, 4, 0.12, { x, y: 2, z, color: COL.steelDk })); G(K, H.box(0.25, 0.25, 0.25, { x, y: 4.1, z, color: COL.beacon })); }
+    ledEdge(K, H, p, COL.cyan, -0.2, 0.1, 0.22);
+    for (let y = -1.2; y > -p.thick + 0.5; y -= 2.8) ledEdge(K, H, p, y < -3 ? COL.magenta : 0x8ad8ff, y, 0.06, 0.05);
   },
   'arc-mast'(K, p, th, rng, H) { // a lattice antenna mast: legs, bracing, dishes, red lights
     const Ht = p.thick;
@@ -319,7 +384,9 @@ export const STYLES = {
     for (let y = -1.5; y > -Ht; y -= 2.4) for (const f of H.faces(p.w, p.d)) F(K, H.box(f.tx ? f.width * 1.3 : 0.07, 0.07, f.tz ? f.width * 1.3 : 0.07, { x: f.nx * (f.half - 0.1), y, z: f.nz * (f.half - 0.1), rz: f.tx ? 0.6 : 0, rx: f.tz ? 0.6 : 0, color: COL.steel }));
     F(K, H.box(p.w, 0.15, p.d, { y: -0.08, color: COL.steelDk }));
     for (const [y, a] of [[-5, 0.4], [-9, 2.2], [-13, 4.1]]) F(K, H.part(new THREE.SphereGeometry(1.2, 8, 4, 0, Math.PI * 2, 0, 1.0), { x: Math.cos(a) * 1.8, y, z: Math.sin(a) * 1.8, rz: Math.PI / 2, ry: -a, color: COL.white }));
-    for (const y of [0.4, -6, -12]) G(K, H.box(0.3, 0.3, 0.3, { y, x: p.w / 2, color: COL.beacon }));
+    for (const y of [0.4, -6, -12]) G(K, H.box(0.3, 0.3, 0.3, { y, x: p.w / 2, color: COL.beacon }), H.box(0.3, 0.3, 0.3, { y, x: -p.w / 2, color: COL.beacon }));
+    for (const [sx, sz] of [[-1, -1], [1, 1]]) N(K, H.box(0.06, Ht, 0.06, { x: sx * (p.w / 2 - 0.02), y: -Ht / 2, z: sz * (p.d / 2 - 0.02), color: COL.cyan }));
+    ledEdge(K, H, p, COL.magenta, -0.1, 0.06, 0.03);
   },
 
   // ---- ships: the coast guard icebreaker (tint 0) and the research icebreaker (tint 1)
@@ -332,6 +399,8 @@ export const STYLES = {
     for (const sx of [-1, 1]) for (let z = -p.d / 2 + 3; z < p.d / 2 - 2; z += 3.2) G(K, H.cyl(0.18, 0.18, 0.06, 6, { x: sx * (p.w / 2 + 0.03), y: -1.6, z, rz: Math.PI / 2, color: COL.warm }));
     if (cg) for (const sx of [-1, 1]) for (const [c, o] of [[COL.red, 0], [COL.white, 0.9], [0x2a4ab0, 1.6]]) F(K, H.box(0.06, 4.6, 0.7, { x: sx * (p.w / 2 + 0.04 + o * 0.001), y: -2.6, z: -p.d / 2 + 6 + o * 0.9, rx: 0.55, color: c })); // the diagonal stripe
     else for (const sx of [-1, 1]) F(K, H.box(0.06, 0.5, p.d * 0.7, { x: sx * (p.w / 2 + 0.03), y: -1.0, color: COL.white }));
+    for (const sx of [-1, 1]) N(K, H.box(0.08, 0.1, p.d, { x: sx * (p.w / 2 + 0.05), y: -0.12, color: COL.cyan }), H.box(0.08, 0.14, p.d, { x: sx * (p.w / 2 + 0.06), y: -p.thick + 3.1, color: cg ? COL.magenta : COL.cyan }));
+    for (const sx of [-1, 1]) for (let z = -p.d / 2 + 5; z < p.d / 2 - 3; z += 10) flood(K, H, sx * (p.w / 2 - 0.2), 1.6, z, -sx, 0, 0xf4f8ff, 0.7); // deck floods on the rails
   },
   'arc-aftdeck'(K, p, th, rng, H) {
     STYLES['arc-hull'](K, p, th, rng, H);
@@ -350,6 +419,8 @@ export const STYLES = {
     F(K, H.box(p.w * 0.6, 0.06, p.d * 0.5, { y: 0.005, z: p.d * 0.2, color: 0x4a5a52 }));
     F(K, H.box(1.2, 0.8, 1.2, { y: -0.4 + 0.4, z: p.d / 2 - 2, color: COL.steelDk })); // the anchor winch (at the aft edge)
     G(K, H.box(0.3, 0.3, 0.3, { y: 1.4, z: -p.d / 2 + 1.2, color: COL.white }));
+    for (const sx of [-1, 1]) N(K, H.box(0.08, 0.1, p.d * 0.5, { x: sx * (p.w * 0.46 + 0.05), y: -0.12, z: p.d * 0.25, color: COL.cyan }));
+    G(K, H.box(0.3, 0.3, 0.3, { x: -p.w * 0.3, y: 0.6, z: -p.d * 0.1, color: 0xff2a2a }), H.box(0.3, 0.3, 0.3, { x: p.w * 0.3, y: 0.6, z: -p.d * 0.1, color: 0x2aff6a }));
   },
   'arc-helideck'(K, p, th, rng, H) {
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: 0x2e3a36 }));
@@ -357,6 +428,7 @@ export const STYLES = {
     F(K, H.box(0.6, 0.04, 3.2, { x: -0.9, y: 0.03, color: COL.white }), H.box(0.6, 0.04, 3.2, { x: 0.9, y: 0.03, color: COL.white }), H.box(1.4, 0.04, 0.5, { y: 0.03, color: COL.white }));
     for (let k = 0; k < 12; k++) { const a = (k / 12) * Math.PI * 2; G(K, H.box(0.2, 0.1, 0.2, { x: Math.cos(a) * (p.w / 2 - 0.4), y: 0.06, z: Math.sin(a) * (p.d / 2 - 0.4), color: k % 2 ? COL.green : COL.cyan })); }
     for (const sx of [-1, 1]) F(K, H.box(0.3, 2.2, 0.3, { x: sx * (p.w / 2 - 1), y: -p.thick - 1.1, z: p.d / 2 - 1.5, rx: 0.5, color: COL.steelDk }));
+    ledEdge(K, H, p, COL.cyan, -0.1, 0.1, 0.04);
   },
   'arc-superstructure'(K, p, th, rng, H) {
     body(K, H, p, COL.white);
@@ -366,8 +438,10 @@ export const STYLES = {
     windows(K, H, p, [0, 1, 2, 3], [-3.4, -5.6], 2.2, { w: 0.9, h: 0.8, frame: COL.offwhite });
     if (p.tint === 0) F(K, H.box(p.w + 0.08, 0.4, p.d + 0.08, { y: -2.4, color: COL.red }));
     rails(K, H, p, COL.white, [0, 1, 2, 3], 0.9);
+    ledEdge(K, H, p, COL.cyan, -0.12, 0.08, 0.06);
+    for (const f of H.faces(p.w, p.d)) if (f.width > 8) for (const s of [-1, 1]) flood(K, H, f.nx * (f.half + 0.3) + f.tx * s * (f.width / 2 - 1.5), -1.9, f.nz * (f.half + 0.3) + f.tz * s * (f.width / 2 - 1.5), f.nx, f.nz, 0xf4f8ff, 0.6);
   },
-  'arc-bridgewing'(K, p, th, rng, H) { body(K, H, p, COL.white); F(K, H.box(p.w + 0.06, 1.0, p.d + 0.06, { y: -0.8, color: 0x1e2a36 })); G(K, H.box(0.3, 0.3, 0.3, { x: p.tint === 1 ? p.w / 2 : -p.w / 2, y: 0.3, color: p.tint === 1 ? 0x2aff6a : COL.beacon })); },
+  'arc-bridgewing'(K, p, th, rng, H) { body(K, H, p, COL.white); F(K, H.box(p.w + 0.06, 1.0, p.d + 0.06, { y: -0.8, color: 0x1e2a36 })); G(K, H.box(0.3, 0.3, 0.3, { x: p.tint === 1 ? p.w / 2 : -p.w / 2, y: 0.3, color: p.tint === 1 ? 0x2aff6a : COL.beacon }), H.box(p.w + 0.1, 0.08, p.d + 0.1, { y: -0.8, color: 0x9ad8ff })); ledEdge(K, H, p, COL.cyan, -0.08, 0.07, 0.03); },
   'arc-bridgetop'(K, p, th, rng, H) {
     body(K, H, p, COL.white); F(K, H.box(p.w + 0.1, 1.2, p.d + 0.1, { y: -1.3, color: 0x1e2a36 })); G(K, H.box(p.w + 0.14, 0.1, p.d + 0.14, { y: -1.3, color: 0x9ad8ff }));
     rails(K, H, p, COL.white, [0, 1, 2, 3], 0.9);
@@ -377,6 +451,8 @@ export const STYLES = {
     body(K, H, p, p.tint === 1 ? COL.red : 0x9aa4ae);
     F(K, H.box(p.w + 0.06, 0.9, p.d + 0.06, { y: -1.6, color: p.tint === 1 ? COL.white : COL.red }));
     F(K, H.box(p.w + 0.1, 0.5, p.d + 0.1, { y: -0.25, color: COL.black }));
+    ledEdge(K, H, p, COL.magenta, -0.55, 0.08, 0.06);
+    G(K, H.box(0.3, 0.3, 0.3, { x: p.w / 2 - 0.3, y: 0.3, z: p.d / 2 - 0.3, color: COL.beacon }));
   },
   'arc-mastpole'(K, p, th, rng, H) { // the mast rises on above its own collision top, through the platforms
     const up = p.tint === 1 ? 6.4 : 10;
@@ -389,6 +465,7 @@ export const STYLES = {
     F(K, H.box(p.w - 0.1, 0.04, p.d - 0.1, { y: 0.0, color: COL.steel }));
     rails(K, H, p, COL.yellow, [0, 1, 2, 3], 0.8);
     G(K, H.box(0.25, 0.25, 0.25, { x: p.w / 2, y: -0.3, z: p.d / 2, color: COL.warm }));
+    ledEdge(K, H, p, COL.cyan, -0.08, 0.07, 0.03);
   },
   'arc-aframe'(K, p, th, rng, H) { // the research ship's stern A-frame (its legs stand on the aft deck)
     const leg = 7.4;
@@ -396,6 +473,8 @@ export const STYLES = {
     for (const s of [-1, 1]) F(K, H.box(0.9, leg, 0.9, { x: s * (p.w / 2 - 0.5), y: -p.thick - leg / 2 + 0.2, z: -1.2, rx: -0.3, color: 0xf08a1a }));
     F(K, H.box(0.12, 4, 0.12, { y: -p.thick - 2, color: COL.steelDk }), H.box(0.8, 0.6, 0.8, { y: -p.thick - 4.2, color: COL.yellow }));
     G(K, H.box(0.4, 0.3, 0.3, { y: 0.2, x: p.w / 2 - 0.4, color: COL.warm }), H.box(0.4, 0.3, 0.3, { y: 0.2, x: -p.w / 2 + 0.4, color: COL.warm }));
+    for (const s of [-1, 1]) flood(K, H, s * (p.w / 2 - 1.6), -p.thick - 0.3, -0.4, 0, -1, 0xf4f8ff, 0.9); // work lights over the aft deck
+    ledEdge(K, H, p, COL.magenta, -0.1, 0.07, 0.03);
   },
   'arc-cranejib'(K, p, th, rng, H) { // a deck crane's jib swung out over the ice (its boom runs back down to the deck)
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.yellow }));
@@ -403,12 +482,15 @@ export const STYLES = {
     F(K, H.box(0.5, 4.6, 0.5, { y: -2.4, z: p.d / 2 + 1.0, rx: -0.4, color: COL.yellow })); // the boom to the pedestal
     F(K, H.box(0.08, 3, 0.08, { y: -1.5 - p.thick, z: -p.d / 2 + 0.4, color: COL.steelDk }), H.box(0.6, 0.5, 0.6, { y: -3.2 - p.thick, z: -p.d / 2 + 0.4, color: COL.red }));
     G(K, H.box(0.3, 0.3, 0.3, { y: 0.2, z: -p.d / 2 + 0.2, color: COL.warm }));
+    ledEdge(K, H, p, COL.cyan, -0.1, 0.07, 0.03);
+    flood(K, H, 0, -p.thick - 0.3, -p.d / 2 + 1.2, 0, -1, 0xf4f8ff, 1.1);
   },
   'arc-winch'(K, p, th, rng, H) {
     body(K, H, p, COL.yellow);
     for (const s of [-1, 1]) F(K, H.cyl(1.0, 1.0, 1.0, 10, { x: s * (p.w / 2 + 0.5), y: -1.2, rz: Math.PI / 2, color: COL.steelDk }));
     F(K, H.box(p.w + 0.05, 0.4, p.d + 0.05, { y: -p.thick + 0.2, color: COL.black }));
     windows(K, H, p, [0, 1], [-1.2], 2.4, { w: 1.2, h: 0.7 });
+    ledEdge(K, H, p, COL.cyan, -0.08, 0.07, 0.03);
   },
 
   // ---- ice: floes, bergs, seracs, the glacier
@@ -429,6 +511,10 @@ export const STYLES = {
     cap(K, H, p, COL.snow, 0.3, 0.05);
     bands(K, H, p, -1.2, -p.thick + 1, 2.3, COL.iceDk, 0.18, 0.08);
     for (let k = 0; k < 4; k++) F(K, lumpy(H.box(1.5 + rng() * 2, 2 + rng() * 3, 1.5 + rng() * 2, { x: (rng() - 0.5) * p.w, y: -p.thick + 1.8, z: (rng() - 0.5) * p.d, color: COL.iceMid }), rng, 0.6, false));
+    if (th.night > 0.5) { // light glowing inside the ice, and its top edge marked
+      for (const f of H.faces(p.w, p.d)) for (let k = 0; k < Math.max(1, Math.floor(f.width / 5)); k++) G(K, H.box(f.tx ? 1.4 + rng() * 2 : 0.1, 0.3 + rng() * 0.4, f.tz ? 1.4 + rng() * 2 : 0.1, { x: f.nx * (f.half + 0.12) + f.tx * (rng() - 0.5) * (f.width - 2), y: -2 - rng() * Math.max(1, p.thick - 5), z: f.nz * (f.half + 0.12) + f.tz * (rng() - 0.5) * (f.width - 2), color: rng() < 0.7 ? 0x2a9ad8 : 0x8a4ad8 }));
+      ledEdge(K, H, p, COL.cyan, -0.32, 0.08, 0.1);
+    }
   },
   'arc-serac'(K, p, th, rng, H) {
     F(K, lumpy(H.cyl(p.r, p.r * 1.15, p.thick, 7, { y: -p.thick / 2, color: [COL.ice, COL.iceMid, 0xa8dcee][p.tint % 3] }), rng, 0.5));
@@ -448,7 +534,11 @@ export const STYLES = {
         const off = -f.width / 2 + (k + 0.5) * (f.width / n) + (rng() - 0.5) * 3, h = 6 + rng() * Math.min(26, p.thick - 6), w = 1.5 + rng() * 3;
         F(K, H.box(f.tx ? w : 0.7, h, f.tz ? w : 0.7, { x: f.nx * (f.half + 0.2) + f.tx * off, y: -0.8 - h / 2 - rng() * 4, z: f.nz * (f.half + 0.2) + f.tz * off, color: rng() < 0.5 ? 0xa8dcee : COL.iceMid }));
       }
-      for (let k = 0; k < Math.floor(f.width / 12); k++) G(K, H.box(f.tx ? 2 + rng() * 3 : 0.1, 0.3 + rng() * 0.5, f.tz ? 2 + rng() * 3 : 0.1, { x: f.nx * (f.half + 0.12) + f.tx * (rng() - 0.5) * (f.width - 4), y: -12 - rng() * Math.max(1, p.thick - 16), z: f.nz * (f.half + 0.12) + f.tz * (rng() - 0.5) * (f.width - 4), color: 0x2a9ac8 })); // light glowing through the ice
+      for (let k = 0; k < Math.floor(f.width / (th.night > 0.5 ? 6 : 12)); k++) G(K, H.box(f.tx ? 2 + rng() * 3 : 0.1, 0.3 + rng() * 0.5, f.tz ? 2 + rng() * 3 : 0.1, { x: f.nx * (f.half + 0.12) + f.tx * (rng() - 0.5) * (f.width - 4), y: -4 - rng() * Math.max(1, p.thick - 8), z: f.nz * (f.half + 0.12) + f.tz * (rng() - 0.5) * (f.width - 4), color: rng() < 0.75 ? 0x2a9ac8 : 0x7a4ad8 })); // light glowing through the ice
+    }
+    if (th.night > 0.5) { // the route across the glacier: marker lights along every edge (red on the crevasse sides), an LED lip
+      ledEdge(K, H, p, COL.cyan, -0.62, 0.12, 0.12);
+      for (const f of H.faces(p.w, p.d)) for (let off = -f.width / 2 + 3; off < f.width / 2 - 1; off += 9) marker(K, H, f.nx * (f.half - 0.8) + f.tx * off, 0, f.nz * (f.half - 0.8) + f.tz * off, f.tx ? (Math.round(off / 9) % 2 ? COL.beacon : 0xffb030) : COL.cyan, 1.2);
     }
   },
   'arc-icecave'(K, p, th, rng, H) { // the cave floor in the ice front: blue ice, glowing crystals along the walls
@@ -456,14 +546,17 @@ export const STYLES = {
     F(K, H.box(p.w + 0.05, 0.1, p.d + 0.05, { y: -0.03, color: 0xb8e2f0 }));
     for (let k = 0; k < 14; k++) {
       const s = k % 2 ? 1 : -1, z = -p.d / 2 + 2 + (k / 14) * (p.d - 4), h = 1 + rng() * 2.4;
-      G(K, H.part(new THREE.ConeGeometry(0.3 + rng() * 0.3, h, 4), { x: s * (p.w / 2 - 0.4), y: h / 2, z, rz: -s * 0.3, color: k % 3 ? 0x6af0ff : 0xa0ffe0 }));
+      G(K, H.part(new THREE.ConeGeometry(0.3 + rng() * 0.3, h, 4), { x: s * (p.w / 2 - 0.4), y: h / 2, z, rz: -s * 0.3, color: k % 3 ? 0x6af0ff : (k % 2 ? 0xff7ae8 : 0xa0ffe0) }));
     }
+    for (const sx of [-1, 1]) N(K, H.box(0.1, 0.06, p.d - 1, { x: sx * (p.w / 2 - 1.2), y: 0.03, color: COL.cyan }));
+    N(K, H.box(p.w, 0.1, 0.1, { y: -0.08, z: p.d / 2 + 0.05, color: COL.magenta }));
   },
   'arc-ledge'(K, p, th, rng, H) { // a shelf of blue ice on the calving face, icicles under it
     F(K, lumpy(H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: p.tint === 1 ? 0x9ad4e8 : COL.ice }), rng, 0.35));
     cap(K, H, p, COL.snow, 0.12, 0.02);
     icicles(K, H, p, rng, -p.thick, Math.max(1, Math.floor(p.w / 2)), 1.6);
     F(K, H.part(new THREE.ConeGeometry(Math.min(p.w, 6) * 0.4, 2.2, 4), { y: -p.thick - 1, rx: Math.PI, ry: Math.PI / 4, color: COL.iceMid }));
+    if (th.night > 0.5) { ledEdge(K, H, p, p.tint === 1 ? COL.magenta : COL.cyan, -0.14, 0.09, 0.08); G(K, H.box(Math.min(p.w, 4) * 0.5, 0.05, 0.4, { y: -p.thick - 0.04, color: 0x5ac8ff })); }
   },
   'arc-snowbridge'(K, p, th, rng, H) { // a crust of snow over the crevasse (it sags a little in the middle)
     F(K, H.box(p.w, 0.5, p.d, { y: -0.25, color: COL.snow }));
@@ -471,6 +564,7 @@ export const STYLES = {
     F(K, H.box(p.w * 0.7, 0.8, p.d * 0.5, { y: -p.thick - 0.3, color: COL.snowDk })); // the sag
     F(K, H.box(0.06, 0.02, p.d * 0.7, { x: p.w * 0.15, y: 0.01, rz: 0, ry: 0.1, color: COL.snowDk })); // a crack
     icicles(K, H, p, rng, -p.thick, 2, 1.2);
+    if (th.night > 0.5) { for (const sx of [-1, 1]) for (const sz of [-1, 1]) marker(K, H, sx * (p.w / 2 - 0.15), 0, sz * (p.d / 2 - 0.3), sz > 0 ? COL.cyan : COL.magenta, 1.0); ledEdge(K, H, p, COL.cyan, -0.1, 0.07, 0.03); }
   },
 
   // ---- the drilling camp on the glacier
@@ -480,6 +574,8 @@ export const STYLES = {
     cap(K, H, p, COL.snow, 0.16, 0.15);
     windows(K, H, p, [1, 2], [-1.6], 2.6, { w: 1.0, h: 0.8 });
     F(K, H.cyl(0.25, 0.25, 1.4, 6, { x: -p.w / 2 + 0.6, y: 0.7, z: -p.d / 2 + 0.6, color: COL.steelDk }));
+    ledEdge(K, H, p, COL.cyan, -0.2, 0.08, 0.18);
+    for (const f of H.faces(p.w, p.d)) flood(K, H, f.nx * (f.half + 0.3), -0.6, f.nz * (f.half + 0.3), f.nx, f.nz, 0xf4f8ff, 0.7);
   },
   'arc-derrick'(K, p, th, rng, H) { // the ice-core drill: its floor, and the lattice derrick standing over the decks above
     body(K, H, p, COL.steelDk);
@@ -493,12 +589,16 @@ export const STYLES = {
     for (let y = 2.4; y < up; y += 2.8) { const k = y / up, hw = (p.w / 2 - 0.15) * (1 - k) + top * k; for (const s of [-1, 1]) F(K, H.box(hw * 2, 0.12, 0.12, { y, z: s * hw, color: 0xf08a1a }), H.box(0.12, 0.12, hw * 2, { x: s * hw, y, color: 0xf08a1a })); }
     F(K, H.cyl(0.25, 0.25, 9, 6, { y: 4.5, color: COL.steelLt })); // the drill string
     G(K, H.box(0.3, 0.3, 0.3, { x: p.w / 2, y: 0.3, z: p.d / 2, color: COL.warm }));
+    for (let y = 2.4; y < up; y += 5.6) { const k = y / up, hw = (p.w / 2 - 0.15) * (1 - k) + top * k; for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) G(K, H.box(0.2, 0.2, 0.2, { x: sx * hw, y, z: sz * hw, color: y > 7 ? COL.beacon : 0xffb030 })); flood(K, H, hw, y - 0.2, 0, 1, 0, 0xf4f8ff, 0.9); flood(K, H, -hw, y - 0.2, 0, -1, 0, 0xf4f8ff, 0.9); } // work lights up the derrick
+    N(K, H.box(0.06, 9, 0.06, { x: 0.27, y: 4.5, color: COL.cyan }), H.box(0.06, 9, 0.06, { x: -0.27, y: 4.5, color: COL.magenta })); // the drill string's status lines
+    ledEdge(K, H, p, COL.magenta, -0.12, 0.08, 0.03);
   },
   'arc-derricktop'(K, p, th, rng, H) {
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.steelDk }));
     rails(K, H, p, COL.yellow, [0, 1, 2, 3], 0.8);
     F(K, H.cyl(0.6, 0.6, 0.3, 10, { y: 1.4, rz: Math.PI / 2, color: COL.steel }), H.box(0.15, 1.3, 0.15, { x: -0.8, y: 0.65, color: COL.steelDk }), H.box(0.15, 1.3, 0.15, { x: 0.8, y: 0.65, color: COL.steelDk }));
     G(K, H.box(0.35, 0.35, 0.35, { y: 2.0, color: COL.beacon }));
+    ledEdge(K, H, p, COL.cyan, -0.08, 0.07, 0.03);
   },
   'arc-hut'(K, p, th, rng, H) { // a research hut on skids
     const col = [0xd8402a, 0xf08a1a, 0x3a8a5a][p.tint % 3];
@@ -510,12 +610,18 @@ export const STYLES = {
     F(K, H.box(p.w * 0.6, 1.4, 1.6, { x: -p.w * 0.2, y: -p.thick + 0.5, z: -p.d / 2 - 0.6, color: COL.snowSh })); // the drift on the windward side
     F(K, H.box(0.08, 2.6, 0.08, { x: p.w / 2 - 0.3, y: 1.3, z: -p.d / 2 + 0.3, color: COL.steelDk }));
     G(K, H.box(0.2, 0.2, 0.2, { x: p.w / 2 - 0.3, y: 2.7, z: -p.d / 2 + 0.3, color: COL.beacon }));
+    ledEdge(K, H, p, [COL.cyan, COL.magenta, 0x8ad8ff][p.tint % 3], -0.2, 0.08, 0.2);
+    flood(K, H, p.w / 2 - 0.3, 2.3, -p.d / 2 + 0.3, 0.5, 1, 0xf4f8ff, 0.6);
   },
   'arc-beacon'(K, p, th, rng, H) { // the camp's beacon mast (its strobe is a backdrop that the snow can't hide)
     STYLES['arc-mast'](K, p, th, rng, H);
     G(K, H.box(1.2, 0.6, 1.2, { y: 0.4, color: COL.cyan }));
   },
-  'arc-helipad'(K, p, th, rng, H) { H.helipad(K, p); F(K, H.cyl(p.r + 0.6, p.r + 0.8, 0.2, H.seg(24, 14), { y: -p.thick + 0.1, color: COL.snowSh })); },
+  'arc-helipad'(K, p, th, rng, H) {
+    H.helipad(K, p); F(K, H.cyl(p.r + 0.6, p.r + 0.8, 0.2, H.seg(24, 14), { y: -p.thick + 0.1, color: COL.snowSh }));
+    ledEdge(K, H, p, COL.cyan, -0.15, 0.1, 0.1);
+    for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2 + 0.2; marker(K, H, Math.cos(a) * (p.r + 1.4), -p.thick + 0.2, Math.sin(a) * (p.r + 1.4), k % 2 ? COL.cyan : 0x2aff6a, 0.6); }
+  },
 
   // ---- THE VAULT: the entrance wedge and the mountain
   'arc-slab'(K, p, th, rng, H) {
@@ -528,6 +634,10 @@ export const STYLES = {
     g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
     for (let y = -1; y > -p.thick; y -= 1.2) F(K, H.box(p.w + 0.04, 0.05, p.d + 0.04, { y, color: 0x8a919a }));
     if (p.tint === 1) G(K, H.box(0.08, 0.12, 6, { x: -p.w / 2 - 0.03, y: -p.thick + 3.2, z: p.d / 2 - 4, color: 0xd8f0ff })); // the corridor light
+    const inner = p.tint === 1 ? -1 : 1; // (the face toward the corridor)
+    for (let z = -p.d / 2 + 2; z < p.d / 2 - 1; z += 4) N(K, H.box(0.06, p.thick - 0.8, 0.12, { x: inner * (p.w / 2 + 0.03), y: -p.thick / 2, z, color: Math.round(z / 4) % 2 ? COL.cyan : COL.aqua }));
+    for (let z = -p.d / 2 + 4; z < p.d / 2 - 1; z += 8) N(K, H.box(0.06, p.thick - 0.8, 0.12, { x: -inner * (p.w / 2 + 0.03), y: -p.thick / 2, z, color: COL.magenta }));
+    ledEdge(K, H, p, COL.cyan, -0.1, 0.07, 0.03);
   },
   'arc-wedge'(K, p, th, rng, H) { // the entrance wedge's roof steps; the prow (tint 3) carries the light installation
     const g = H.meterBox(p.w, p.thick, p.d, 4, { faces: ['px', 'nx', 'pz', 'nz'], color: 0xa4abb4 });
@@ -538,6 +648,8 @@ export const STYLES = {
     const pick = (n) => cols[((n % 4) + 4) % 4];
     for (let z = -p.d / 2 + 0.5; z < p.d / 2; z += 0.9) for (const x of [-0.9, 0, 0.9]) G(K, H.box(0.7, 0.04, 0.7, { x, y: 0.02, z, color: pick(Math.round(z * 3) + Math.round(x * 2)) }));
     for (const s of [-1, 1]) G(K, H.box(0.08, 0.14, p.d, { x: s * (p.w / 2 + 0.03), y: -0.25, color: 0x5af0e0 }));
+    N(K, H.box(p.w + 0.1, 0.12, 0.08, { y: -0.08, z: p.d / 2 + 0.04, color: COL.magenta })); // each roof step's lip
+    for (const s of [-1, 1]) for (let z = -p.d / 2 + 0.6; z < p.d / 2; z += 1.2) G(K, H.box(0.06, p.thick - 0.6, 0.34, { x: s * (p.w / 2 + 0.04), y: -p.thick / 2 - 0.2, z, color: pick(Math.round(z * 2) + s + p.tint) })); // the walls blaze too: prism bars down both sides
     if (p.tint === 3) { // the prow: a glowing panel of prisms on the front face, over the door
       for (let y = -0.6; y > -p.thick + 0.8; y -= 0.6) for (let x = -p.w / 2 + 0.5; x < p.w / 2; x += 0.6) G(K, H.box(0.45, 0.45, 0.08, { x, y, z: p.d / 2 + 0.05, color: pick(Math.round(x * 5) + Math.round(y * 7)) }));
       F(K, H.box(4.4, 0.3, 0.3, { y: -p.thick - 0.15, z: p.d / 2 - 0.7, color: COL.steelDk })); // the door lintel
@@ -548,6 +660,9 @@ export const STYLES = {
     for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) F(K, H.box(0.18, p.thick, 0.18, { x: sx * (p.w / 2 - 0.1), y: -p.thick / 2, z: sz * (p.d / 2 - 0.1), color: COL.steel }));
     for (let y = -1.5; y > -p.thick; y -= 2) for (const f of H.faces(p.w, p.d)) F(K, H.box(f.tx ? f.width : 0.06, 0.06, f.tz ? f.width : 0.06, { x: f.nx * (f.half - 0.1), y, z: f.nz * (f.half - 0.1), color: COL.steel }));
     for (const s of [-1, 1]) { F(K, H.box(0.9, 0.6, 0.5, { x: s * 0.8, y: -0.45, z: p.d / 2 + 0.2, rx: 0.5, color: COL.steelDk })); G(K, H.box(0.7, 0.4, 0.06, { x: s * 0.8, y: -0.55, z: p.d / 2 + 0.47, rx: 0.5, color: 0xfff4d8 })); }
+    G(K, H.box(0.3, 0.3, 0.3, { x: p.w / 2 - 0.1, y: 0.25, z: -p.d / 2 + 0.1, color: COL.beacon }));
+    for (const [sx, sz] of [[-1, -1], [1, 1]]) N(K, H.box(0.06, p.thick, 0.06, { x: sx * (p.w / 2 + 0.02), y: -p.thick / 2, z: sz * (p.d / 2 + 0.02), color: COL.cyan }));
+    ledEdge(K, H, p, COL.magenta, -0.1, 0.07, 0.03);
   },
   // ---- the tunnel and the halls
   'arc-tunnelfloor'(K, p, th, rng, H) {
@@ -557,8 +672,10 @@ export const STYLES = {
     for (const s of [-1, 1]) F(K, H.box(0.5, 0.35, p.d, { x: s * (p.w / 2 - 0.25), y: 0.17, color: COL.steelDk })); // cable trays along the foot of the walls
     for (let z = -p.d / 2 + 2; z < p.d / 2; z += 4) F(K, H.box(1.2, 0.02, 0.6, { y: 0.01, z, color: 0x4a525c })); // drain grates
     F(K, H.box(p.w * 0.6, 0.012, p.d - 0.4, { y: 0.008, color: 0xdde8f2 })); // a skin of frost
+    for (const s of [-1, 1]) { N(K, H.box(0.06, 0.06, p.d, { x: s * (p.w / 2 - 0.52), y: 0.3, color: s > 0 ? COL.cyan : COL.magenta })); for (let z = -p.d / 2 + 1; z < p.d / 2; z += 2) G(K, H.box(0.1, 0.08, 0.1, { x: s * (p.w / 2 - 0.3), y: 0.37, z, color: (Math.round(z) + s) % 3 ? 0x2aff8a : 0xff8a2a })); } // LED strips on the cable trays, status lights
+    N(K, H.box(p.w, 0.06, 0.08, { y: -0.06, z: -p.d / 2 - 0.02, color: COL.cyan })); // the landing's lip (the next flight goes down from it)
   },
-  'arc-tunnelstep'(K, p, th, rng, H) { body(K, H, p, 0x7a828c); F(K, H.box(p.w, 0.03, 0.14, { y: 0.0, z: -p.d / 2 + 0.07, color: COL.yellow })); },
+  'arc-tunnelstep'(K, p, th, rng, H) { body(K, H, p, 0x7a828c); F(K, H.box(p.w, 0.03, 0.14, { y: 0.0, z: -p.d / 2 + 0.07, color: COL.yellow })); N(K, H.box(p.w, 0.05, 0.05, { y: -0.03, z: -p.d / 2 - 0.02, color: COL.cyan })); },
   'arc-vaultceil'(K, p, th, rng, H) { // the underside: frosted concrete, cold light tubes, ducts
     const B = -p.thick;
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: 0x6a737e }));
@@ -568,6 +685,7 @@ export const STYLES = {
       for (let s = -L / 2 + 2; s < L / 2 - 1; s += 5) G(K, H.box(long ? 0.25 : 3, 0.1, long ? 3 : 0.25, { x: long ? off : s, y: B - 0.06, z: long ? s : off, color: 0xd8f2ff }));
     }
     F(K, H.cyl(0.4, 0.4, L, 8, { x: long ? W / 2 - 1 : 0, y: B - 0.5, z: long ? 0 : W / 2 - 1, rx: long ? Math.PI / 2 : 0, rz: long ? 0 : Math.PI / 2, color: COL.steel }));
+    N(K, H.box(long ? 0.06 : L, 0.06, long ? L : 0.06, { x: long ? W / 2 - 1 : 0, y: B - 0.95, z: long ? 0 : W / 2 - 1, color: COL.magenta })); // a light line under the duct
   },
   'arc-vaultwall'(K, p, th, rng, H) { // frosted concrete; cold light strips at head height, rime creeping up from the floor
     const g = H.meterBox(p.w, p.thick, p.d, 4, { faces: ['px', 'nx', 'pz', 'nz'], color: [0x7f8894, 0x8a939e, 0x6f7884][p.tint % 3] });
@@ -586,6 +704,13 @@ export const STYLES = {
       if (tunnel) continue;
       G(K, H.box(f.tx ? f.width - 0.4 : 0.06, 0.16, f.tz ? f.width - 0.4 : 0.06, { x: ox, y: loc(-5.6), z: oz, color: 0xbfeaff }));
       F(K, H.box(f.tx ? f.width : 0.08, 1.0, f.tz ? f.width : 0.08, { x: f.nx * (f.half + 0.04), y: loc(-8.5), z: f.nz * (f.half + 0.04), color: 0xd8e6f0 })); // rime
+      N(K, H.box(f.tx ? f.width - 0.4 : 0.06, 0.1, f.tz ? f.width - 0.4 : 0.06, { x: f.nx * (f.half + 0.06), y: loc(-7.95), z: f.nz * (f.half + 0.06), color: (p.tint % 3) === 2 ? COL.cyan : COL.magenta })); // a floor line over the rime
+      N(K, H.box(f.tx ? f.width - 0.4 : 0.06, 0.08, f.tz ? f.width - 0.4 : 0.06, { x: ox, y: loc(1.0), z: oz, color: 0x4a8cff })); // and one high up
+      if (f.width > 6) for (let u = -f.width / 2 + 2.5; u < f.width / 2 - 2; u += 7) { // status panels: a dark screen, rows of LEDs
+        const px = f.nx * (f.half + 0.05) + f.tx * u, pz = f.nz * (f.half + 0.05) + f.tz * u;
+        G(K, H.box(f.tx ? 1.6 : 0.04, 1.0, f.tz ? 1.6 : 0.04, { x: px, y: loc(-4.2), z: pz, color: 0x0a1a34 }));
+        for (let r = 0; r < 3; r++) for (let c = 0; c < 5; c++) if ((r * 5 + c + Math.round(u)) % 4) G(K, H.box(f.tx ? 0.14 : 0.05, 0.1, f.tz ? 0.14 : 0.05, { x: px + f.nx * 0.02 + f.tx * (c - 2) * 0.28, y: loc(-3.9 - r * 0.28), z: pz + f.nz * 0.02 + f.tz * (c - 2) * 0.28, color: [0x2aff8a, COL.cyan, 0xff8a2a, COL.magenta][(r + c * 3 + Math.round(u)) % 4] }));
+      }
       if (p.thick > 40) for (const yw of [-19, -30]) G(K, H.box(f.tx ? f.width - 0.4 : 0.06, 0.12, f.tz ? f.width - 0.4 : 0.06, { x: ox, y: loc(yw), z: oz, color: 0x3a8ab8 })); // down the shaft
       if (f.width > 8) for (let k = 0; k < Math.floor(f.width / 8); k++) F(K, H.cyl(0.18, 0.18, 2.2, 6, { x: f.nx * (f.half + 0.3) + f.tx * (-f.width / 2 + 4 + k * 8), y: loc(-1.5), z: f.nz * (f.half + 0.3) + f.tz * (-f.width / 2 + 4 + k * 8), color: COL.steelLt }));
     }
@@ -597,18 +722,22 @@ export const STYLES = {
     for (const f of H.faces(p.w, p.d)) {
       const n = Math.floor(f.width / 1.6);
       for (let k = 0; k < n; k++) F(K, H.box(f.tx ? f.width / n : 0.3, 0.02, f.tz ? f.width / n : 0.3, { x: f.nx * (f.half - 0.15) + f.tx * (-f.width / 2 + (k + 0.5) * f.width / n), y: 0.012, z: f.nz * (f.half - 0.15) + f.tz * (-f.width / 2 + (k + 0.5) * f.width / n), color: k % 2 ? COL.black : COL.yellow }));
+      N(K, H.box(f.tx ? f.width - 0.8 : 0.08, 0.02, f.tz ? f.width - 0.8 : 0.08, { x: f.nx * (f.half - 0.5), y: 0.014, z: f.nz * (f.half - 0.5), color: COL.cyan }));
     }
+    ledEdge(K, H, p, COL.cyan, -0.08, 0.08, 0.03); // (the shaft's landings: their lip)
   },
   'arc-pump'(K, p, th, rng, H) {
     body(K, H, p, 0x3a6a8a);
     for (let x = -p.w / 2 + 0.8; x < p.w / 2; x += 1.6) F(K, H.cyl(0.35, 0.35, p.d + 1.2, 8, { x, y: -p.thick * 0.6, rx: Math.PI / 2, color: COL.steelLt }));
     for (let k = 0; k < 4; k++) G(K, H.box(0.3, 0.3, 0.06, { x: -p.w / 2 + 0.8 + k * 1.1, y: -0.6, z: p.d / 2 + 0.04, color: k % 2 ? COL.green : COL.cyan }));
+    ledEdge(K, H, p, COL.cyan, -0.08, 0.07, 0.03);
   },
   'arc-cabinet'(K, p, th, rng, H) { // a transformer cabinet: grey-green, louvres, a warning plate, status lights
     body(K, H, p, 0x5a6a62);
     for (let y = -0.4; y > -p.thick + 0.3; y -= 0.3) F(K, H.box(p.w + 0.04, 0.06, p.d * 0.6, { y, color: 0x44524c }));
     F(K, H.box(0.6, 0.5, 0.04, { y: -0.6, z: p.d / 2 + 0.02, color: COL.yellow }));
     for (let k = 0; k < 3; k++) G(K, H.box(0.12, 0.12, 0.06, { x: -0.4 + k * 0.4, y: -0.25, z: p.d / 2 + 0.03, color: [COL.green, COL.green, 0xff8a2a][(k + p.tint) % 3] }));
+    ledEdge(K, H, p, p.tint % 2 ? COL.magenta : COL.cyan, -0.06, 0.06, 0.03);
   },
   'arc-catwalk'(K, p, th, rng, H) {
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.steelDk }));
@@ -616,6 +745,7 @@ export const STYLES = {
     rails(K, H, p, COL.yellow, p.w > p.d ? [0, 1] : [2, 3], 1.0);
     const long = p.d > p.w, L = long ? p.d : p.w;
     for (let s = -L / 2 + 2; s < L / 2; s += 5) F(K, H.box(long ? p.w : 0.2, 2.2, long ? 0.2 : p.d, { x: long ? 0 : s, y: -p.thick - 1.1, z: long ? s : 0, color: COL.steelDk }));
+    ledEdge(K, H, p, COL.cyan, -0.08, 0.07, 0.03);
   },
   'arc-gantry'(K, p, th, rng, H) { // the hall's travelling gantry crane: a yellow box girder, a trolley and its hook
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.yellow }));
@@ -623,6 +753,9 @@ export const STYLES = {
     for (const s of [-1, 1]) { for (let k = 0; k < 5; k++) F(K, H.box(p.w + 0.06, 0.06, 0.4, { y: 0.02, z: s * (p.d / 2 - 0.3 - k * 0.8), color: k % 2 ? COL.black : COL.yellow })); F(K, H.box(p.w + 1, 1.0, 1.4, { y: -p.thick - 0.2, z: s * (p.d / 2 - 0.7), color: COL.steelDk })); }
     F(K, H.box(p.w + 0.6, 1.2, 2.4, { y: -p.thick - 0.6, color: COL.steelDk }), H.box(0.08, 5, 0.08, { y: -p.thick - 3.6, color: COL.black }), H.box(0.7, 0.8, 0.5, { y: -p.thick - 6.2, color: COL.red }));
     G(K, H.box(0.4, 0.2, 0.4, { y: -p.thick - 1.3, color: 0xffb030 }));
+    ledEdge(K, H, p, 0xffb030, -0.1, 0.08, 0.04);
+    for (const s of [-1, 1]) G(K, H.box(0.3, 0.3, 0.3, { x: s * (p.w / 2 + 0.2), y: 0.2, z: s * (p.d / 2 - 0.4), color: COL.beacon }));
+    N(K, H.box(p.w + 0.1, 0.08, p.d - 1, { y: -p.thick - 0.02, color: COL.cyan }));
   },
   'arc-seedrack'(K, p, th, rng, H) { // seed-vault shelving: grey steel, shelves of sealed seed boxes (the top shelf stays clear)
     const Ht = p.thick, boxes = [0x1e2228, 0x2e3440, 0x5a4a3a, 0x3a5a7a, 0x7a3a3a, 0x4a6a3a, 0xc8c8c0];
@@ -639,6 +772,8 @@ export const STYLES = {
       }
     }
     for (const sx of [-1, 1]) G(K, H.box(0.04, 0.06, p.d - 0.4, { x: sx * (p.w / 2 + 0.02), y: -0.4, color: 0x8ad8ff }));
+    for (let y = 0; y > -Ht + 0.4; y -= 1.8) for (const sx of [-1, 1]) N(K, H.box(0.05, 0.05, p.d, { x: sx * (p.w / 2 + 0.03), y: y - 0.1, color: y === 0 ? COL.cyan : (Math.round(-y / 1.8) % 2 ? COL.magenta : 0x4a8cff) })); // a light lip on every shelf (the top one cyan)
+    for (const sz of [-1, 1]) N(K, H.box(p.w, 0.05, 0.05, { y: -0.1, z: sz * (p.d / 2 + 0.03), color: COL.cyan }));
   },
   'arc-taperack'(K, p, th, rng, H) { // data-tape and film racks: black cabinets, rows of status lights, a frosted top
     const Ht = Math.min(p.thick, 14);
@@ -654,18 +789,25 @@ export const STYLES = {
       }
     }
     if (p.thick > 20) for (const f of H.faces(p.w, p.d)) G(K, H.box(f.tx ? f.width : 0.05, 0.12, f.tz ? f.width : 0.05, { x: f.nx * (f.half + 0.04), y: -1.4, z: f.nz * (f.half + 0.04), color: 0x5fe8ff })); // islands in the shaft: a lit rim
+    ledEdge(K, H, p, p.thick > 20 ? COL.magenta : COL.cyan, -0.08, 0.07, 0.03);
+    for (const f of H.faces(p.w, p.d)) if (f.width >= 2) { const nn = Math.floor(f.width / 1.2); for (let k = 0; k < nn - 1; k++) { const off = -f.width / 2 + (k + 1) * (f.width / nn); N(K, H.box(f.tx ? 0.05 : 0.04, Ht - 0.8, f.tz ? 0.05 : 0.04, { x: f.nx * (f.half + 0.045) + f.tx * off, y: -Ht / 2, z: f.nz * (f.half + 0.045) + f.tz * off, color: k % 2 ? 0x2a5ad8 : 0x1a8ab8 })); } } // light seams between the cabinets
   },
-  'arc-cryopod'(K, p, th, rng, H) {
+  'arc-cryopod'(K, p, th, rng, H) { // a cryo pod: a steel drum with a glowing glass belt, a frosted cap, a holo ring over it
+    const c = p.tint ? 0x5fe8ff : 0x8affd0;
     F(K, H.cyl(p.r, p.r, p.thick, H.seg(16, 10), { y: -p.thick / 2, color: COL.steelLt }));
-    G(K, H.cyl(p.r + 0.03, p.r + 0.03, p.thick * 0.45, H.seg(16, 10), { y: -p.thick * 0.5, color: p.tint ? 0x5fe8ff : 0x8affd0 }));
+    G(K, H.cyl(p.r + 0.03, p.r + 0.03, p.thick * 0.62, H.seg(16, 10), { y: -p.thick * 0.5, color: c }));
+    for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; F(K, H.box(0.12, p.thick * 0.64, 0.12, { x: Math.cos(a) * (p.r + 0.05), y: -p.thick * 0.5, z: Math.sin(a) * (p.r + 0.05), color: COL.steelDk })); }
     for (const y of [-0.15, -p.thick + 0.2]) F(K, H.cyl(p.r + 0.1, p.r + 0.1, 0.3, H.seg(16, 10), { y, color: COL.steelDk }));
     F(K, H.cyl(p.r * 0.5, p.r * 0.5, 0.05, 10, { y: 0.01, color: 0xdfeaf2 }));
+    ledEdge(K, H, p, p.tint ? COL.magenta : COL.cyan, -0.04, 0.07, 0.11);
+    G(K, H.part(new THREE.TorusGeometry(p.r * 0.7, 0.03, 3, 16), { rx: Math.PI / 2, y: 2.6, color: c }), H.part(new THREE.TorusGeometry(p.r * 0.45, 0.03, 3, 12), { rx: Math.PI / 2, y: 3.1, color: c })); // its holo readout, high over the lid
   },
   'arc-chest'(K, p, th, rng, H) { // the world archive's chest: steel, brass corners, a green seam of light
     body(K, H, p, 0x4a525e);
     for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) F(K, H.box(0.5, p.thick + 0.05, 0.5, { x: sx * (p.w / 2 - 0.2), y: -p.thick / 2, z: sz * (p.d / 2 - 0.2), color: 0xc8a040 }));
     G(K, H.box(p.w + 0.04, 0.08, p.d + 0.04, { y: -0.6, color: 0x5aff9a }));
     F(K, H.box(p.w * 0.6, 0.04, p.d * 0.5, { y: 0.01, color: 0xdfeaf2 }));
+    ledEdge(K, H, p, 0x5aff9a, -0.08, 0.07, 0.03);
   },
   'arc-shuttle'(K, p, th, rng, H) { // an archive shuttle: a hover pallet that slides across the shaft
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: 0x2e3440 }));
@@ -673,6 +815,7 @@ export const STYLES = {
     for (const f of H.faces(p.w, p.d)) for (let k = 0; k < 4; k++) F(K, H.box(f.tx ? f.width / 4 : 0.25, 0.05, f.tz ? f.width / 4 : 0.25, { x: f.nx * (f.half - 0.12) + f.tx * (-f.width / 2 + (k + 0.5) * f.width / 4), y: 0.02, z: f.nz * (f.half - 0.12) + f.tz * (-f.width / 2 + (k + 0.5) * f.width / 4), color: k % 2 ? COL.black : COL.yellow }));
     G(K, H.box(p.w + 0.06, 0.1, p.d + 0.06, { y: -p.thick + 0.2, color: [0x5fe8ff, 0x8affd0, 0x4a8cff, 0x5fe8ff][p.tint % 4] }));
     jets(K, H, [[-1, -1], [1, -1], [-1, 1], [1, 1]], -p.thick - 0.02, 0.4);
+    ledEdge(K, H, p, COL.magenta, -0.08, 0.07, 0.03);
   },
 
   // ---- COLD STORAGE: the ice cavern
@@ -685,6 +828,13 @@ export const STYLES = {
       if (k % 3 === 0) F(K, H.box(2 + rng() * 4, 0.03, 1 + rng() * 2, { x: (rng() - 0.5) * (p.w - 4), y: 0.012, z: (rng() - 0.5) * (p.d - 4), ry: rng() * Math.PI, color: COL.snow }));
     }
     F(K, H.part(new THREE.RingGeometry(12, 12.4, H.seg(48, 24)), { rx: -Math.PI / 2, y: 0.02, color: 0x8ad8f0 }));
+    // lit from below: glowing cracks running through the ice, a cyan ring, magenta veins
+    N(K, H.part(new THREE.RingGeometry(12.45, 12.6, H.seg(48, 24)), { rx: -Math.PI / 2, y: 0.022, color: COL.cyan }), H.part(new THREE.RingGeometry(5.9, 6.0, H.seg(32, 16)), { rx: -Math.PI / 2, y: 0.022, color: COL.magenta }));
+    for (let k = 0; k < 22; k++) {
+      let x = (rng() - 0.5) * (p.w - 10), z = (rng() - 0.5) * (p.d - 10), a = rng() * Math.PI;
+      const col = k % 3 ? 0x2ab8e8 : 0xc83ad8;
+      for (let j = 0; j < 3; j++) { const l = 1.5 + rng() * 3; G(K, H.box(l, 0.02, 0.1, { x: x + Math.cos(a) * l / 2, y: 0.016, z: z - Math.sin(a) * l / 2, ry: a, color: col })); x += Math.cos(a) * l; z -= Math.sin(a) * l; a += (rng() - 0.5) * 1.4; }
+    }
   },
   'arc-cavewall'(K, p, th, rng, H) { // the cavern wall: dark rock sheeted with blue ice, crystals jutting out
     const g = H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.rock });
@@ -695,7 +845,12 @@ export const STYLES = {
       for (let k = 0; k < n; k++) {
         const off = -f.width / 2 + (k + 0.5) * (f.width / n) + (rng() - 0.5) * 2, h = 4 + rng() * 14, w = 1.5 + rng() * 2.5;
         F(K, H.box(f.tx ? w : 0.8, h, f.tz ? w : 0.8, { x: f.nx * (f.half + 0.3) + f.tx * off, y: -2 - h / 2 - rng() * 12, z: f.nz * (f.half + 0.3) + f.tz * off, color: rng() < 0.5 ? COL.iceDk : 0x5a9ab8 }));
-        if (k % 3 === 0) { const ch = 1.5 + rng() * 2.5; G(K, H.part(new THREE.ConeGeometry(0.4 + rng() * 0.4, ch, 4), { x: f.nx * (f.half + 0.6) + f.tx * off, y: -p.thick + 4 + ch / 2 + rng() * 2, z: f.nz * (f.half + 0.6) + f.tz * off, rz: f.nx * -0.5, rx: f.nz * 0.5, color: k % 2 ? 0x5fe8ff : 0x9affe8 })); }
+        if (k % 3 === 0) { const ch = 1.5 + rng() * 2.5; G(K, H.part(new THREE.ConeGeometry(0.4 + rng() * 0.4, ch, 4), { x: f.nx * (f.half + 0.6) + f.tx * off, y: -p.thick + 4 + ch / 2 + rng() * 2, z: f.nz * (f.half + 0.6) + f.tz * off, rz: f.nx * -0.5, rx: f.nz * 0.5, color: k % 2 ? 0x5fe8ff : (k % 4 ? 0x9affe8 : 0xff6ae0) })); }
+        if (k % 2 === 1) { // a vein of light inside the ice sheet, climbing the wall
+          let u = off, v = -p.thick + 6 + rng() * 6;
+          const col = rng() < 0.62 ? 0x2ac8f0 : 0xd84ae0;
+          for (let j = 0; j < 4; j++) { const l = 2 + rng() * 4, du = (rng() - 0.5) * 2; G(K, H.box(f.tx ? Math.abs(du) + 0.14 : 0.08, l, f.tz ? Math.abs(du) + 0.14 : 0.08, { x: f.nx * (f.half + 0.36) + f.tx * (u + du / 2), y: v + l / 2, z: f.nz * (f.half + 0.36) + f.tz * (u + du / 2), color: col })); u += du; v += l; }
+        }
       }
     }
   },
@@ -705,24 +860,30 @@ export const STYLES = {
       const x = (rng() - 0.5) * (p.w - 4), z = (rng() - 0.5) * (p.d - 4), len = 1 + rng() * 3.4;
       F(K, H.part(new THREE.ConeGeometry(0.3 + rng() * 0.6, len, 4), { x, y: -p.thick - len / 2, z, rx: Math.PI, color: rng() < 0.6 ? COL.iceMid : COL.ice }));
     }
-    for (let k = 0; k < 10; k++) G(K, H.box(0.5, 0.2, 0.5, { x: (rng() - 0.5) * (p.w - 10), y: -p.thick - 0.1, z: (rng() - 0.5) * (p.d - 10), color: 0x9ae8ff }));
+    for (let k = 0; k < 24; k++) G(K, H.box(0.4 + rng() * 0.8, 0.2, 0.4 + rng() * 0.8, { x: (rng() - 0.5) * (p.w - 10), y: -p.thick - 0.1, z: (rng() - 0.5) * (p.d - 10), color: k % 3 ? 0x9ae8ff : 0xe87af0 }));
+    for (let k = 0; k < 14; k++) { const x = (rng() - 0.5) * (p.w - 8), z = (rng() - 0.5) * (p.d - 8), len = 1.6 + rng() * 2.6; G(K, H.part(new THREE.ConeGeometry(0.22, len, 4), { x, y: -p.thick - len / 2, z, rx: Math.PI, color: k % 2 ? 0x5fe8ff : 0xff7ae8 })); } // glowing icicles
   },
   'arc-iceledge'(K, p, th, rng, H) {
     F(K, lumpy(H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: [0x6aaecc, 0x8ccbe0, 0x5a9ab8, 0x7abcd8][p.tint % 4] }), rng, 0.3));
     cap(K, H, p, COL.snow, 0.12, 0.04);
     icicles(K, H, p, rng, -p.thick, Math.max(1, Math.floor(Math.max(p.w, p.d) / 3)), 1.4);
     for (const f of H.faces(p.w, p.d)) G(K, H.box(f.tx ? f.width - 0.4 : 0.05, 0.08, f.tz ? f.width - 0.4 : 0.05, { x: f.nx * (f.half + 0.03), y: -0.3, z: f.nz * (f.half + 0.03), color: 0x5fe8ff }));
+    for (const f of H.faces(p.w, p.d)) if (f.width > 3) G(K, H.box(f.tx ? f.width - 1 : 0.05, 0.06, f.tz ? f.width - 1 : 0.05, { x: f.nx * (f.half + 0.03), y: -p.thick + 0.2, z: f.nz * (f.half + 0.03), color: 0xe85ae0 }));
+    G(K, H.box(Math.max(0.5, p.w - 1.2), 0.04, Math.max(0.5, p.d - 1.2), { y: -p.thick - 0.03, color: 0x3a1a6a })); // under-light
   },
   'arc-icecolumn'(K, p, th, rng, H) { // a column of ice from floor to roof (cover from the frost breath)
     F(K, lumpy(H.cyl(p.r, p.r * 1.08, p.thick, 7, { y: -p.thick / 2, color: 0x9ad4ea }), rng, 0.35));
     F(K, H.cyl(p.r * 1.35, p.r * 1.1, 2.4, 7, { y: -p.thick + 1.2, color: 0xc8eaf6 }), H.cyl(p.r * 1.05, p.r * 1.45, 3, 7, { y: -1.5, color: 0x7ab8d8 }));
     for (let k = 0; k < 6; k++) G(K, H.box(0.06, 2 + rng() * 4, 0.06, { x: Math.cos(k * 1.05) * (p.r + 0.02), y: -p.thick * (0.2 + rng() * 0.6), z: Math.sin(k * 1.05) * (p.r + 0.02), color: 0x6af0ff }));
+    for (let k = 0; k < 7; k++) { const a = k * 0.9 + 0.4, y0 = -p.thick + 3 + rng() * (p.thick - 8), l = 3 + rng() * 6; G(K, H.box(0.14, l, 0.14, { x: Math.cos(a) * (p.r + 0.08), y: y0, z: Math.sin(a) * (p.r + 0.08), rz: (rng() - 0.5) * 0.4, color: k % 3 ? 0x3ad0ff : 0xe05ae8 })); } // veins of light
+    for (const y of [-p.thick + 2.8, -p.thick * 0.5]) N(K, H.cyl(p.r * 1.12, p.r * 1.12, 0.12, 7, { y, color: y > -p.thick * 0.6 ? COL.magenta : COL.cyan }));
   },
   'arc-icestump'(K, p, th, rng, H) {
     F(K, lumpy(H.cyl(p.r, p.r * 1.2, p.thick, 7, { y: -p.thick / 2, color: [0x9ad4ea, 0x8ccbe0, 0xa8dcee][p.tint % 3] }), rng, 0.3));
     F(K, H.cyl(p.r + 0.04, p.r + 0.04, 0.1, 7, { y: -0.04, color: COL.snow }));
     for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2 + p.tint; F(K, H.part(new THREE.ConeGeometry(0.22, 0.6 + (k % 3) * 0.25, 4), { x: Math.cos(a) * (p.r + 0.05), y: 0.1, z: Math.sin(a) * (p.r + 0.05), rz: Math.cos(a) * 0.6, rx: -Math.sin(a) * 0.6, color: COL.ice })); }
     G(K, H.cyl(p.r * 0.4, p.r * 0.4, 0.04, 7, { y: 0.02, color: 0x8af0ff }));
+    ledEdge(K, H, p, p.tint % 2 ? COL.magenta : COL.cyan, -0.12, 0.09, 0.06);
   },
   'arc-deepdoor'(K, p, th, rng, H) { // the deep door: a round steel vault door set in the ice wall (it faces the arena, west)
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.rockDk }));
@@ -730,5 +891,7 @@ export const STYLES = {
     F(K, H.part(new THREE.TorusGeometry(4.3, 0.3, 4, H.seg(24, 14)), { x: -p.w / 2 - 0.7, y: -p.thick / 2, ry: Math.PI / 2, color: COL.steelDk }));
     for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; F(K, H.box(0.3, 0.7, 0.7, { x: -p.w / 2 - 0.8, y: -p.thick / 2 + Math.sin(a) * 3.2, z: Math.cos(a) * 3.2, color: COL.steelLt })); }
     G(K, H.part(new THREE.TorusGeometry(2.0, 0.12, 4, H.seg(24, 14)), { x: -p.w / 2 - 0.75, y: -p.thick / 2, ry: Math.PI / 2, color: 0x5fe8ff }));
+    N(K, H.part(new THREE.TorusGeometry(4.65, 0.08, 4, H.seg(24, 14)), { x: -p.w / 2 - 0.9, y: -p.thick / 2, ry: Math.PI / 2, color: COL.magenta }));
+    for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2 + 0.39; G(K, H.box(0.1, 0.24, 0.24, { x: -p.w / 2 - 0.95, y: -p.thick / 2 + Math.sin(a) * 3.2, z: Math.cos(a) * 3.2, color: k % 2 ? COL.cyan : 0xff8a2a })); }
   },
 };

@@ -54,6 +54,7 @@ export function polarisModel(M) {
       G(box(0.06, 1.4, 0.08, { x: s * 2.06, y: 0.9, z: 4.4, color: C.strip }));
     }
     P(box(1.6, 1.5, 1.7, { y: 1.1, z: 5.4, rx: -0.3, color: C.chassis }), box(1.7, 0.4, 1.5, { y: 1.85, z: 5.3, rx: -0.3, color: C.white })); // the neck
+    G(box(1.66, 0.07, 0.07, { y: 0.5, z: 6.12, rx: -0.3, color: C.strip })); // a collar line
     P(box(1.4, 1.0, 1.0, { y: 0.9, z: -0.7, color: C.white }), box(0.6, 0.5, 0.6, { y: 1.1, z: -1.2, color: C.white })); // rump and stub tail
   }));
   // the back plates (they lift in the punish windows), the core under them, the frost vents
@@ -96,9 +97,10 @@ export function polarisModel(M) {
     const leg = joint(hips, s * 1.35, 0.1, 4.6, 'front' + n);
     leg.add(mesh(M, (P, G) => { P(box(1.05, 2.0, 1.15, { y: -0.85, color: C.chassis }), box(1.15, 1.2, 1.25, { y: -0.4, color: C.white })); G(box(0.06, 1.1, 0.06, { x: s * 0.6, y: -0.7, z: 0.5, color: C.strip })); }));
     const elbow = joint(leg, 0, -1.85, 0, 'elbow' + n);
-    elbow.add(mesh(M, (P) => {
+    elbow.add(mesh(M, (P, G) => {
       P(box(0.95, 1.4, 1.0, { y: -0.6, color: C.chassisDk }), box(1.0, 0.8, 1.05, { y: -0.45, z: 0.06, color: C.white }));
       P(box(1.3, 0.42, 1.7, { y: -1.35, z: 0.35, color: C.chassisDk }), box(1.35, 0.18, 1.75, { y: -1.17, z: 0.35, color: C.white }));
+      G(box(1.37, 0.05, 0.05, { y: -1.07, z: 1.2, color: C.strip }));
       for (const c of [-0.42, -0.14, 0.14, 0.42]) P(part(new THREE.ConeGeometry(0.1, 0.55, 4), { x: c, y: -1.45, z: 1.35, rx: Math.PI / 2 + 0.3, color: C.claw }));
     }));
     J['front' + n] = leg; J['elbow' + n] = elbow;

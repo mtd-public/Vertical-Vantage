@@ -133,7 +133,7 @@ const lasers = [
 
 const S = SPIRAL.pts, R4 = RINGS[4][1];
 export default {
-  id: 'egypt-cairo', name: 'CAIRO', sub: 'NEO-CAIRO · 17:20 · GOLDEN HOUR', theme: 'egyptGolden', song: 'nileBreak',
+  id: 'egypt-cairo', name: 'CAIRO', sub: 'NEO-CAIRO · 23:40 · NEON NIGHT', theme: 'egyptNight', song: 'nileBreak',
   seed: 8001, par: 330, killY: -0.6, water: 0,
   start: { x: 66, y: 6, z: 52, yaw: yawTo(-1, -0.6) },
   plats, lasers,
@@ -144,7 +144,7 @@ export default {
   ],
   exit: { x: TX, y: CROWN, z: TZ, yaw: 0 },
   portal: { x: DISH.x, y: DISH.h + 1.4, z: DISH.z },
-  bonusStyle: { theme: 'egyptBonusGold', weapon: 'spread', tag: 'NILE' },
+  bonusStyle: { theme: 'egyptBonusNight', weapon: 'spread', tag: 'NILE' },
   enemies: [
     { type: 'guard', ...on(A[4]) },
     { type: 'guard', x: 38, y: 11, z: 42 },

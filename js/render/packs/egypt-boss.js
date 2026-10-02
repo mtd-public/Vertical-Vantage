@@ -27,7 +27,7 @@ export function anubisModel(M) {
   // ---- legs: hips at 4.3 m; black thighs, gold knee plates, shins with lapis greaves, gold-toed feet
   for (const [s, n] of [[1, 'L'], [-1, 'R']]) {
     const leg = joint(body, s * 0.95, 4.3, 0, 'leg' + n);
-    leg.add(mesh(M, (P) => { P(box(1.0, 2.1, 1.1, { y: -1.0, color: C.black }), box(1.1, 0.5, 1.2, { y: -0.3, color: C.blackHi }), box(0.3, 1.4, 0.2, { x: s * 0.55, y: -1.1, color: C.goldDk })); }));
+    leg.add(mesh(M, (P, G) => { P(box(1.0, 2.1, 1.1, { y: -1.0, color: C.black }), box(1.1, 0.5, 1.2, { y: -0.3, color: C.blackHi }), box(0.3, 1.4, 0.2, { x: s * 0.55, y: -1.1, color: C.goldDk })); G(box(0.08, 1.5, 0.06, { x: -s * 0.25, y: -1.1, z: 0.57, color: C.cyan }), box(1.12, 0.06, 1.22, { y: -0.56, color: C.gold })); }));
     const knee = joint(leg, 0, -2.1, 0, 'knee' + n);
     knee.add(mesh(M, (P, G) => {
       P(part(new THREE.IcosahedronGeometry(0.55, 0), { color: C.gold }));
@@ -45,6 +45,7 @@ export function anubisModel(M) {
     for (let k = 0; k < 14; k++) { const a = (k / 14) * Math.PI * 2; P(box(0.12, 1.36, 0.05, { x: Math.cos(a) * 1.5, y: -0.9, z: Math.sin(a) * 1.08, ry: -a + Math.PI / 2, color: C.goldDk })); }
     P(box(0.9, 1.6, 0.1, { y: -0.95, z: 1.2, color: C.lapis }), box(0.95, 0.14, 0.12, { y: -0.3, z: 1.22, color: C.gold }), box(0.95, 0.14, 0.12, { y: -1.7, z: 1.22, color: C.gold }));
   }));
+  pelvis.add(mesh(M, (P, G) => { G(part(new THREE.TorusGeometry(1.0, 0.05, 3, 20), { y: -1.62, rx: Math.PI / 2, sx: 1.6, sy: 1.15, color: C.gold }), box(0.06, 1.3, 0.05, { y: -0.95, z: 1.27, color: C.cyan })); })); // a gold LED hem, a cyan seam down the apron
   // ---- torso: black plate, the broad collar (gold, lapis, turquoise), a glowing ankh core in the chest
   const torso = joint(body, 0, 4.7, 0, 'torso');
   torso.add(mesh(M, (P, G) => {
@@ -54,6 +55,8 @@ export function anubisModel(M) {
     G(part(new THREE.TorusGeometry(0.22, 0.06, 3, 8), { y: 1.95, z: 0.88, color: C.cyan }));
     for (const s of [-1, 1]) { P(part(new THREE.SphereGeometry(0.85, 8, 5), { x: s * 1.75, y: 2.6, sy: 0.8, color: C.black })); P(box(0.6, 0.12, 1.0, { x: s * 1.95, y: 2.95, color: C.gold })); }
     P(cyl(0.45, 0.55, 0.7, 8, { y: 3.2, color: C.blackHi }));
+    G(part(new THREE.CylinderGeometry(1.86, 1.86, 0.06, 12, 1, true, -Math.PI * 0.55, Math.PI * 1.1), { y: 2.84, z: 0.1, color: C.cyan })); // the collar's rim, lit
+    for (const s of [-1, 1]) G(box(0.62, 0.05, 1.02, { x: s * 1.95, y: 3.03, color: C.cyan }));
     for (const s of [-1, 1]) G(box(0.3, 0.12, 0.06, { x: s * 0.7, y: 2.0, z: -0.88, color: 0xff8a2a })); // back vents (the ward's power: the open back)
     G(box(1.4, 1.0, 0.06, { y: 1.4, z: -0.78, color: 0x2a6aff }));
   }));
@@ -66,7 +69,9 @@ export function anubisModel(M) {
     for (const s of [-1, 1]) {
       P(part(new THREE.ConeGeometry(0.38, 1.9, 4), { x: s * 0.42, y: 1.9, z: -0.15, rz: -s * 0.12, sz: 0.45, color: C.black }));
       P(part(new THREE.ConeGeometry(0.24, 1.4, 4), { x: s * 0.42, y: 1.85, z: 0.03, rz: -s * 0.12, sz: 0.25, color: C.gold }));
+      G(box(0.12, 0.12, 0.12, { x: s * 0.53, y: 2.84, z: -0.15, color: C.cyan }));
     }
+    G(box(1.36, 0.05, 1.46, { y: 1.13, color: C.gold })); // the headband
     P(box(1.4, 0.8, 0.12, { y: -0.2, z: -0.7, color: C.lapis })); // a lapis neck guard
   }));
   const eyes = mesh(M, (P, G) => { for (const s of [-1, 1]) G(box(0.34, 0.12, 0.08, { x: s * 0.36, y: 0, z: 0, rz: s * 0.25, color: C.cyan })); });

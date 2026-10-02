@@ -126,7 +126,7 @@ const lasers = [
 
 const E9 = { x: G.x1 - 0.8, y: gf(9) + 6.5, z: gzm(9) };
 export default {
-  id: 'egypt-sanctum', name: 'INNER SANCTUM', sub: 'THE GREAT PYRAMID · INSIDE · TORCHLIGHT', theme: 'egyptTomb', song: 'tombHard',
+  id: 'egypt-sanctum', name: 'INNER SANCTUM', sub: 'THE GREAT PYRAMID · INSIDE · 03:00 · DATA LIGHT', theme: 'egyptTomb', song: 'tombHard',
   seed: 8003, par: 320, killY: -16,
   start: { x: 0, y: 0, z: 22, yaw: 0 },
   plats, lasers,

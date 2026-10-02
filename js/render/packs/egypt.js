@@ -6,51 +6,52 @@ import { TOMB } from './egypt-tomb.js';
 import { BACKDROPS } from './egypt-backdrops.js';
 import { anubisModel, anubisUpdate } from './egypt-boss.js';
 
-// Gold and lapis: a low sun over the Nile, a white-hot noon in the sand, torchlight underground, and
-// the Duat's lapis night with gold stars.
+// Neo-Cairo after dark, the data dynasty in gold, lapis and cyan: the city's neon under a lapis sky,
+// the Giza plateau's dust glowing over the lit data pyramid, the sanctum's data light, and the
+// Duat's lapis night. Every stage is night, and so are the bonus arenas.
 const themes = {
-  egyptGolden: { // CAIRO: 17:20, the sun low in the west over Giza, the old city glowing ochre
-    skyTop: '#2f5cb8', skyBot: '#ffbf7a', sun: '#ffd08a', sunDir: [-0.86, 0.2, 0.46], night: 0.08,
-    fog: [140, 520], hemi: ['#ffe6c4', '#7a5638', 1.55], key: ['#ffc27a', 2.4],
-    cloud: '#ffe2b8', cloudShade: '#e89a68', city: 0.3, arc: [0, 4], cityCol: '#b88a62', cityH: 0.45, pyramids: 0,
-    windows: 0.2, neon: 0.75, water: '#3a7088', rain: 0, stars: 0, beams: 0, haze: 0.4,
+  egyptNight: { // CAIRO 23:40: a lapis sky over the neon city, the moon over Giza, searchlights
+    skyTop: '#02051c', skyBot: '#2e2152', sun: '#f4ead2', sunDir: [-0.62, 0.36, 0.7], night: 1,
+    fog: [70, 330], hemi: ['#6a72c8', '#6a4430', 1.25], key: ['#a8bcff', 0.75],
+    cloud: '#3a2c5c', cloudShade: '#1a1434', cover: 0.12, city: 1, arc: [0, 4], cityCol: '#120c26', cityH: 0.55, pyramids: 0,
+    windows: 1, neon: 1.3, water: '#0a1432', rain: 0, stars: 0.6, beams: 0.8, haze: 0.36,
   },
-  egyptHaze: { // DATA PYRAMID: noon with a sandstorm blowing in, the sun a white disc, the distance ochre
-    skyTop: '#a8946a', skyBot: '#f0d4a4', sun: '#fff6e0', sunDir: [0.3, 0.86, 0.42], night: 0,
-    fog: [90, 380], hemi: ['#fff2dc', '#b88a5a', 1.85], key: ['#fff0d0', 2.3],
-    cloud: '#f6e2c0', cloudShade: '#e0bc90', cover: 0.15, city: 0, arc: [0, 4], cityCol: '#c8a070', pyramids: 0,
-    windows: 0, neon: 0.85, water: null, rain: 0, stars: 0, beams: 0, haze: 0.62,
+  egyptDust: { // DATA PYRAMID 02:10: dust hanging over the plateau, lit gold and magenta by the data centre
+    skyTop: '#030620', skyBot: '#33264a', sun: '#ffe8c8', sunDir: [0.12, 0.34, -0.93], night: 1,
+    fog: [60, 300], hemi: ['#6c7ad8', '#5a3a2a', 1.25], key: ['#c0ccff', 0.8],
+    cloud: '#4a3a62', cloudShade: '#241a3a', cover: 0.35, city: 0.6, arc: [-0.62, 0.75], cityCol: '#160e22', cityH: 0.5, pyramids: 0,
+    windows: 0.9, neon: 1.3, water: null, rain: 0, stars: 0.45, beams: 0.7, haze: 0.5,
   },
-  egyptTomb: { // INNER SANCTUM: no sky at all, torchlight on limestone, cyan data glyphs
-    skyTop: '#0a0605', skyBot: '#20120a', sun: '#ffb46a', sunDir: [0.3, 0.85, 0.25], night: 1,
-    fog: [22, 120], hemi: ['#ffc88c', '#3a2416', 1.55], key: ['#ffae64', 0.95],
-    cloud: '#1a100a', cloudShade: '#100a06', city: 0, arc: [0, 4], cityCol: '#1a100a', pyramids: 0,
-    windows: 0, neon: 1.25, water: null, rain: 0, stars: 0, beams: 0, haze: 0.3,
+  egyptTomb: { // INNER SANCTUM 03:00: no sky at all; torchlight on limestone, a lapis dark, cyan data light
+    skyTop: '#01020a', skyBot: '#0a1028', sun: '#ffb46a', sunDir: [0.3, 0.85, 0.25], night: 1,
+    fog: [22, 118], hemi: ['#c8a08a', '#161c44', 1.15], key: ['#ffa864', 0.85],
+    cloud: '#0a1028', cloudShade: '#060a18', city: 0, arc: [0, 4], cityCol: '#0a1028', pyramids: 0,
+    windows: 0, neon: 1.3, water: null, rain: 0, stars: 0, beams: 0, haze: 0.3,
   },
-  egyptDuat: { // HALL OF JUDGMENT: the Duat's lapis night, gold stars, braziers
-    skyTop: '#030620', skyBot: '#2a1a52', sun: '#c8d4ff', sunDir: [-0.25, 0.62, -0.74], night: 1,
-    fog: [70, 330], hemi: ['#9a96e8', '#3a2818', 1.5], key: ['#ffc070', 1.05],
+  egyptDuat: { // HALL OF JUDGMENT: the Duat's lapis night, gold stars, braziers, data light
+    skyTop: '#02041a', skyBot: '#261a54', sun: '#c8d4ff', sunDir: [-0.25, 0.62, -0.74], night: 1,
+    fog: [70, 330], hemi: ['#9a96e8', '#2a2030', 1.5], key: ['#ffc070', 1.05],
     cloud: '#2a2860', cloudShade: '#141034', city: 0, arc: [0, 4], cityCol: '#141034', pyramids: 0,
-    windows: 0.6, neon: 1.25, water: null, rain: 0, stars: 1, beams: 0.35, haze: 0.35,
+    windows: 0.6, neon: 1.3, water: null, rain: 0, stars: 1, beams: 0.5, haze: 0.35,
   },
-  // the SERVER CORE bonus arenas, gilded
-  egyptBonusGold: {
-    skyTop: '#1a3ab8', skyBot: '#ffc870', sun: '#ffe0a0', sunDir: [-0.6, 0.3, 0.6], night: 0.1, power: 1,
-    fog: [80, 300], hemi: ['#fff0d0', '#6a4a3a', 1.75], key: ['#ffd8a0', 2.1],
-    cloud: '#fff0d8', cloudShade: '#f0b080', city: 0, arc: [0, 4], cityCol: '#c8a07a', windows: 0.2, neon: 0.9,
-    water: null, rain: 0, stars: 0, beams: 0, pyramids: 0,
+  // the SERVER CORE bonus arenas: a gilded power sky at night
+  egyptBonusNight: {
+    skyTop: '#040a30', skyBot: '#3a2a6a', sun: '#ffe0a0', sunDir: [-0.6, 0.3, 0.6], night: 1, power: 0.45,
+    fog: [70, 280], hemi: ['#a09ae8', '#201a3a', 1.45], key: ['#ffd8a0', 1.1],
+    cloud: '#4a3a78', cloudShade: '#241a44', city: 0, arc: [0, 4], cityCol: '#1a1430', windows: 1, neon: 1.3,
+    water: null, rain: 0, stars: 0.7, beams: 0, pyramids: 0,
   },
-  egyptBonusHaze: {
-    skyTop: '#c8803a', skyBot: '#ffe4b0', sun: '#fff8e0', sunDir: [0.3, 0.8, -0.5], night: 0, power: 1,
-    fog: [70, 280], hemi: ['#fff4e0', '#a0784a', 1.8], key: ['#fff0d0', 2.1],
-    cloud: '#ffe8c8', cloudShade: '#e0a870', city: 0, arc: [0, 4], cityCol: '#c8a070', windows: 0, neon: 0.9,
-    water: null, rain: 0, stars: 0, beams: 0, pyramids: 0,
+  egyptBonusDust: {
+    skyTop: '#0a0626', skyBot: '#5a2a44', sun: '#fff0d8', sunDir: [0.3, 0.6, -0.5], night: 1, power: 0.45,
+    fog: [70, 280], hemi: ['#c8a0d8', '#2a1a26', 1.45], key: ['#ffe0c0', 1.1],
+    cloud: '#6a3a5a', cloudShade: '#341a30', city: 0, arc: [0, 4], cityCol: '#1a1020', windows: 1, neon: 1.3,
+    water: null, rain: 0, stars: 0.5, beams: 0, pyramids: 0,
   },
   egyptBonusTomb: {
-    skyTop: '#06082a', skyBot: '#5a2a1a', sun: '#ffc890', sunDir: [0.4, 0.5, -0.7], night: 0.7, power: 1,
-    fog: [60, 260], hemi: ['#ffd8b0', '#3a2a5a', 1.55], key: ['#ffb880', 1.6],
-    cloud: '#5a3a5a', cloudShade: '#2a1a3a', city: 0, arc: [0, 4], cityCol: '#2a1a3a', windows: 0.6, neon: 1.2,
-    water: null, rain: 0, stars: 0.6, beams: 0, pyramids: 0,
+    skyTop: '#02061e', skyBot: '#14305a', sun: '#a8f0ff', sunDir: [0.4, 0.5, -0.7], night: 1, power: 0.45,
+    fog: [60, 260], hemi: ['#a8d0e8', '#1a2240', 1.45], key: ['#ffb880', 1.1],
+    cloud: '#1a3a5a', cloudShade: '#0c1a34', city: 0, arc: [0, 4], cityCol: '#0c1a34', windows: 1, neon: 1.3,
+    water: null, rain: 0, stars: 0.8, beams: 0, pyramids: 0,
   },
 };
 

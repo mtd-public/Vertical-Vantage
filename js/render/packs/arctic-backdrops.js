@@ -123,9 +123,39 @@ export function makeSnow(n, o = {}) {
   return pts;
 }
 
+// ------------------------------------------------------------------ light cones (floodlights in the snow)
+// o.cones = [[x, y, z, dx, dy, dz, len, radius, '#hex'?], …] in the backdrop's frame: additive, flickering a
+// little with the snow; unfogged, so they're kept faint.
+function lightCones(o) {
+  const g = new THREE.Group(), byCol = {}, cones = [...(o.cones || [])];
+  for (const [x, z, R, k0] of o.domes || []) for (let k = 0; k < 4; k++) { // o.domes = [[x, z, R], …] on o.base: four uplights washing each radome
+    const a = (k / 4) * Math.PI * 2 + 0.6, c = k % 2 ? '#8ad8ff' : (k0 ? '#ff8ae8' : '#d8f0ff');
+    cones.push([x + Math.cos(a) * (R + 1.6), (o.base ?? 0) + 0.3, z + Math.sin(a) * (R + 1.6), -Math.cos(a) * 0.45, 1, -Math.sin(a) * 0.45, R * 1.9, R * 0.75, c]);
+  }
+  for (const c of cones) (byCol[c[8] || '#d8ecff'] ||= []).push(c);
+  for (const [col, list] of Object.entries(byCol)) {
+    const geos = list.map(([x, y, z, dx, dy, dz, L, r]) => {
+      const geo = new THREE.ConeGeometry(r, L, 10, 1, true); geo.translate(0, -L / 2, 0); // apex at the origin, opening down -y
+      const d = new THREE.Vector3(dx, dy, dz).normalize(), q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), d);
+      geo.applyMatrix4(new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), q, new THREE.Vector3(1, 1, 1)));
+      return geo.toNonIndexed();
+    });
+    const pos = [];
+    for (const q of geos) { pos.push(...q.attributes.position.array); q.dispose(); }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    const k = o.k ?? 0.12, mat = own(new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: k, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+    const m = new THREE.Mesh(geo, mat), ph = list[0][0] * 0.37;
+    m.renderOrder = 5;
+    m.onBeforeRender = () => { mat.opacity = k * (0.85 + 0.15 * Math.sin(now() * 7 + ph)); };
+    g.add(m);
+  }
+  return g;
+}
+
 // ------------------------------------------------------------------ the kinds
 export const BACKDROPS = {
   'arc-aurora': (o, th) => aurora(o, th),
+  'arc-lightcones': (o) => lightCones(o),
   'arc-snowfall': (o) => makeSnow(o.n ?? 900, { wind: o.wind ?? 0.2, size: o.size ?? 1, k: o.k ?? 0.9, zMin: o.zMin }),
 
   // Mountains all round the fjord: flat-topped plateau mountains and a few sharper peaks, snow on top.
@@ -157,6 +187,12 @@ export const BACKDROPS = {
       for (const t of [0.35, 0.7]) {
         const x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, z = a[2] + (b[2] - a[2]) * t;
         K.add('p', box(0.12, hang * 0.8, 0.12, { x, y: y - hang * 0.4, z, color: 0x30343c }), part(new THREE.CylinderGeometry(1.2, 0.8, 1.1, 4, 1), { x, y: y - hang * 0.8 - 0.5, z, ry: Math.PI / 4, color: 0x6a3420 }));
+        K.add('g', box(0.3, 0.3, 0.3, { x, y: y - hang * 0.8 - 1.1, z, color: 0xff2a2a }));
+      }
+      for (let k = 1; k < 10; k++) { // the tramway lit: lights strung along both cables
+        const t = k / 10, la = [xa, ya - 0.6 + hang, za + off * s], lb = [xb, yb - 1.4 + hang, zb + off * s];
+        K.add('g', box(0.22, 0.22, 0.22, { x: la[0] + (lb[0] - la[0]) * t, y: la[1] + (lb[1] - la[1]) * t - 0.15, z: la[2] + (lb[2] - la[2]) * t, color: k % 2 ? 0x5fe8ff : 0xff5ad8 }));
+        K.add('g', box(0.18, 0.18, 0.18, { x: a[0] + (b[0] - a[0]) * t, y: a[1] + (b[1] - a[1]) * t - 0.12, z: a[2] + (b[2] - a[2]) * t, color: 0xffd48a }));
       }
     }
     return meshes(K, { glow: M.glow, paintFlat: M.paintFlat });
@@ -166,13 +202,42 @@ export const BACKDROPS = {
   'arc-townlights'(o, th, B, M) {
     const K = new Kit(), rng = mulberry32(o.seed ?? 913), cols = [0xc8362e, 0xe0a830, 0x2a8a8a, 0x2a5ab0, 0x4a8a3a, 0xd86a8a, 0xc87a30, 0x8a6ab8];
     K.add('p', box(560, 2, 260, { x: 40, y: -0.02, z: 388, color: 0xdfe8f2 }));
+    const leds = [0x5fe8ff, 0xff5ad8, 0x8ad8ff, 0x8a6aff];
     for (let i = 0; i < 70; i++) {
-      const x = -170 + rng() * 360, z = 268 + rng() * 120, w = 6 + rng() * 4, d = 7 + rng() * 4, h = 4 + rng() * 3, y = 1 + 1.8;
-      K.add('p', box(w, h, d, { x, y: y + h / 2, z, ry: Math.floor(rng() * 2) * Math.PI / 2, color: cols[Math.floor(rng() * cols.length)] }), box(w + 0.4, 0.3, d + 0.4, { x, y: y + h + 0.1, z, color: 0xeef4fa }));
-      for (let k = 0; k < 2; k++) if (rng() < 0.75) K.add('g', box(0.9, 1.0, 0.2, { x: x + (k - 0.5) * w * 0.5, y: y + h * 0.5, z: z - d / 2 - 0.1, color: 0xffd48a }));
+      const x = -170 + rng() * 360, z = 268 + rng() * 120, w = 6 + rng() * 4, d = 7 + rng() * 4, h = 4 + rng() * 3, y = 1 + 1.8, ry = Math.floor(rng() * 2) * Math.PI / 2;
+      K.add('p', box(w, h, d, { x, y: y + h / 2, z, ry, color: cols[Math.floor(rng() * cols.length)] }), box(w + 0.4, 0.3, d + 0.4, { x, y: y + h + 0.1, z, color: 0xeef4fa }));
+      for (let k = 0; k < 2; k++) if (rng() < 0.85) K.add('g', box(0.9, 1.0, 0.2, { x: x + (k - 0.5) * w * 0.5, y: y + h * 0.5, z: z - d / 2 - 0.1, color: rng() < 0.8 ? 0xffd48a : 0x9ad8ff }));
+      K.add('g', box(w + 0.6, 0.16, d + 0.6, { x, y: y + h - 0.1, z, ry, color: leds[i % leds.length] })); // its LED eaves
+      if (i % 3 === 0) K.add('g', box(w - 1, 0.1, d - 1, { x, y: y - 0.2, z, ry, color: 0x1a3a5a })); // the glow under it
     }
-    for (let i = 0; i < 24; i++) { const x = -150 + i * 15, z = 262; K.add('p', box(0.15, 6, 0.15, { x, y: 4, z, color: 0x30343c })); K.add('g', box(0.8, 0.3, 0.5, { x, y: 7, z, color: 0xffc070 })); }
+    for (let i = 0; i < 24; i++) { const x = -150 + i * 15, z = 262; K.add('p', box(0.15, 6, 0.15, { x, y: 4, z, color: 0x30343c })); K.add('g', box(0.8, 0.3, 0.5, { x, y: 7, z, color: i % 4 ? 0xffc070 : 0x5fe8ff })); }
     return meshes(K, { glow: M.glow, paintFlat: M.paintFlat });
+  },
+  // Street lights (fogged, near): o.lines = [[x0, z0, x1, z1, y, step], …]: a pole, an LED head (warm or ice
+  // blue, alternately), and its pool of light on the snow.
+  'arc-streetlights'(o, th, B, M) {
+    const K = new Kit(), halos = { warm: [], ice: [] };
+    let n = 0;
+    for (const [x0, z0, x1, z1, y, step] of o.lines || []) {
+      const L = Math.sqrt((x1 - x0) * (x1 - x0) + (z1 - z0) * (z1 - z0)), m = Math.max(1, Math.round(L / step));
+      for (let k = 0; k <= m; k++, n++) {
+        const x = x0 + (x1 - x0) * k / m, z = z0 + (z1 - z0) * k / m, warm = n % 3 !== 1;
+        K.add('p', box(0.14, 5, 0.14, { x, y: y + 2.5, z, color: 0x30343c }), box(1.0, 0.12, 0.3, { x: x + 0.4, y: y + 5, z, color: 0x30343c }));
+        K.add('g', box(0.9, 0.3, 0.5, { x: x + 0.65, y: y + 4.86, z, color: warm ? 0xffd08a : 0x9ae8ff }), cyl(2.6, 2.6, 0.03, 10, { x: x + 0.6, y: y + 0.03, z, color: warm ? 0xc8aca8 : 0x8ac8e8 }));
+        K.add('g', box(0.17, 3.2, 0.17, { x, y: y + 2.0, z, color: n % 2 ? 0xff5ad8 : 0x5fe8ff })); // an LED strip up the pole
+        (warm ? halos.warm : halos.ice).push([x + 0.65, y + 4.8, z]);
+      }
+    }
+    const g = meshes(K, { glow: M.glow, paintFlat: M.paintFlat });
+    for (const [key, col] of [['warm', 0xffb860], ['ice', 0x5ac8ff]]) { // a soft glow round every lamp (additive)
+      if (!halos[key].length) continue;
+      const pos = [];
+      for (const [x, y, z] of halos[key]) { const q = new THREE.IcosahedronGeometry(1.1, 0).toNonIndexed(); q.translate(x, y, z); pos.push(...q.attributes.position.array); q.dispose(); }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      const h = new THREE.Mesh(geo, own(new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
+      h.renderOrder = 5; g.add(h);
+    }
+    return g;
   },
   // The satellite station's far field of radomes on the next ridge.
   'arc-radomes'(o, th, B) {
@@ -181,7 +246,10 @@ export const BACKDROPS = {
     for (let i = 0; i < (o.n ?? 9); i++) {
       const x = (rng() - 0.5) * 230, z = (rng() - 0.5) * 130, R = 5 + rng() * 9;
       K.add('solid', B.part(new THREE.IcosahedronGeometry(R, 1), { x, y: 3 + R * 0.85, z, color: B.c('#f4f6f8', -0.2) }), B.cyl(R * 0.9, R, 3, 10, { x, y: 1.5, z, color: B.c('#8e959e') }));
-      if (B.night) K.add('glow', B.box(1, 1, 1, { x, y: 3 + R * 1.85, z, color: '#ff3030' }));
+      if (B.night) {
+        K.add('glow', B.box(1, 1, 1, { x, y: 3 + R * 1.85, z, color: '#ff3030' }));
+        K.add('glow', B.cyl(R * 1.0, R * 1.0, 0.5, 12, { x, y: 3 + R * 0.85, z, color: i % 2 ? '#5fe8ff' : '#ff5ad8' }), B.cyl(R * 0.92, R * 0.92, 0.6, 10, { x, y: 2.6, z, color: '#8ad8ff' }));
+      }
     }
     for (let i = 0; i < 5; i++) { const x = (rng() - 0.5) * 200, z = (rng() - 0.5) * 100; K.add('solid', B.part(new THREE.SphereGeometry(7, 8, 4, 0, Math.PI * 2, 0, 1.1), { x, y: 12, z, rx: -0.9, color: B.c('#d8dde3', -0.1) }), B.box(1.4, 10, 1.4, { x, y: 5, z, color: B.c('#6f7884') })); }
     return B.mesh(K);
@@ -209,8 +277,14 @@ export const BACKDROPS = {
   'arc-fjordview'(o, th, B) {
     const K = new B.Kit(), rng = mulberry32(o.seed ?? 933);
     K.add('solid', B.box(1400, 2, 500, { y: -1, color: B.c('#14263a') }), B.box(1400, 2, 200, { y: 0, z: -330, color: B.c('#c8d4e0', -0.2) }));
-    for (let i = 0; i < 160; i++) K.add('glow', B.box(1.6, 1.6, 1.6, { x: -200 + rng() * 260, y: 2, z: -300 + rng() * 120, color: rng() < 0.8 ? '#ffd48a' : '#a8e0ff' }));
+    for (let i = 0; i < 260; i++) K.add('glow', B.box(1.6, 1.6, 1.6, { x: -200 + rng() * 260, y: 2, z: -300 + rng() * 120, color: rng() < 0.7 ? '#ffd48a' : (rng() < 0.6 ? '#a8e0ff' : '#ff6ad8') }));
     for (let i = 0; i < 30; i++) K.add('glow', B.box(1.2, 1, 1.2, { x: 120 + i * 8, y: 2, z: -280, color: i % 2 ? '#ffffff' : '#5af06a' }));
+    for (let i = 0; i < 14; i++) { // the port's neon towers on the shore
+      const x = -160 + rng() * 200, z = -250 + rng() * 40, w = 8 + rng() * 8, h = 18 + rng() * 40;
+      K.add('solid', B.box(w, h, w, { x, y: h / 2, z, color: B.c('#1a2434') }));
+      for (let y = 4; y < h - 2; y += 4) if (rng() < 0.7) K.add('glow', B.box(w + 0.4, 1.0, w * 0.6, { x, y, z, color: rng() < 0.7 ? '#9ad8ff' : '#ffd48a' }));
+      K.add('glow', B.box(w + 1, 1.2, w + 1, { x, y: h - 1, z, color: i % 2 ? '#5fe8ff' : '#ff5ad8' }), B.box(0.8, 0.8, 0.8, { x, y: h + 2, z, color: '#ff3030' }));
+    }
     return B.mesh(K);
   },
   // The camp beacon's strobe: unfogged and additive, so you find the camp through the whiteout.
@@ -226,6 +300,7 @@ export const BACKDROPS = {
     const K = new Kit(), rng = mulberry32(o.seed ?? 941);
     const cluster = (x, z, s, col) => { for (let k = 0; k < 5; k++) { const h = (2 + rng() * 4) * s, a = rng() * Math.PI * 2; K.add('g', part(new THREE.ConeGeometry(0.5 * s, h, 4), { x: x + Math.cos(a) * s, y: h / 2, z: z + Math.sin(a) * s, rz: Math.cos(a) * 0.4, rx: Math.sin(a) * 0.4, color: col })); } };
     for (const [x, z] of [[-36.5, -27], [36.5, -27], [-36.5, 27], [36.5, 27], [-37, -20], [-37, 20], [37, -14], [37, 16]]) cluster(x, z, 1.4, rng() < 0.5 ? 0x5fe8ff : 0x9affe8);
+    for (const [x, z] of [[-20, -28.4], [20, 28.4], [-37, 6], [37, -4], [10, -28.4], [-10, 28.4]]) cluster(x, z, 1.1, 0xff6ae0); // magenta crystal clusters
     for (let i = 0; i < 6; i++) { // cryo pods frozen into the north and south walls
       const x = -26 + i * 10, z = i % 2 ? -28.6 : 28.6;
       K.add('p', cyl(1.3, 1.3, 4, 10, { x, y: 3.5, z, color: 0x8a96a2 }));

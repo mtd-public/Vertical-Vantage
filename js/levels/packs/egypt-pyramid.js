@@ -85,7 +85,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'egypt-pyramid', name: 'DATA PYRAMID', sub: 'GIZA PLATEAU · 12:40 · SANDSTORM', theme: 'egyptHaze', song: 'nileBreak',
+  id: 'egypt-pyramid', name: 'DATA PYRAMID', sub: 'GIZA PLATEAU · 02:10 · DUST HAZE', theme: 'egyptDust', song: 'nileBreak',
   seed: 8002, par: 320, killY: -6,
   start: { x: 4, y: 0, z: 34, yaw: 0.05 },
   plats, lasers,
@@ -96,7 +96,7 @@ export default {
   ],
   exit: { x: PYR.x, y: SUMMIT, z: PYR.z + 2, yaw: 0 },
   portal: { x: 89.5, y: 5.2 + 1.4, z: 20 },
-  bonusStyle: { theme: 'egyptBonusHaze', weapon: 'rapid', tag: 'GIZA' },
+  bonusStyle: { theme: 'egyptBonusDust', weapon: 'rapid', tag: 'GIZA' },
   enemies: [
     { type: 'guard', x: -14, y: 0, z: 6 },
     { type: 'guard', x: cwAt(0.6).x, y: 2.5, z: cwAt(0.6).z },
@@ -128,5 +128,7 @@ export default {
     { kind: 'eg-khafre', x: -520, y: -2, z: 470, s: 0.5, small: 1 },
     { kind: 'eg-dunes', x: 0, y: -1, z: 0, r0: 260, r1: 420, n: 26, seed: 82 },
     { kind: 'eg-cairoRing', x: 700, y: -1, z: -500, r0: 0, r1: 260, n: 40, seed: 83, towers: 1 },
+    { kind: 'eg-uplink', x: 0, y: 55, z: -80, n: 6, spread: 0.22, h: 420, w: 1.4 }, // the capstone's uplink lasers
+    { kind: 'eg-dust', x: 0, y: 0, z: 0, n: 700, wind: 0.6, k: 0.55, color: '#e8b098' }, // dust blowing through the floodlights
   ],
 };

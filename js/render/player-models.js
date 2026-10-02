@@ -183,7 +183,7 @@ export function legsModel(M, paint = M.paintFlat) {
 // six-barrel cluster (rapid), a launch tube with a warhead on a loader (rocket). A little screen on
 // the forearm shows the ammo.
 // userData: bones { base, collar, ringA, coil, slide, spin, warhead, blaster, spread, rapid, rocket },
-// petals [bones], mz { weapon: { bone, tip } }, screen { cv, tex, key }, flash (mesh).
+// petals [bones], mz { weapon: { bone, tip } }, screen { cv, tex, + what it shows }, flash and aura (meshes).
 export const CANNON_OPEN = { blaster: 0.1, spread: 0.4, rapid: 0.2, rocket: 0.56 };
 export function cannonModel(M) {
   const g = new THREE.Group(), rig = new Rig(g), C = PC;
@@ -336,6 +336,6 @@ export function cannonModel(M) {
   // the aura in the mouth of the iris (the view tints it and turns it to face the eye)
   const aura = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.34), M.vmFlash.clone());
   aura.position.set(0, 0, -0.42); aura.renderOrder = 1; g.add(aura);
-  Object.assign(g.userData, { aura, bones: { base, collar, ringA, coil, slide, spin, warhead: wh, blaster: bl, spread: sp, rapid: rp, rocket: rk }, petals, mz, screen: { cv, tex, key: '' }, flash, meshes });
+  Object.assign(g.userData, { aura, bones: { base, collar, ringA, coil, slide, spin, warhead: wh, blaster: bl, spread: sp, rapid: rp, rocket: rk }, petals, mz, screen: { cv, tex, show: '', n: -1, hot: -1 }, flash, meshes });
   return g;
 }

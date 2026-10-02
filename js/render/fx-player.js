@@ -102,7 +102,8 @@ export class PlayerFX {
     this.spot = inst(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: glowTex(), side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4, ...add }), N_SPOT);
     this.halo.renderOrder = this.trail.renderOrder = this.ring.renderOrder = this.spot.renderOrder = 6;
     this.group = new THREE.Group();
-    this.group.add(this.core, this.halo, this.trail, this.rocket, this.smoke, this.ring, this.spot);
+    this.meshes = [this.core, this.halo, this.trail, this.rocket, this.smoke, this.ring, this.spot];
+    this.group.add(...this.meshes);
     scene.add(this.group);
     // particle pools
     this.sparks = pool(N_SPARK, () => ({ life: 1, max: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, w: 0.04, len: 0.04, c: new THREE.Color() }));
@@ -112,7 +113,8 @@ export class PlayerFX {
     this.spots = pool(N_SPOT, () => ({ life: 1, max: 1, x: 0, y: 0, z: 0, nx: 0, ny: 1, nz: 0, s: 0.5, c: new THREE.Color() }));
     this.iSpark = this.iGlow = this.iPuff = this.iRing = this.iSpot = 0;
     this.mx = 0.45; this.my = -0.35; this.mOn = false; // the muzzle on screen (NDC), set by the view
-    this.cam = null;
+    this.cam = null; this.rx = this.ry = 0; this.nt = this.nh = 0;
+    this.flashK = 1; // the reduced-flash option (< 1): dimmer impact flashes and jump rings
   }
 
   setMuzzle(x, y, on) { this.mx = x; this.my = y; this.mOn = on; }
@@ -144,7 +146,7 @@ export class PlayerFX {
   // The air-jump disc: a flat ring that bursts out under your feet (gold on the third jump).
   jumpRing(x, y, z, stage) {
     _c.set(stage === 2 ? 0xffd23a : 0x7ff6ff);
-    this.ringAt(x, y, z, 0, 1, 0, 0.3, 1.5 + stage * 0.5, 0.28, _c, 0.8);
+    this.ringAt(x, y, z, 0, 1, 0, 0.3, 1.5 + stage * 0.5, 0.28, _c, 0.8 * this.flashK);
   }
   // Rocket launch: a puff of smoke at the muzzle.
   fire(e) {
@@ -160,8 +162,9 @@ export class PlayerFX {
     if (!S || e.kind === 'rocket') return false;
     const col = COL[e.kind], k = this.fx.k, nx = e.nx, ny = e.ny, nz = e.nz;
     const x = e.x + nx * 0.06, y = e.y + ny * 0.06, z = e.z + nz * 0.06;
-    this.glow(x, y, z, e.kind === 'rapid' ? 0.9 : 1.4, 0.3, 0.12, _c.copy(col).lerp(WHITE, 0.4), 1);
-    this.glow(x, y, z, 0.5, 0.2, 0.08, WHITE, 1);
+    const fk = this.flashK;
+    this.glow(x, y, z, (e.kind === 'rapid' ? 0.9 : 1.4) * (0.5 + fk * 0.5), 0.3, 0.12, _c.copy(col).lerp(WHITE, 0.4), fk);
+    this.glow(x, y, z, 0.5, 0.2, 0.08, WHITE, fk);
     this.ringAt(e.x + nx * 0.03, e.y + ny * 0.03, e.z + nz * 0.03, nx, ny, nz, 0.15, e.kind === 'spread' ? 0.9 : 1.2, 0.2, col, 0.9);
     const sp = this.spots[this.iSpot]; this.iSpot = (this.iSpot + 1) % N_SPOT;
     sp.life = 0; sp.max = 0.7; sp.x = e.x + nx * 0.02; sp.y = e.y + ny * 0.02; sp.z = e.z + nz * 0.02; sp.nx = nx; sp.ny = ny; sp.nz = nz; sp.s = 0.55 + Math.random() * 0.2; sp.c.copy(col).lerp(FLAME, 0.4);
@@ -187,64 +190,66 @@ export class PlayerFX {
   }
 
   // ---- per frame
+  // A point along a shot's visual path: its true position `back` metres behind the head, pulled
+  // toward the muzzle's screen ray the nearer it is to where it left.
+  pathAt(out, s, travel, back) {
+    const tr = Math.max(0.3, travel - back), along = travel - tr, cv = Math.max(0, 1 - tr / CONVERGE);
+    out.set(s.x - _dir.x * along, s.y - _dir.y * along, s.z - _dir.z * along);
+    return out.addScaledVector(_right, this.rx * tr * cv).addScaledVector(_up, this.ry * tr * cv);
+  }
+  // An axial billboard from a (head) to b (tail), turned to face the camera.
+  streak(a, b, wdt, col, gain) {
+    if (this.nt >= N_TRAIL) return;
+    _nrm.subVectors(b, a);
+    if (_nrm.lengthSq() < 1e-8) return;
+    _toCam.subVectors(this.cam.position, a);
+    _side.crossVectors(_nrm, _toCam);
+    if (_side.lengthSq() < 1e-8) return;
+    _side.normalize().multiplyScalar(wdt);
+    _s.crossVectors(_side, _nrm).normalize();
+    _m.makeBasis(_side, _s, _nrm).setPosition(a);
+    this.trail.setMatrixAt(this.nt, _m); this.trail.setColorAt(this.nt, _c.copy(col).multiplyScalar(gain)); this.nt++;
+  }
+  billboard(x, y, z, size, col, gain) {
+    if (this.nh >= N_HALO) return;
+    _m.compose(_p.set(x, y, z), this.cam.quaternion, _s.set(size, size, size));
+    this.halo.setMatrixAt(this.nh, _m); this.halo.setColorAt(this.nh, _c.copy(col).multiplyScalar(gain)); this.nh++;
+  }
+
   update(dt, w, camera, t) {
     this.cam = camera;
-    const P = camera.projectionMatrix.elements, cp = camera.position;
-    const rx = this.mOn ? this.mx / P[0] : 0, ry = this.mOn ? this.my / P[5] : 0;
+    const P = camera.projectionMatrix.elements, cp = camera.position, k = this.fx.k;
+    this.rx = this.mOn ? this.mx / P[0] : 0; this.ry = this.mOn ? this.my / P[5] : 0;
     _right.setFromMatrixColumn(camera.matrixWorld, 0); _up.setFromMatrixColumn(camera.matrixWorld, 1);
-    let nc = 0, nh = 0, nt = 0, nr = 0;
-    const core = this.core, halo = this.halo, trail = this.trail, rocket = this.rocket, k = this.fx.k;
-    // a point along a shot's visual path: its true position `back` metres behind the head, pulled
-    // toward the muzzle's screen ray the nearer it is to where it left
-    const pathAt = (out, s, travel, back) => {
-      const tr = Math.max(0.3, travel - back), along = travel - tr, cv = Math.max(0, 1 - tr / CONVERGE);
-      out.set(s.x - _dir.x * along, s.y - _dir.y * along, s.z - _dir.z * along);
-      return out.addScaledVector(_right, rx * tr * cv).addScaledVector(_up, ry * tr * cv);
-    };
-    const streak = (a, b, wdt, col, gain) => { // an axial billboard from a (head) to b (tail)
-      if (nt >= N_TRAIL) return;
-      _nrm.subVectors(b, a);
-      const len = _nrm.length();
-      if (len < 1e-4) return;
-      _toCam.subVectors(cp, a);
-      _side.crossVectors(_nrm, _toCam);
-      if (_side.lengthSq() < 1e-8) return;
-      _side.normalize().multiplyScalar(wdt);
-      _s.crossVectors(_side, _nrm).normalize();
-      _m.makeBasis(_side, _s, _nrm).setPosition(a);
-      trail.setMatrixAt(nt, _m); trail.setColorAt(nt, _c.copy(col).multiplyScalar(gain)); nt++;
-    };
-    const billboard = (x, y, z, size, col, gain) => {
-      if (nh >= N_HALO) return;
-      _m.compose(_p.set(x, y, z), camera.quaternion, _s.set(size, size, size));
-      halo.setMatrixAt(nh, _m); halo.setColorAt(nh, _c.copy(col).multiplyScalar(gain)); nh++;
-    };
-    for (const s of w.shots) {
-      const S = STYLE[s.kind];
+    this.nt = 0; this.nh = 0;
+    let nc = 0, nr = 0;
+    const shots = w.shots;
+    for (let i = 0; i < shots.length; i++) {
+      const s = shots[i], S = STYLE[s.kind];
       if (!S || nc >= N_SHOT) continue;
       const W = WEAPONS[s.kind], speed = Math.sqrt(s.vx * s.vx + s.vy * s.vy + s.vz * s.vz) || 1;
       _dir.set(s.vx / speed, s.vy / speed, s.vz / speed);
       const travel = 0.4 + Math.max(0, (W ? W.life : 1) - s.life) * speed;
       const near = Math.min(1, 0.4 + travel / 6); // small as it leaves the barrel
-      pathAt(_a, s, travel, 0);
+      this.pathAt(_a, s, travel, 0);
       const col = COL[s.kind];
       if (s.kind === 'rocket') {
         if (nr < N_ROCKET) { // body along the flight line, rolling
           _q.setFromUnitVectors(_Z, _nrm.set(-_dir.x, -_dir.y, -_dir.z)).multiply(_q2.setFromAxisAngle(_Z, t * 9 + s.id));
           _m.compose(_a, _q, _s.setScalar(near));
-          rocket.setMatrixAt(nr++, _m);
+          this.rocket.setMatrixAt(nr++, _m);
         }
-        pathAt(_b, s, travel, 0.32 * near); // the nozzle
+        this.pathAt(_b, s, travel, 0.32 * near); // the nozzle
         const fl = 0.8 + Math.random() * 0.4;
-        pathAt(_p, s, travel, (0.32 + 2.2 * fl) * near); streak(_b, _p, 0.34 * near, FLAME, 0.75); // the flame: an outer plume,
-        pathAt(_p, s, travel, (0.32 + 1.1 * fl) * near); streak(_b, _p, 0.16 * near, FLAME_HOT, 1); // a hot core
-        billboard(_b.x, _b.y, _b.z, S.halo * near * fl, FLAME, 0.85);
-        billboard(_b.x, _b.y, _b.z, 0.45 * near, WHITE, 0.8); // and a white-hot nozzle
-        billboard(_a.x, _a.y, _a.z, 0.9 * near, col, 0.3);
+        this.pathAt(_p, s, travel, (0.32 + 2.2 * fl) * near); this.streak(_b, _p, 0.34 * near, FLAME, 0.75); // the flame: an outer plume,
+        this.pathAt(_p, s, travel, (0.32 + 1.1 * fl) * near); this.streak(_b, _p, 0.16 * near, FLAME_HOT, 1); // a hot core
+        this.billboard(_b.x, _b.y, _b.z, S.halo * near * fl, FLAME, 0.85);
+        this.billboard(_b.x, _b.y, _b.z, 0.45 * near, WHITE, 0.8); // and a white-hot nozzle
+        this.billboard(_a.x, _a.y, _a.z, 0.9 * near, col, 0.3);
         // exhaust smoke along the last frame's path (density independent of frame rate)
         if (travel > 5) {
           const n = Math.min(3, Math.max(1, Math.round(dt * 55 * k)));
-          for (let i = 0; i < n; i++) {
+          for (let j = 0; j < n; j++) {
             const u = Math.random() * dt * speed;
             this.puff(_b.x - _dir.x * u + (Math.random() - 0.5) * 0.1, _b.y - _dir.y * u + (Math.random() - 0.5) * 0.1, _b.z - _dir.z * u + (Math.random() - 0.5) * 0.1,
               0.12, 0.45 + Math.random() * 0.35 + Math.min(0.3, travel * 0.02), 0.8 + Math.random() * 0.6, 0.65 + Math.random() * 0.3, (Math.random() - 0.5) * 0.5, 0.3 + Math.random() * 0.4, (Math.random() - 0.5) * 0.5);
@@ -255,46 +260,51 @@ export class PlayerFX {
       // core crystal along the flight line
       _nrm.copy(_dir).multiplyScalar(S.core[1] * near);
       _toCam.subVectors(cp, _a);
+      const dist = _toCam.length();
       _side.crossVectors(_dir, _toCam);
       if (_side.lengthSq() < 1e-8) _side.set(1, 0, 0);
       _side.normalize();
       _s.crossVectors(_side, _dir).normalize().multiplyScalar(S.core[0] * near);
       _side.multiplyScalar(S.core[0] * near);
       _m.makeBasis(_side, _s, _nrm).setPosition(_a);
-      core.setMatrixAt(nc, _m); core.setColorAt(nc, COREC[s.kind]); nc++;
+      this.core.setMatrixAt(nc, _m); this.core.setColorAt(nc, COREC[s.kind]); nc++;
       // (far shots keep a minimum size on screen, so a bolt stays readable all the way out)
-      billboard(_a.x, _a.y, _a.z, Math.max(S.halo * near, _toCam.length() * 0.035), col, S.haloK);
-      for (const [tw, tl, wm, g] of S.trails) {
-        pathAt(_b, s, travel, tl * Math.min(1, travel / 3));
-        streak(_a, _b, tw * near, wm ? _c2.copy(col).lerp(WHITE, wm) : col, g);
+      this.billboard(_a.x, _a.y, _a.z, Math.max(S.halo * near, dist * 0.035), col, S.haloK);
+      for (let j = 0; j < S.trails.length; j++) {
+        const T = S.trails[j];
+        this.pathAt(_b, s, travel, T[1] * Math.min(1, travel / 3));
+        this.streak(_a, _b, T[0] * near, T[2] ? _c2.copy(col).lerp(WHITE, T[2]) : col, T[3]);
       }
     }
     // sparks: streaks along their velocity, falling
-    for (const p of this.sparks) {
+    for (let i = 0; i < N_SPARK; i++) {
+      const p = this.sparks[i];
       if (p.life >= p.max) continue;
       p.life += dt; p.vy -= 16 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       const f = 1 - p.life / p.max;
       if (f <= 0) continue;
       _a.set(p.x, p.y, p.z); _b.set(p.x - p.vx * 0.035, p.y - p.vy * 0.035, p.z - p.vz * 0.035);
-      streak(_a, _b, p.w * (0.5 + f * 0.5), p.c, 0.4 + f * 0.9);
+      this.streak(_a, _b, p.w * (0.5 + f * 0.5), p.c, 0.4 + f * 0.9);
     }
     // glows: flashes and jet sparks
-    for (const g of this.glows) {
+    for (let i = 0; i < N_GLOW; i++) {
+      const g = this.glows[i];
       if (g.life >= g.max) continue;
       g.life += dt; g.x += g.vx * dt; g.y += g.vy * dt; g.z += g.vz * dt;
       const f = g.life / g.max;
       if (f >= 1) continue;
-      billboard(g.x, g.y, g.z, g.s0 + (g.s1 - g.s0) * f, g.c, g.k * (1 - f));
+      this.billboard(g.x, g.y, g.z, g.s0 + (g.s1 - g.s0) * f, g.c, g.k * (1 - f));
     }
-    core.count = nc; halo.count = nh; trail.count = nt; rocket.count = nr;
-    // smoke
+    this.core.count = nc; this.halo.count = this.nh; this.trail.count = this.nt; this.rocket.count = nr;
+    // smoke: soft sprites, growing, drifting, fading (warm for an instant as they leave the flame)
     let ns = 0;
-    for (const p of this.puffs) {
+    const drag = Math.exp(-dt * 2.2);
+    for (let i = 0; i < N_SMOKE; i++) {
+      const p = this.puffs[i];
       if (p.life >= p.max) continue;
       p.life += dt;
       const f = p.life / p.max;
       if (f >= 1) continue;
-      const drag = Math.exp(-dt * 2.2);
       p.vx *= drag; p.vz *= drag; p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
       const sz = p.s0 + (p.s1 - p.s0) * Math.sqrt(f);
       _m.compose(_p.set(p.x, p.y, p.z), _q.copy(camera.quaternion).multiply(_q2.setFromAxisAngle(_Z, p.rot + f * 0.8)), _s.setScalar(sz * 1.6));
@@ -307,7 +317,8 @@ export class PlayerFX {
     this.smoke.count = ns;
     // rings and hot spots, flat on their surface
     let ng = 0;
-    for (const r of this.rings) {
+    for (let i = 0; i < N_RING; i++) {
+      const r = this.rings[i];
       if (r.life >= r.max) continue;
       r.life += dt;
       const f = r.life / r.max;
@@ -318,7 +329,8 @@ export class PlayerFX {
     }
     this.ring.count = ng;
     let np = 0;
-    for (const s of this.spots) {
+    for (let i = 0; i < N_SPOT; i++) {
+      const s = this.spots[i];
       if (s.life >= s.max) continue;
       s.life += dt;
       const f = s.life / s.max;
@@ -328,7 +340,8 @@ export class PlayerFX {
       this.spot.setMatrixAt(np, _m); this.spot.setColorAt(np, _c.copy(s.c).multiplyScalar(0.8 * (1 - f) * (1 - f))); np++;
     }
     this.spot.count = np;
-    for (const m of [core, halo, trail, rocket, this.smoke, this.ring, this.spot]) {
+    for (let i = 0; i < this.meshes.length; i++) {
+      const m = this.meshes[i];
       m.visible = m.count > 0;
       if (!m.visible) continue;
       m.instanceMatrix.needsUpdate = true;

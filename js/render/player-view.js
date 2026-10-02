@@ -12,6 +12,9 @@ export const WEAPON_COL = { blaster: 0x2be8ff, spread: 0xff7a2b, rapid: 0x9fff6a
 const LABEL = { blaster: 'BLSTR', spread: 'SPRD', rapid: 'PULSE', rocket: 'RCKT' };
 const AMMO_MAX = { spread: 24, rapid: 160, rocket: 12 }; // a full pickup (the screen's bar)
 const JET_COL = [0x7ff6ff, 0x7ff6ff, 0xffd23a];
+// per weapon: how hard a shot kicks, how much heat it adds, how big its muzzle flash is
+const KICK = { blaster: 1, spread: 1.5, rapid: 0.45, rocket: 2.2 }, HEAT = { blaster: 0.07, spread: 0.22, rapid: 0.045, rocket: 0.4 };
+const FLASH = { blaster: 1, spread: 1.15, rapid: 0.7, rocket: 1.3 }, TUCK = [1, 1, 1.18, 1.35];
 const _c = new THREE.Color(), _c2 = new THREE.Color(), _white = new THREE.Color(0xffffff), _dim = new THREE.Color(0x101418);
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3();
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -85,9 +88,8 @@ export class PlayerView {
   }
 
   fire(e) {
-    const k = { blaster: 1, spread: 1.5, rapid: 0.45, rocket: 2.2 }[e.weapon] ?? 1;
-    this.kick = k; this.recoil = 1; this.flashT = e.weapon === 'rocket' ? 0.08 : e.weapon === 'rapid' ? 0.04 : 0.05;
-    this.heat = Math.min(1.6, this.heat + ({ blaster: 0.07, spread: 0.22, rapid: 0.045, rocket: 0.4 }[e.weapon] ?? 0.07));
+    this.kick = KICK[e.weapon] ?? 1; this.recoil = 1; this.flashT = e.weapon === 'rocket' ? 0.08 : e.weapon === 'rapid' ? 0.04 : 0.05;
+    this.heat = Math.min(1.6, this.heat + (HEAT[e.weapon] ?? 0.07));
     this.fireSpin = Math.min(1, this.fireSpin + 0.35);
     this.side = e.side || 0;
     this.flashRot = Math.random() * Math.PI;
@@ -125,7 +127,7 @@ export class PlayerView {
     else if (this.jumpT < (this.jumpStage ? 0.14 : 0.09)) { // push-off / air kick: legs snap straight, toes pointed
       hl = hr = this.jumpStage ? -0.2 : -0.04; kl = kr = 0; ftL = ftR = -0.7; spread = this.jumpStage ? 0.1 : 0.05; ease = Math.min(1, dt * 30);
     } else if (P.vy > 0) {
-      const k = [1, 1, 1.18, 1.35][Math.min(3, P.jumps)], open = clamp01(1 - P.vy / 5) * 0.45; // eases open toward the apex
+      const k = TUCK[Math.min(3, P.jumps)], open = clamp01(1 - P.vy / 5) * 0.45; // eases open toward the apex
       hl = 0.58 * k * (1 - open); hr = 0.44 * k * (1 - open); kl = -1.3 * k * (1 - open * 0.8); kr = -1.08 * k * (1 - open * 0.8);
       ftL = ftR = -0.4 + open * 0.3; spread = 0.08 + open * 0.04; ease = Math.min(1, dt * 12);
     } else if (below && y - (below.h + below.oy) < 1.6) { // reach for the deck: legs out, toes up, ready to take it
@@ -135,35 +137,31 @@ export class PlayerView {
       const sw = Math.sin(t * 3.2 + fall * t * 6) * (0.07 + fall * 0.05), trail = Math.max(-0.3, Math.min(0.3, -fwd * 0.03));
       hl = 0.22 + sw + trail; hr = 0.1 - sw + trail; kl = -0.38 - sw; kr = -0.22 + sw; ftL = ftR = -0.45 + fall * 0.2; spread = 0.08 + fall * 0.14; ease = Math.min(1, dt * 10);
     }
-    for (const [hip, knee, foot, h, k, f, sx] of [[B.hipL, B.kneeL, B.footL, hl, kl, ftL, -1], [B.hipR, B.kneeR, B.footR, hr, kr, ftR, 1]]) {
-      hip.rotation.x += (h - hip.rotation.x) * ease;
-      hip.rotation.z += (sx * spread - hip.rotation.z) * ease;
-      knee.rotation.x += (k - knee.rotation.x) * ease;
-      foot.rotation.x += (f - foot.rotation.x) * ease;
-      foot.rotation.z = -hip.rotation.z * 0.6; // soles stay level-ish when splayed
-    }
+    poseLeg(B.hipL, B.kneeL, B.footL, hl, kl, ftL, -spread, ease);
+    poseLeg(B.hipR, B.kneeR, B.footR, hr, kr, ftR, spread, ease);
     lg.scale.y += (1 - squash - lg.scale.y) * Math.min(1, dt * 22);
     lg.visible = !P.dead;
     // heel jets: layered flames that flare on the air jump, flicker and shrink away, with a short trail
     // of sparks left behind in the world
     const j = this.jetT, on = j > 0.02 && !P.dead;
-    for (const jet of [B.jetL, B.jetR]) {
-      if (!on) { jet.scale.setScalar(0); continue; }
-      const fl = 0.85 + Math.random() * 0.3;
-      jet.scale.set((0.75 + j * 0.45) * fl, (0.3 + j * 1.25) * (0.8 + Math.random() * 0.4), (0.75 + j * 0.45) * fl);
-    }
+    this.jetPose(B.jetL, on, j); this.jetPose(B.jetR, on, j);
     if (on) {
       this.puffT -= dt;
       if (this.puffT <= 0) {
         this.puffT = 0.022;
         lg.updateMatrixWorld(true);
-        const pfx = R.fx.pfx;
-        for (const jet of [B.jetL, B.jetR]) {
-          _v.set(0, -0.12, 0).applyMatrix4(jet.matrixWorld);
-          pfx.jetPuff(_v.x, _v.y, _v.z, this.jetMat.color, j);
-        }
+        this.jetPuff(B.jetL, j); this.jetPuff(B.jetR, j);
       }
     }
+  }
+  jetPose(jet, on, j) {
+    if (!on) { jet.scale.setScalar(0); return; }
+    const fl = 0.85 + Math.random() * 0.3;
+    jet.scale.set((0.75 + j * 0.45) * fl, (0.3 + j * 1.25) * (0.8 + Math.random() * 0.4), (0.75 + j * 0.45) * fl);
+  }
+  jetPuff(jet, j) {
+    _v.set(0, -0.12, 0).applyMatrix4(jet.matrixWorld);
+    this.R.fx.pfx.jetPuff(_v.x, _v.y, _v.z, this.jetMat.color, j);
   }
 
   // ------------------------------------------------------------------ the arm cannon
@@ -199,7 +197,7 @@ export class PlayerView {
     // petals: closed at the middle of a swap, open to the weapon's spread, kicked by each shot
     const f = this.swapT > 0.5 ? (this.swapT - 0.5) * 2 : 1 - this.swapT * 2;
     const open = (CANNON_OPEN[show] ?? 0.1) * f + rk * 0.07;
-    U.petals.forEach((pg, k) => { pg.rotation.x += (open + (show === 'rapid' ? Math.sin(this.spinV * 0.2 + k) * 0.01 * this.spinV / 30 : 0) - pg.rotation.x) * Math.min(1, dt * 24); });
+    for (let k = 0; k < 4; k++) { const pg = U.petals[k]; pg.rotation.x += (open + (show === 'rapid' ? Math.sin(this.spinV * 0.2 + k) * 0.01 * this.spinV / 30 : 0) - pg.rotation.x) * Math.min(1, dt * 24); }
     // the business end: the shown weapon's, shrinking away as the petals close and growing back as they open
     for (const k in MZ) MZ[k].bone.scale.setScalar(k === show ? Math.max(0.001, f) : 0);
     // the recoil slide, the gyro ring and wrist collar, the coil (spins up and pulses on a shot)
@@ -233,7 +231,7 @@ export class PlayerView {
     const fl = U.flash, tip = MZ[show]?.tip ?? -0.5;
     fl.visible = this.flashT > 0 && c.visible;
     if (fl.visible) {
-      const s = ({ rocket: 1.3, spread: 1.15, rapid: 0.7 }[this.held] ?? 1) * (R.flashK < 1 ? 0.55 : 1) * (0.85 + Math.random() * 0.3);
+      const s = (FLASH[this.held] ?? 1) * (R.flashK < 1 ? 0.55 : 1) * (0.85 + Math.random() * 0.3);
       fl.position.set(0, 0, tip - 0.04);
       fl.rotation.set(0, 0, this.flashRot + Math.random() * 0.4);
       fl.scale.set(s * (this.held === 'spread' ? 1.4 : 1), s, s * (this.held === 'rocket' ? 1.6 : 1));
@@ -243,6 +241,7 @@ export class PlayerView {
     c.updateMatrixWorld();
     _v.set(0, 0, tip).applyMatrix4(c.matrixWorld).project(this.cam);
     R.fx.pfx.setMuzzle(_v.x, _v.y, c.visible);
+    R.fx.pfx.flashK = R.flashK;
   }
 
   // The ammo screen (a 40 × 20 LCD in a 3 × 5 pixel font): the weapon's name on a bar in its colour,
@@ -250,9 +249,8 @@ export class PlayerView {
   drawScreen(P, show, wcol) {
     const U = this.cannon.userData, scr = U.screen;
     const n = P.ammo[show] ?? 0, inf = show === 'blaster', hot = Math.min(10, Math.round(this.heat * 6));
-    const key = show + (inf ? 'i' : n) + '/' + hot;
-    if (scr.key === key) return;
-    scr.key = key;
+    if (scr.show === show && scr.n === n && scr.hot === hot) return;
+    scr.show = show; scr.n = n; scr.hot = hot;
     const x = scr.cv.getContext('2d'), col = '#' + _c.set(wcol).getHexString(), bg = '#04060b';
     x.fillStyle = bg; x.fillRect(0, 0, 40, 20);
     x.fillStyle = col; x.fillRect(0, 0, 40, 7);
@@ -265,6 +263,15 @@ export class PlayerView {
     x.fillStyle = hot > 7 ? '#ffe0c0' : '#ff6a1a'; x.fillRect(0, 19, hot * 4, 1);
     scr.tex.needsUpdate = true;
   }
+}
+
+// Ease a leg toward a pose: hip swing and splay, knee bend, ankle; the sole stays level-ish when splayed.
+function poseLeg(hip, knee, foot, h, k, f, splay, ease) {
+  hip.rotation.x += (h - hip.rotation.x) * ease;
+  hip.rotation.z += (splay - hip.rotation.z) * ease;
+  knee.rotation.x += (k - knee.rotation.x) * ease;
+  foot.rotation.x += (f - foot.rotation.x) * ease;
+  foot.rotation.z = -hip.rotation.z * 0.6;
 }
 
 // 3 × 5 pixel glyphs (rows top to bottom), and '~' for ∞ (7 × 3).

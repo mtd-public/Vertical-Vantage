@@ -1,4 +1,4 @@
-// Render side of pack 'seattle': overcast themes (cover, close fog, muted greens and greys, drizzle),
+// Render side of pack 'seattle': a rainy neon night (emerald and teal neon, low cloud lit from below),
 // the platform styles (seattle-styles.js), distant landmarks (the Needle, the port cranes, ferry
 // lights) and STORMCROW's view (seattle-boss.js).
 import * as THREE from 'three';
@@ -8,40 +8,43 @@ import * as ST from './seattle-site.js';
 import { stormcrow } from './seattle-boss.js';
 
 const themes = {
-  // NEEDLE: a grey Seattle morning. Overcast lid, soft key light, the flood a dull green.
-  seaMorning: {
-    skyTop: '#74838a', skyBot: '#bcc6c2', sun: '#d8ddd6', sunDir: [0.45, 0.5, 0.55], night: 0,
-    fog: [60, 290], hemi: ['#e2ebe6', '#4f5b55', 1.7], key: ['#eef0e8', 1.35],
-    cloud: '#d2d8d8', cloudShade: '#96a1a3', city: 0.55, arc: [1.57, 1.0], cityCol: '#76838a', windows: 0, neon: 0.45,
-    water: '#4a6a63', rain: 0, stars: 0, beams: 0, cover: 0.72, cityH: 0.8, pyramids: 0, haze: 0.5,
+  // NEEDLE, 22:10: rain over Seattle Center. A slate-teal night, the emerald city glow under the cloud,
+  // the Needle ringed in light, searchlights in the rain.
+  seaNeedle: {
+    skyTop: '#040c18', skyBot: '#1c3c44', sun: '#d8e8ff', sunDir: [0.5, 0.42, 0.75], night: 1,
+    fog: [50, 260], hemi: ['#5e90a4', '#0e1a1e', 1.35], key: ['#a8c8ff', 0.7],
+    cloud: '#2a3e48', cloudShade: '#14222a', city: 0.85, arc: [1.57, 1.1], cityCol: '#0a141a', windows: 1, neon: 1.3,
+    water: '#0a1e26', rain: 1, stars: 0.12, beams: 0.9, cover: 0.55, cityH: 0.9, pyramids: 0, haze: 0.36,
   },
-  // PIKE PLACE: drizzle over the waterfront, mid-afternoon; the market's neon already on.
-  seaDrizzle: {
-    skyTop: '#66767a', skyBot: '#aab5b1', sun: '#cfd6cf', sunDir: [-0.5, 0.45, 0.4], night: 0.1,
-    fog: [55, 260], hemi: ['#d6e0db', '#46524c', 1.6], key: ['#e4e8de', 1.2],
-    cloud: '#bcc4c4', cloudShade: '#7f8b8d', city: 0.75, arc: [0, 1.3], cityCol: '#66727a', windows: 0.25, neon: 0.7,
-    water: '#3e5c58', rain: 1, stars: 0, beams: 0, cover: 0.85, cityH: 1.0, pyramids: 0, haze: 0.55,
+  // PIKE PLACE, 00:20: drizzle on the waterfront. Deep blue, the market's red neon bleeding into the
+  // low cloud, the wheel and the ferries lit, Rainier a moonlit ghost in the south-east.
+  seaPike: {
+    skyTop: '#05081c', skyBot: '#3a2a40', sun: '#dce6ff', sunDir: [0.62, 0.4, 0.68], night: 1,
+    fog: [50, 250], hemi: ['#6a7cc0', '#1a1018', 1.35], key: ['#b0c4ff', 0.7],
+    cloud: '#3a3450', cloudShade: '#1c1a2c', city: 0.95, arc: [0, 1.3], cityCol: '#0e0c18', windows: 1, neon: 1.3,
+    water: '#0c1a28', rain: 1, stars: 0.1, beams: 0.8, cover: 0.6, cityH: 1.0, pyramids: 0, haze: 0.38,
   },
-  // RAINIER RAIN: dusk in the rain, a last bruise of orange under the cloud, towers lighting up.
-  seaDusk: {
-    skyTop: '#2a3244', skyBot: '#7c7466', sun: '#ffb070', sunDir: [0.62, 0.14, 0.6], night: 0.55,
-    fog: [48, 240], hemi: ['#a4afc0', '#2e2c30', 1.45], key: ['#ffc898', 0.95],
-    cloud: '#6a6470', cloudShade: '#3e3a48', city: 0.9, arc: [0, 4], cityCol: '#2e3240', windows: 0.55, neon: 0.95,
-    water: '#25363c', rain: 1, stars: 0, beams: 0.25, cover: 0.8, cityH: 1.2, pyramids: 0, haze: 0.42,
+  // RAINIER RAIN, 20:50: the deep blue hour in the rain. Indigo cloud, one last ember of light behind
+  // Rainier, the cranes' work lights and every tower lit.
+  seaRainier: {
+    skyTop: '#0e1438', skyBot: '#4a3a5a', sun: '#ff9a68', sunDir: [0.62, 0.07, 0.6], night: 0.75,
+    fog: [48, 250], hemi: ['#7c8cc4', '#1a1a2a', 1.4], key: ['#ffb48c', 0.7],
+    cloud: '#4a4462', cloudShade: '#262438', city: 0.95, arc: [0, 4], cityCol: '#141628', windows: 1, neon: 1.25,
+    water: '#141e2e', rain: 1, stars: 0, beams: 0.6, cover: 0.7, cityH: 1.2, pyramids: 0, haze: 0.34,
   },
-  // ABOVE THE NEEDLE: the thunderstorm. Dark lid, the lit city far below, rain sheeting through.
+  // ABOVE THE NEEDLE, 23:10: the thunderstorm. Dark lid, the lit city far below, rain sheeting through.
   seaStorm: {
-    skyTop: '#121823', skyBot: '#3c454c', sun: '#c8d8ff', sunDir: [-0.3, 0.7, -0.4], night: 0.85,
-    fog: [45, 230], hemi: ['#8a96aa', '#1c2026', 1.4], key: ['#b0c4e0', 0.85],
-    cloud: '#3a4250', cloudShade: '#1c2028', city: 0.8, arc: [0, 4], cityCol: '#141820', windows: 0.9, neon: 1.0,
-    water: null, rain: 1, stars: 0, beams: 0.5, cover: 1.0, cityH: 0.7, pyramids: 0, haze: 0.5,
+    skyTop: '#0a1020', skyBot: '#24364a', sun: '#c8d8ff', sunDir: [-0.3, 0.7, -0.4], night: 1,
+    fog: [45, 240], hemi: ['#7c94b4', '#141c24', 1.5], key: ['#b0c8ec', 0.85],
+    cloud: '#2e3a4c', cloudShade: '#141a24', city: 0.85, arc: [0, 4], cityCol: '#0a1018', windows: 1, neon: 1.3,
+    water: null, rain: 1, stars: 0, beams: 0.8, cover: 1.0, cityH: 0.7, pyramids: 0, haze: 0.4,
   },
-  // the pack's SERVER CORE bonus: emerald power sky
+  // the pack's SERVER CORE bonus: an emerald power sky over a rainy night
   seaBonus: {
-    skyTop: '#1f6a58', skyBot: '#a8e0c8', sun: '#f0fff0', sunDir: [-0.4, 0.6, -0.6], night: 0.1, power: 1,
-    fog: [70, 280], hemi: ['#f0fff8', '#4a6a60', 1.7], key: ['#f4fff0', 2.0],
-    cloud: '#e8fff4', cloudShade: '#b8dcc8', city: 0, arc: [0, 4], cityCol: '#93a9a0', windows: 0, neon: 0.9,
-    water: null, rain: 0, stars: 0, beams: 0,
+    skyTop: '#03140e', skyBot: '#14504a', sun: '#e0fff0', sunDir: [-0.4, 0.6, -0.6], night: 1, power: 1,
+    fog: [70, 280], hemi: ['#88d8c0', '#0e2a24', 1.5], key: ['#d0fff0', 1.0],
+    cloud: '#2a5a4c', cloudShade: '#143a30', city: 0, arc: [0, 4], cityCol: '#0a1c16', windows: 1, neon: 1.3,
+    water: null, rain: 0, stars: 0.5, beams: 0,
   },
 };
 

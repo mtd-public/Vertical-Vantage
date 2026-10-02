@@ -75,7 +75,7 @@ const ringPt = (a, r = 4.4, up = 0) => ({ x: N.x + Math.cos(a * D) * r, y: 22 + 
 const radial = (a, period, phase) => { const p = ringPt(a); return laser(p.x, 22, p.z, 3.6, 2.4, -a * D, period, 0.5, phase); };
 
 export default {
-  id: 'seattle-needle', name: 'NEEDLE', sub: 'SEATTLE CENTER · 08:40 · OVERCAST', theme: 'seaMorning', song: 'emeraldDrizzle',
+  id: 'seattle-needle', name: 'NEEDLE', sub: 'SEATTLE CENTER · 22:10 · RAIN', theme: 'seaNeedle', song: 'emeraldDrizzle',
   seed: 4001, par: 270, killY: -0.6, water: 0,
   start: { x: 0, y: W, z: 32, yaw: 0 },
   plats,

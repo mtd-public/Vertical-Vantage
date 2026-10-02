@@ -61,7 +61,7 @@ for (const [x, z, w, d, h, t] of [[84, -40, 18, 18, 46, 2], [90, -90, 16, 20, 58
   [116, 2, 16, 16, 52, 0], [74, -168, 14, 14, 44, 6], [104, 44, 20, 16, 40, 7], [146, -100, 18, 18, 90, 2], [150, -20, 20, 20, 76, 5], [60, 60, 16, 14, 26, 3]]) P(tower(x, z, w, d, h, { tint: t, style: 'seaTower' }));
 
 export default {
-  id: 'seattle-pike', name: 'PIKE PLACE', sub: 'WATERFRONT · 15:20 · DRIZZLE', theme: 'seaDrizzle', song: 'emeraldDrizzle',
+  id: 'seattle-pike', name: 'PIKE PLACE', sub: 'WATERFRONT · 00:20 · DRIZZLE', theme: 'seaPike', song: 'emeraldDrizzle',
   seed: 4002, par: 300, killY: -0.6, water: 0,
   start: { x: -34, y: W, z: 34, yaw: 0.25 },
   plats,

@@ -127,7 +127,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'sanfran-gate', name: 'GOLDEN GATE', sub: 'NEW SAN FRANCISCO · 07:10 · FOG BANKS', theme: 'sfMorning', song: 'jumpstart',
+  id: 'sanfran-gate', name: 'GOLDEN GATE', sub: 'NEW SAN FRANCISCO · 23:40 · FOG BANKS', theme: 'sfGate', song: 'jumpstart',
   seed: 3001, par: 300, killY: -0.6, water: 0,
   start: { x: 0, y: D, z: 66, yaw: 0 },
   plats, lasers,
@@ -168,9 +168,11 @@ export default {
   backdrops: [
     { kind: 'sfSkyline', x: 560, z: 420, w: 300, d: 110, n: 18, hMin: 30, hMax: 100, salesforce: true },
     { kind: 'sfSprawl', x: 140, z: 330, yaw: -0.5, len: 520, dep: 160, n: 5, h: 45 },
-    { kind: 'hills', x: -120, z: 360, len: 640, h: 60, n: 7, houses: 6, color: '#7c8a5c' },
-    { kind: 'hills', x: 40, z: -560, len: 980, h: 120, n: 6, color: '#9a8a58' },
-    { kind: 'hills', x: 560, z: -420, len: 420, h: 80, n: 4, color: '#6a7a52' },
+    { kind: 'sfHills', x: -120, z: 360, len: 640, h: 60, n: 7, lights: 60, color: '#2e2c3c' },
+    { kind: 'sfHills', x: 40, z: -560, len: 980, h: 120, n: 6, lights: 6, color: '#1e1e2c' },
+    { kind: 'sfHills', x: 560, z: -420, len: 420, h: 80, n: 4, lights: 26, color: '#24242e' },
+    { kind: 'sfBeams', x: 560, y: 0, z: 420, pts: [[-90, 0, 10], [10, 0, -30], [110, 0, 20]], len: 320, r: 15, color: '#b8c4ff' },
+    { kind: 'sfBeacons', pts: [[-10.6, 62.4, -61.9], [10.6, 62.4, -61.9], [-10.6, 62.4, -201.9], [10.6, 62.4, -201.9]], size: 0.5, rate: 0.6 },
     { kind: 'alcatraz', x: 430, z: -250, yaw: -0.4, s: 0.55 },
     { kind: 'fogBank', x: -480, z: -160, yaw: 1.4, s: 1.2 },
     { kind: 'fogBank', x: -360, z: 160, yaw: 1.9, s: 1 },

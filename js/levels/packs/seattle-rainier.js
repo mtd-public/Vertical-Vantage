@@ -81,7 +81,7 @@ for (const [x, z, w, d, h, t, s] of [[-60, -10, 16, 16, 34, 1, 'seaTower'], [-20
   [-40, -100, 18, 18, 40, 1, 'seaTower'], [20, -96, 16, 16, 54, 4, 'glassTower'], [100, -50, 16, 18, 70, 5, 'seaTower']]) P(tower(x, z, w, d, h, { tint: t, style: s }));
 
 export default {
-  id: 'seattle-rainier', name: 'RAINIER RAIN', sub: 'DOWNTOWN · 19:40 · RAIN', theme: 'seaDusk', song: 'emeraldDrizzle',
+  id: 'seattle-rainier', name: 'RAINIER RAIN', sub: 'DOWNTOWN · 20:50 · BLUE HOUR RAIN', theme: 'seaRainier', song: 'emeraldDrizzle',
   seed: 4003, par: 330, killY: -24, water: -60,
   start: { x: -70, y: 30.3, z: -66, yaw: yawTo(1, 0.6) },
   plats,

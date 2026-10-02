@@ -32,7 +32,7 @@ for (const [x, z, h] of [[18, -18, 9], [-17, 18, 9.5], [-35, 20, 13], [35, -21, 
 }
 
 export default {
-  id: 'sanfran-boss', name: 'FAULT LINE', sub: 'BERNAL HILL · 17:40 · BOSS', theme: 'sfPark', song: 'bossfight',
+  id: 'sanfran-boss', name: 'FAULT LINE', sub: 'BERNAL HILL · 20:20 · BLUE HOUR · BOSS', theme: 'sfPark', song: 'bossfight',
   seed: 3004, par: 210, killY: -12, cloudY: -26, objective: 'boss', bossName: 'TREMOR',
   arena: A,
   start: { x: 0, y: A.floor, z: 22, yaw: 0 },
@@ -65,7 +65,8 @@ export default {
     { kind: 'transamerica', x: 300, y: -34, z: -330, s: 0.5 },
     { kind: 'sutro', x: -420, y: -40, z: 60, s: 0.5 },
     { kind: 'alcatraz', x: 60, y: -26, z: -620, yaw: 0.2, s: 0.6 },
-    { kind: 'hills', x: -60, y: -30, z: -900, len: 1200, h: 110, n: 7, color: '#8a8460' },
+    { kind: 'sfHills', x: -60, y: -30, z: -900, len: 1200, h: 110, n: 7, lights: 24, color: '#3a3448' },
+    { kind: 'sfBeams', x: 360, y: -34, z: -260, pts: [[-50, 0, 20], [40, 0, -30]], len: 300, r: 14, color: '#d0c8ff', opacity: 0.16 },
     { kind: 'fogBank', x: -520, y: -24, z: -240, yaw: 1.2, s: 1.4 },
     { kind: 'fogBank', x: 420, y: -24, z: 200, yaw: -1, s: 1.3 },
   ],

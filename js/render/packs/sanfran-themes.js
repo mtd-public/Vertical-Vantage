@@ -1,35 +1,40 @@
-// NEW SAN FRANCISCO themes: morning fog on the bay, a sunny afternoon on the hills, dusk with the fog
-// rolling over Twin Peaks, golden hour on the boss's hilltop park, and a Summer-of-Love bonus sky.
+// NEW SAN FRANCISCO themes: Fog City after dark. The pack's palette is International Orange, sodium
+// amber and a hot pink / cyan neon, under a navy sky whose fog glows rose from the lit city beneath it.
+//   sfGate     the Golden Gate at 23:40: fog banks rolling in, the bridge floodlit, the moon over the Pacific
+//   sfStreets  the steep streets at 21:30: a clear violet night, the Painted Ladies outlined in neon
+//   sfPeaks    Twin Peaks at 01:10: only the hilltops stand out of a fog sea lit amber-rose from below
+//   sfPark     the boss's hilltop park in the deep blue hour (20:20): readable, the city lighting up
+//   sfBonus    SERVER CORE, San Francisco edition: a neon Summer-of-Love sunburst over a night sky
 // (Fields: see render/themes.js. cover = overcast lid, cloudSea = the fog sea below the level.)
 export default {
-  sfMorning: { // stage 1: the Golden Gate at 07:10, low fog banks, the sun just over the East Bay
-    skyTop: '#6a9ad8', skyBot: '#e6e0d6', sun: '#fff0c8', sunDir: [0.62, 0.32, 0.5], night: 0,
-    fog: [70, 360], hemi: ['#f4f0ea', '#5c6672', 1.65], key: ['#ffe4bc', 2.1],
-    cloud: '#ffffff', cloudShade: '#d6d8dc', city: 0.55, arc: [0.75, 0.75], cityCol: '#a6aebc', windows: 0, neon: 0.4,
-    water: '#3b7593', rain: 0, stars: 0, beams: 0, cover: 0.42, cityH: 0.7, pyramids: 0, haze: 0.42,
+  sfGate: {
+    skyTop: '#040820', skyBot: '#4a2a44', sun: '#e4ecff', sunDir: [-0.55, 0.36, -0.75], night: 1,
+    fog: [70, 340], hemi: ['#6e72cc', '#2a1626', 1.3], key: ['#aabcff', 0.8],
+    cloud: '#4e3a5c', cloudShade: '#2a2042', city: 0.9, arc: [0.75, 0.85], cityCol: '#140c22', windows: 1, neon: 1.3,
+    water: '#0c2232', rain: 0, stars: 0.55, beams: 0.9, cover: 0.2, cityH: 0.8, pyramids: 0, haze: 0.3,
   },
-  sfAfternoon: { // stage 2: the steep streets at 15:30, deep blue sky, puffy clouds
-    skyTop: '#3d86ea', skyBot: '#d6ecfa', sun: '#fff6d6', sunDir: [-0.42, 0.7, 0.32], night: 0,
-    fog: [90, 400], hemi: ['#ffffff', '#6c7a68', 1.75], key: ['#fff2dc', 2.3],
-    cloud: '#ffffff', cloudShade: '#dfe8f6', city: 0.6, arc: [0.9, 0.7], cityCol: '#a8b4c8', windows: 0, neon: 0.45,
-    water: '#2f7cab', rain: 0, stars: 0, beams: 0, cover: 0.08, cityH: 0.8, pyramids: 0, haze: 0.38,
+  sfStreets: {
+    skyTop: '#060624', skyBot: '#46264e', sun: '#e8ecff', sunDir: [-0.5, 0.5, -0.7], night: 1,
+    fog: [80, 380], hemi: ['#7a76d4', '#2e1a30', 1.35], key: ['#b4c2ff', 0.85],
+    cloud: '#4a3660', cloudShade: '#281e40', city: 0.9, arc: [0.9, 0.8], cityCol: '#150c24', windows: 1, neon: 1.3,
+    water: '#0e1e34', rain: 0, stars: 0.7, beams: 1, cover: 0.05, cityH: 0.9, pyramids: 0, haze: 0.32,
   },
-  sfDusk: { // stage 3: Twin Peaks at 19:50, the fog pouring over the hills, the city lights coming on
-    skyTop: '#2c2660', skyBot: '#f2a47e', sun: '#ffc690', sunDir: [-0.72, 0.1, -0.45], night: 0.35,
-    fog: [45, 250], hemi: ['#ffe2d6', '#4a4062', 1.7], key: ['#ffbc96', 1.75],
-    cloud: '#ffd6cc', cloudShade: '#b48aa6', city: 0.8, arc: [0.7, 0.9], cityCol: '#5a4a6c', windows: 0.75, neon: 0.95,
-    water: null, rain: 0, stars: 0.12, beams: 0, cover: 0.55, cityH: 0.75, pyramids: 0, cloudSea: '#fff6f4', haze: 0.48,
+  sfPeaks: {
+    skyTop: '#03061a', skyBot: '#563044', sun: '#e8eeff', sunDir: [-0.5, 0.38, -0.78], night: 1,
+    fog: [55, 280], hemi: ['#6a6ec8', '#3a1e2c', 1.3], key: ['#aab8ff', 0.75],
+    cloud: '#4a3654', cloudShade: '#261c38', city: 0.85, arc: [0.7, 0.9], cityCol: '#120a1e', windows: 1, neon: 1.3,
+    water: null, rain: 0, stars: 0.75, beams: 1, cover: 0.15, cityH: 0.75, pyramids: 0, cloudSea: '#e2a8c4', haze: 0.34,
   },
-  sfPark: { // the boss: a hilltop park at golden hour, the fog sea below, the bridge on the horizon
-    skyTop: '#3e6cc8', skyBot: '#f4cfa6', sun: '#ffe0a0', sunDir: [-0.62, 0.24, -0.62], night: 0.08,
-    fog: [70, 330], hemi: ['#fff0e2', '#4c5a42', 1.6], key: ['#ffd6a0', 2.0],
-    cloud: '#fff4ea', cloudShade: '#e8b8a2', city: 0.5, arc: [1.3, 0.8], cityCol: '#8c8ea4', windows: 0.2, neon: 0.6,
-    water: null, rain: 0, stars: 0, beams: 0, cover: 0.3, cityH: 0.7, pyramids: 0, cloudSea: '#f0e0d4', haze: 0.4,
+  sfPark: {
+    skyTop: '#0c1644', skyBot: '#6a4a78', sun: '#ffb48a', sunDir: [-0.62, 0.08, -0.62], night: 0.65,
+    fog: [70, 330], hemi: ['#a4a8e8', '#3a3048', 1.55], key: ['#ffc4a0', 1.0],
+    cloud: '#8a6aa0', cloudShade: '#4a3a6a', city: 0.6, arc: [1.3, 0.8], cityCol: '#241a3a', windows: 0.9, neon: 1.15,
+    water: null, rain: 0, stars: 0.25, beams: 0.4, cover: 0.25, cityH: 0.7, pyramids: 0, cloudSea: '#c8b0e0', haze: 0.36,
   },
-  sfBonus: { // SERVER CORE, San Francisco edition: a psychedelic Summer-of-Love sunburst
-    skyTop: '#c03ad8', skyBot: '#ffd27a', sun: '#fff0c0', sunDir: [0.4, 0.5, -0.6], night: 0.1, power: 1,
-    fog: [80, 300], hemi: ['#fff0f8', '#5a3a6a', 1.7], key: ['#ffe0c0', 2.0],
-    cloud: '#fff0f6', cloudShade: '#f0a8d0', city: 0, arc: [0, 4], cityCol: '#8a6aa0', windows: 0.3, neon: 1.1,
-    water: null, rain: 0, stars: 0, beams: 0,
+  sfBonus: {
+    skyTop: '#0a0424', skyBot: '#5a1e5a', sun: '#e8ecff', sunDir: [0.4, 0.5, -0.6], night: 1, power: 1,
+    fog: [70, 280], hemi: ['#a088e8', '#2a1430', 1.45], key: ['#ffc8e8', 1.0],
+    cloud: '#5a3a6a', cloudShade: '#2e2040', city: 0, arc: [0, 4], cityCol: '#1a0e26', windows: 1, neon: 1.3,
+    water: null, rain: 0, stars: 0.6, beams: 0,
   },
 };

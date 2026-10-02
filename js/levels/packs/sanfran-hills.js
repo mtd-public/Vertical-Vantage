@@ -130,7 +130,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'sanfran-hills', name: 'STEEP STREETS', sub: 'NEW SAN FRANCISCO · 15:30 · SUNNY', theme: 'sfAfternoon', song: 'skygarden',
+  id: 'sanfran-hills', name: 'STEEP STREETS', sub: 'NEW SAN FRANCISCO · 21:30 · CLEAR NIGHT', theme: 'sfStreets', song: 'skygarden',
   seed: 3002, par: 300, killY: -0.6, water: 0,
   start: { x: 0, y: 1.5, z: 22, yaw: 0 },
   plats, lasers,
@@ -170,9 +170,9 @@ export default {
   ],
   backdrops: [
     { kind: 'goldenGate', x: -360, z: -520, yaw: 0.74, s: 0.25 },
-    { kind: 'hills', x: -500, z: -860, len: 1000, h: 70, n: 6, color: '#9a8c5a' },
+    { kind: 'sfHills', x: -500, z: -860, len: 1000, h: 70, n: 6, lights: 10, color: '#22222e' },
     { kind: 'alcatraz', x: 110, z: -500, yaw: 0.2, s: 0.5 },
-    { kind: 'hills', x: 420, z: -700, len: 500, h: 70, n: 4, color: '#6e7c50' },
+    { kind: 'sfHills', x: 420, z: -700, len: 500, h: 70, n: 4, lights: 24, color: '#26262e' },
     { kind: 'sfSkyline', x: 420, z: -60, w: 140, d: 220, n: 18, hMin: 40, hMax: 130, salesforce: true },
     { kind: 'transamerica', x: 360, z: -150, s: 0.42 },
     { kind: 'sfSprawl', x: 0, z: 190, len: 640, dep: 200, n: 6, h: 40 },
@@ -180,5 +180,6 @@ export default {
     { kind: 'sfSprawl', x: 230, z: 40, yaw: -Math.PI / 2, len: 300, dep: 130, n: 3, h: 25 },
     { kind: 'sutro', x: -520, z: 260, s: 0.38, hill: false },
     { kind: 'fogBank', x: -720, z: -260, yaw: 1.3, s: 1.2 },
+    { kind: 'sfBeams', x: 420, y: 0, z: -60, pts: [[0, 0, -80], [-20, 0, 40]], len: 300, r: 14, color: '#c8b8ff' },
   ],
 };

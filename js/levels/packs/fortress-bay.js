@@ -71,7 +71,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'fortress-bay', name: 'BOMB BAY', sub: 'AIR FORTRESS · ORDNANCE HANGAR · 23:30 · NIGHT', theme: 'fortressNight', song: 'netdive',
+  id: 'fortress-bay', name: 'BOMB BAY', sub: 'AIR FORTRESS · ORDNANCE HANGAR · 03:20 · RED ALERT', theme: 'fortressBay', song: 'netdive',
   seed: 7003, par: 300, killY: -20, cloudY: -100,
   start: { x: 0, y: 0, z: 6, yaw: 0 },
   plats, lasers,
@@ -82,7 +82,7 @@ export default {
   ],
   exit: { x: 0, y: 6, z: -162, yaw: 0 },
   portal: { x: -12.5, y: -6.6, z: -78 },
-  bonusStyle: { theme: 'fortressBonus', music: 'serverRush', weapon: 'rocket', tag: 'Ω-3' },
+  bonusStyle: { theme: 'fortressBonus3', music: 'serverRush', weapon: 'rocket', tag: 'Ω-3' },
   enemies: [
     { type: 'guard', x: -8, y: 0, z: -30 },
     { type: 'guard', x: -22, y: 0, z: -98 },

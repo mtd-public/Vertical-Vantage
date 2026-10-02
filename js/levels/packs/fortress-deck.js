@@ -88,7 +88,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'fortress-deck', name: 'FLIGHT DECK', sub: 'AIR FORTRESS · 12 000 M · 06:40 · CLEAR', theme: 'fortressDay', song: 'finalAscent',
+  id: 'fortress-deck', name: 'FLIGHT DECK', sub: 'AIR FORTRESS · 12 000 M · 01:40 · NIGHT ASSAULT', theme: 'fortressDeck', song: 'finalAscent',
   seed: 7001, par: 280, killY: -24, cloudY: -150,
   start: { x: 0, y: 0, z: 36, yaw: 0 },
   plats, lasers,
@@ -138,5 +138,20 @@ export default {
     { kind: 'fortress-cumulus', x: 700, y: -170, z: 120, s: 1.4 }, // towering cloud far off
     { kind: 'fortress-cumulus', x: -650, y: -170, z: -650, s: 1.8 },
     { kind: 'fortress-cumulus', x: 200, y: -170, z: 800, s: 1.1 },
+    // the night: searchlights under the deck edges, AA tracers climbing, flak, the city through the clouds
+    { kind: 'fortress-searchlights', x: -20, y: -12, z: -36, aim: 1.7, pitch: 0.75, sweep: 0.45, n: 2 },
+    { kind: 'fortress-searchlights', x: 20, y: -12, z: -132, aim: -1.6, pitch: 0.8, sweep: 0.5, n: 2, phase: 2 },
+    { kind: 'fortress-searchlights', x: 0, y: -10, z: -190, aim: 0.1, pitch: 0.6, sweep: 0.5, n: 2, phase: 4, gap: 10 },
+    { kind: 'fortress-searchlights', x: 0, y: -14, z: 42, aim: Math.PI, pitch: 0.7, sweep: 0.5, n: 2, phase: 1, gap: 14 },
+    { kind: 'fortress-tracers', x: -27, y: -6, z: -120, aim: 1.2, pitch: 0.55, phase: 0 },
+    { kind: 'fortress-tracers', x: 27, y: -6, z: -60, aim: -1.3, pitch: 0.7, phase: 1.7, col: 0xff5a3a },
+    { kind: 'fortress-tracers', x: -27, y: -6, z: -10, aim: 1.9, pitch: 0.6, phase: 3.1 },
+    { kind: 'fortress-flak', x: -260, y: 80, z: -420, w: 360, h: 120, d: 260 },
+    { kind: 'fortress-flak', x: 380, y: 40, z: -160, w: 220, h: 100, d: 380, phase: 0.8 },
+    { kind: 'fortress-citygap', x: -300, y: -149, z: -480, r: 130, coast: 0.6 },
+    { kind: 'fortress-citygap', x: 360, y: -149, z: -330, r: 100 },
+    { kind: 'fortress-citygap', x: -420, y: -149, z: 40, r: 110, coast: 2.4 },
+    { kind: 'fortress-citygap', x: 330, y: -149, z: 260, r: 90 },
+    { kind: 'fortress-citygap', x: 40, y: -149, z: -560, r: 100, coast: 1.6 },
   ],
 };

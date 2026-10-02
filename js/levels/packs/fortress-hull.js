@@ -68,7 +68,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'fortress-hull', name: 'HULL BREACH', sub: 'AIR FORTRESS · UNDER THE PORT WING · 18:50 · SUNSET', theme: 'fortressDusk', song: 'sprint',
+  id: 'fortress-hull', name: 'HULL BREACH', sub: 'AIR FORTRESS · UNDER THE PORT WING · 02:30 · FLAK', theme: 'fortressHull', song: 'sprint',
   seed: 7002, par: 300, killY: -10, cloudY: -110,
   start: { x: -66, y: CAT, z: 2, yaw: -Math.PI / 2 },
   plats, lasers,
@@ -79,7 +79,7 @@ export default {
   ],
   exit: { x: 6, y: TOP, z: -32, yaw: -Math.PI / 2 }, // on the wing top, facing the flank you climb
   portal: { x: 11, y: 8.4, z: 14 }, // the deep pod under junction 2
-  bonusStyle: { theme: 'fortressBonus', music: 'serverRush', weapon: 'spread', tag: 'Ω-2' },
+  bonusStyle: { theme: 'fortressBonus2', music: 'serverRush', weapon: 'spread', tag: 'Ω-2' },
   enemies: [
     { type: 'turret', x: -27, y: CAT, z: 3 },
     { type: 'turret', x: -17, y: 14.5, z: -40 },

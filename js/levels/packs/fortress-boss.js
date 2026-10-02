@@ -47,7 +47,7 @@ for (let i = 0; i < 24; i++) {
 
 const on = ([x, z], y, dx = 0, dz = 0) => ({ x: x + dx, y, z: z + dz });
 export default {
-  id: 'fortress-boss', name: 'COMMAND BRIDGE', sub: 'AIR FORTRESS · BRIDGE TOWER · 12 400 M · BOSS', theme: 'fortressBoss', song: 'dreadnought',
+  id: 'fortress-boss', name: 'COMMAND BRIDGE', sub: 'AIR FORTRESS · BRIDGE TOWER · 12 400 M · 04:10 · BOSS', theme: 'fortressBoss', song: 'dreadnought',
   seed: 7004, par: 240, killY: -14, cloudY: -160, objective: 'boss', bossName: 'DREADNOUGHT',
   arena: A,
   start: { x: 0, y: 0, z: 15.5, yaw: 0 },

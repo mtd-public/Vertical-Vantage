@@ -65,9 +65,9 @@ export default {
     { kind: 'twistTower', x: -170, y: -40, z: -300, s: 1.1 },
     { kind: 'bottleOpener', x: -40, y: -40, z: -360, s: 1.05 },
     { kind: 'jinmaoTower', x: -250, y: -40, z: -200, s: 1 },
-    { kind: 'bundRow', x: 380, y: -40, z: 40, yaw: Math.PI / 2, s: 1.2 },
-    { kind: 'skyline', x: -260, y: -40, z: -360, w: 260, d: 90, n: 18, hMin: 50, hMax: 150, color: '#3a2a5a' },
-    { kind: 'skyline', x: 120, y: -40, z: -420, w: 280, d: 90, n: 16, hMin: 40, hMax: 130, color: '#3a2a5a' },
-    { kind: 'skyline', x: -380, y: -40, z: 120, w: 90, d: 280, n: 14, hMin: 40, hMax: 120, color: '#3a2a5a' },
+    { kind: 'bundRow', x: 380, y: -40, z: 40, yaw: -Math.PI / 2, s: 1.2 },
+    { kind: 'ledTowers', x: -260, y: -40, z: -360, w: 260, d: 90, n: 18, hMin: 50, hMax: 150 },
+    { kind: 'ledTowers', x: 120, y: -40, z: -420, w: 280, d: 90, n: 16, hMin: 40, hMax: 130 },
+    { kind: 'ledTowers', x: -380, y: -40, z: 120, w: 90, d: 280, n: 14, hMin: 40, hMax: 120 },
   ],
 };

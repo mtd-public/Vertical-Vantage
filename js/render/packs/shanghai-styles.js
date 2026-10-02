@@ -744,44 +744,56 @@ function rockery(K, p, th, rng, H) {
 
 // ------------------------------------------------------------------ the Pearl Tower (boss)
 const PINK = '#e8307a', PINK_HI = '#ff6aa8', PINK_DK = '#9a1a50';
+// LED meridians down a sphere of radius R centred at cy, below its cut at polar angle t0 (n of them).
+function meridians(K, H, R, cy, t0, n, color, tube = 0.08) {
+  for (let k = 0; k < n; k++) K.add('glow', H.part(new THREE.TorusGeometry(R + 0.04, tube, 3, H.seg(16, 10), Math.PI - t0), { y: cy, rz: -Math.PI / 2, ry: (k / n) * TAU, color }));
+}
 function pearlDeck(K, p, th, rng, H) {
-  const r = p.r, R = 17, cy = -Math.sqrt(R * R - r * r); // the sphere's centre, so it meets the deck's rim
+  const r = p.r, R = 17, cy = -Math.sqrt(R * R - r * r), lit = (th.night || 0) > 0.5; // the sphere's centre, so it meets the deck's rim
   const t0 = Math.acos(-cy / R);
-  K.add('flat', H.part(new THREE.SphereGeometry(R, H.seg(28, 18), H.seg(16, 12), 0, TAU, t0, Math.PI - t0), { y: cy, color: PINK }));
+  K.add('flat', H.part(new THREE.SphereGeometry(R, H.seg(28, 18), H.seg(16, 12), 0, TAU, t0, Math.PI - t0), { y: cy, color: lit ? '#c0186a' : PINK }));
   for (const lat of [0.25, 0.55, 0.85]) { // window bands round the sphere
     const y = cy + Math.cos(t0 + (Math.PI - t0) * lat) * R, rr = Math.sqrt(Math.max(0, R * R - (y - cy) * (y - cy))) + 0.05;
     for (let k = 0; k < 40; k++) { const a = k / 40 * TAU; K.add('glow', H.box(0.7, 0.5, 0.1, { x: Math.cos(a) * rr, y, z: Math.sin(a) * rr, ry: -a + Math.PI / 2, color: k % 5 ? '#ffd6ea' : '#7ff6ff' })); }
   }
-  K.add('flat', H.cyl(r, r, 0.25, H.seg(40, 24), { y: -0.125, color: '#2a2034' }));
+  if (lit) { // the hot-pink LED cage: meridians and two rings
+    meridians(K, H, R, cy, t0, 16, '#ff4ab8', 0.1);
+    for (const lat of [0.4, 0.7]) { const y = cy + Math.cos(t0 + (Math.PI - t0) * lat) * R, rr = Math.sqrt(Math.max(0, R * R - (y - cy) * (y - cy))) + 0.06; K.add('glow', H.part(new THREE.TorusGeometry(rr, 0.12, 3, H.seg(40, 24)), { rx: Math.PI / 2, y, color: '#ff2bd6' })); }
+  }
+  K.add('flat', H.cyl(r, r, 0.25, H.seg(40, 24), { y: -0.125, color: lit ? '#5e4c76' : '#2a2034' }));
   K.add('neon', H.part(new THREE.RingGeometry(r - 0.9, r - 0.6, H.seg(40, 24)), { rx: -Math.PI / 2, y: 0.02, color: '#ff2b8a' }), H.part(new THREE.RingGeometry(5.4, 5.7, H.seg(32, 20)), { rx: -Math.PI / 2, y: 0.02, color: '#2be8ff' }));
-  for (let k = 0; k < 12; k++) { const a = k / 12 * TAU; K.add('flat', H.box(0.15, 0.02, r - 6.5, { x: Math.cos(a) * (r + 5.5) / 2, y: 0.015, z: Math.sin(a) * (r + 5.5) / 2, ry: -a + Math.PI / 2, color: '#4a3a5a' })); }
+  for (let k = 0; k < 12; k++) { const a = k / 12 * TAU; K.add('flat', H.box(0.15, 0.02, r - 6.5, { x: Math.cos(a) * (r + 5.5) / 2, y: 0.015, z: Math.sin(a) * (r + 5.5) / 2, ry: -a + Math.PI / 2, color: lit ? '#806c98' : '#4a3a5a' })); }
   for (let k = 0; k < 48; k++) { const a = k / 48 * TAU; K.add('flat', H.box(0.1, 0.7, 0.1, { x: Math.cos(a) * (r - 0.15), y: 0.35, z: Math.sin(a) * (r - 0.15), color: '#c8c8d4' })); }
-  K.add('flat', H.part(new THREE.TorusGeometry(r - 0.15, 0.06, 3, H.seg(40, 24)), { rx: Math.PI / 2, y: 0.72, color: '#e8e8f0' }));
+  K.add(lit ? 'glow' : 'flat', H.part(new THREE.TorusGeometry(r - 0.15, 0.06, 3, H.seg(40, 24)), { rx: Math.PI / 2, y: 0.72, color: lit ? '#ffd0f0' : '#e8e8f0' })); // the rail (lit: the deck's edge reads)
 }
 function pearlColumn(K, p, th, rng, H) {
   const T = p.thick, r = p.r;
   K.add('flat', H.cyl(r, r, T, H.seg(12, 8), { y: -T / 2, color: '#d8d8e2' }));
   for (let y = -2; y > -T; y -= 3) K.add('neon', H.cyl(r + 0.06, r + 0.06, 0.18, H.seg(12, 8), { y, color: (y / 3 | 0) % 2 ? '#ff2b8a' : '#c8d8ff' }));
+  if ((th.night || 0) > 0.5) for (const a of [0, 2.1, 4.2]) K.add('glow', H.box(0.1, T, 0.1, { x: Math.cos(a) * (r + 0.05), y: -T / 2, z: Math.sin(a) * (r + 0.05), color: '#ff8ad8' }));
   K.add('glow', H.box(0.3, 0.3, 0.3, { y: 0.15, color: '#ff2a2a' }));
 }
 function pearlRing(K, p, th, rng, H) {
-  const r = p.r, small = p.tint === 1, R = r + 0.6, cy = -Math.sqrt(Math.max(0.1, R * R - r * r)), t0 = Math.acos(Math.min(1, -cy / R));
-  K.add('flat', H.part(new THREE.SphereGeometry(R, H.seg(18, 12), H.seg(10, 8), 0, TAU, t0, Math.PI - t0), { y: cy, color: small ? PINK_HI : PINK }));
-  K.add('flat', H.cyl(r, r, 0.2, H.seg(20, 14), { y: -0.1, color: '#2a2034' }));
+  const r = p.r, small = p.tint === 1, R = r + 0.6, cy = -Math.sqrt(Math.max(0.1, R * R - r * r)), t0 = Math.acos(Math.min(1, -cy / R)), lit = (th.night || 0) > 0.5;
+  K.add('flat', H.part(new THREE.SphereGeometry(R, H.seg(18, 12), H.seg(10, 8), 0, TAU, t0, Math.PI - t0), { y: cy, color: lit ? (small ? '#e0307a' : '#c0186a') : small ? PINK_HI : PINK }));
+  K.add('flat', H.cyl(r, r, 0.2, H.seg(20, 14), { y: -0.1, color: lit ? '#5e4c76' : '#2a2034' }));
   K.add('neon', H.part(new THREE.TorusGeometry(r - 0.2, 0.08, 3, H.seg(20, 14)), { rx: Math.PI / 2, y: 0.03, color: '#7ff6ff' }));
   for (let k = 0; k < 16; k++) { const a = k / 16 * TAU; K.add('glow', H.box(0.4, 0.3, 0.1, { x: Math.cos(a) * (R - 0.1), y: cy * 0.35, z: Math.sin(a) * (R - 0.1), ry: -a + Math.PI / 2, color: '#ffd6ea' })); }
+  if (lit) meridians(K, H, R, cy, t0, 8, '#ff4ab8', 0.06);
 }
 function pearlPad(K, p, th, rng, H) {
   const r = p.r, T = p.thick, v = p.tint >= 0 ? p.tint : 0;
   K.add('flat', H.part(new THREE.SphereGeometry(r, H.seg(16, 10), H.seg(8, 6), 0, TAU, Math.PI / 2, Math.PI / 2), { y: -0.15, sy: (T + r * 0.5) / r, color: [PINK, PINK_HI, PINK_DK][v % 3] }));
   K.add('flat', H.cyl(r, r, 0.3, H.seg(16, 10), { y: -0.15, color: '#f0e8f4' }));
   K.add('neon', H.part(new THREE.TorusGeometry(r * 0.72, 0.07, 3, H.seg(16, 10)), { rx: Math.PI / 2, y: 0.03, color: v === 1 ? '#ffe52b' : '#7ff6ff' }));
+  if ((th.night || 0) > 0.5) K.add('neon', H.part(new THREE.TorusGeometry(r + 0.02, 0.06, 3, H.seg(16, 10)), { rx: Math.PI / 2, y: -0.28, color: '#ff4ab8' })); // the rim, lit from below
   K.add('glow', H.cyl(r * 0.35, r * 0.15, 0.6, 8, { y: -T - r * 0.5 - 0.1, color: '#ff8ad8' })); // its thruster glow
 }
 function pearlPod(K, p, th, rng, H) {
   const r = p.r, T = p.thick;
   K.add('flat', H.cyl(r, r + 0.3, T, H.seg(12, 8), { y: -T / 2, color: PINK_HI }), H.cyl(r + 0.05, r + 0.05, 0.12, H.seg(12, 8), { y: -0.06, color: '#f0e8f4' }));
   K.add('glow', H.cyl(r + 0.32, r + 0.32, 0.12, H.seg(12, 8), { y: -T + 0.3, color: '#7ff6ff' }));
+  if ((th.night || 0) > 0.5) K.add('neon', H.part(new THREE.TorusGeometry(r + 0.06, 0.05, 3, H.seg(12, 8)), { rx: Math.PI / 2, y: -0.02, color: '#ffd0f0' }));
 }
 
 export const SHANGHAI_STYLES = {

@@ -24,6 +24,11 @@ function headModel(M) {
     for (let k = 0; k < 5; k++) K.add('p', box(0.07, 0.07, 0.9, { x: sx * (0.7 + k * 0.45), y: 0.25 - k * 0.22, z: -2.4 + k * 0.75, ry: sx * 0.55, rx: 0.25, color: 0x3a3a44 }));
   }
   g.add(mesh(K.build().p, M.paintFlat));
+  // jade seams down the snout and round the brow, gold-lit horn tips: it reads against the night smog
+  const S = new Kit();
+  S.add('s', box(0.1, 0.08, 2.1, { y: 0.88, z: -1.6, rx: -0.12, color: 0x7bffd8 }), box(2.45, 0.08, 0.1, { y: 1.12, z: -1.15, color: 0x7bffd8 }));
+  for (const sx of [-1, 1]) S.add('s', box(0.1, 0.1, 0.4, { x: sx * 1.05, y: 2.9, z: 1.85, rx: -1.0, rz: sx * 0.35, color: 0xffd23a }), box(0.07, 0.07, 1.2, { x: sx * 1.12, y: 0.15, z: 0.6, ry: sx * 0.3, color: 0x7bffd8 }));
+  g.add(mesh(S.build().s, M.glow));
   const eyes = mesh(E.build().e, M.glow, 'eye'); g.add(eyes);
   // the jaw (opens to breathe fire and spit pearls), with teeth and a glowing throat
   const jaw = new THREE.Group(); jaw.name = 'jaw'; jaw.position.set(0, -0.55, -0.6); g.add(jaw);
@@ -49,6 +54,7 @@ function segModel(M, e, n) {
   g.add(mesh(K.build().p, M.paintFlat));
   const L = new Kit();
   for (const sx of [-1, 1]) L.add('l', box(0.08, 0.12, 1.6, { x: sx * r * 0.98, y: -0.25, color: 0x7bffd8 })); // glowing seams
+  L.add('l', box(0.12, 0.06, 1.7, { y: r * 0.9 + 0.1, color: 0xffd23a })); // a gold line down the spine
   g.add(mesh(L.build().l, M.glow));
   g.scale.setScalar(e.rr || 1);
   return g;

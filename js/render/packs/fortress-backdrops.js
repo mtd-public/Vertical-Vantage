@@ -6,7 +6,7 @@
 //   gunships circling, towering cumulus, flak bursting, and the city's lights through gaps in the cloud
 // A few of them move: a mesh's onBeforeRender turns its pivot (render time only, never the sim's).
 import * as THREE from 'three';
-import { Kit, box, cyl, ball, part } from '../geo.js';
+import { Kit, box, cyl, ball, part, merge } from '../geo.js';
 import { seg } from '../retro.js';
 import { C, litTop } from './fortress-styles.js';
 
@@ -166,6 +166,15 @@ function citygap(o, th, B) {
     }
   }
   return B.mesh(K);
+}
+
+// Light falling from the hangar lamps: soft additive cones, all in one mesh. o.at = [[x, z, colour?], …]
+// relative to (o.x, o.y, o.z) (the lamps' height); o.h tall, o.r wide where they reach the floor.
+function cones(o, th, B, M) {
+  const g = new THREE.Group(), h = o.h ?? 25, r = o.r ?? 5, geos = [];
+  for (const [x, z, c] of o.at || []) { const b = beamGeo(h, r, c ?? 0xffe2b0, o.k ?? 0.1); b.rotateX(-Math.PI / 2); b.translate(x, 0, z); geos.push(b); }
+  if (geos.length) g.add(new THREE.Mesh(merge(geos), lightMat()));
+  return g;
 }
 
 // ------------------------------------------------------------------ escorts (far, hazed)
@@ -340,7 +349,7 @@ function deckbelow(o, th, B, M) {
 
 export const BACKDROPS = {
   'fortress-fan': fan, 'fortress-turbine': turbine, 'fortress-rotor': rotor, 'fortress-radar': radar,
-  'fortress-searchlights': searchlights, 'fortress-tracers': tracers, 'fortress-flak': flak, 'fortress-citygap': citygap,
+  'fortress-searchlights': searchlights, 'fortress-tracers': tracers, 'fortress-flak': flak, 'fortress-citygap': citygap, 'fortress-cones': cones,
   'fortress-gunship': gunship, 'fortress-escorts': escorts, 'fortress-carrier': carrier, 'fortress-cumulus': cumulus,
   'fortress-wing': wing, 'fortress-wingfar': wingfar, 'fortress-nacelle': nacelle, 'fortress-deckbelow': deckbelow,
 };

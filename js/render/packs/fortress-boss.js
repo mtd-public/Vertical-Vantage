@@ -35,6 +35,15 @@ function model(M) {
     L(box(0.12, 1.2, 0.5, { x: sx * 3.82, y: 1.6, z: 0, color: 0xff6a1a })); // side vents (always a little warm)
   }
   A(box(2.4, 1.6, 0.3, { y: 1.7, z: 3.72, color: 0x23262c })); // the hangar hatch (back)
+  // night accents (always lit): a light down every rib, rings round the skirt and the visor band,
+  // lit rims on the launcher pods, so the core reads against the night
+  for (let i = 0; i < 12; i++) { const a = (i / 12) * Math.PI * 2 + Math.PI / 12; L(box(0.12, 1.5, 0.06, { x: Math.cos(a) * 3.89, y: 2.0, z: Math.sin(a) * 3.89, ry: -a + Math.PI / 2, color: i % 3 ? 0x2be8ff : 0xb45bff })); }
+  L(part(new THREE.TorusGeometry(4.13, 0.07, 3, 24), { rx: Math.PI / 2, y: 0.32, color: 0xffb02b }));
+  L(part(new THREE.TorusGeometry(3.66, 0.06, 3, 24), { rx: Math.PI / 2, y: 2.98, color: 0xb45bff }), part(new THREE.TorusGeometry(3.63, 0.06, 3, 24), { rx: Math.PI / 2, y: 3.93, color: 0xb45bff }));
+  for (const sx of [-1, 1]) {
+    for (const [w, h, dx, dy] of [[1.56, 0.07, 0, 0.62], [1.56, 0.07, 0, -0.62], [0.07, 1.3, 0.76, 0], [0.07, 1.3, -0.76, 0]]) L(box(w, h, 0.06, { x: sx * 2.75 + dx, y: 4.6 + dy, z: -1.93, color: 0xffb02b }));
+    L(box(0.2, 0.2, 0.2, { x: sx * 4.2, y: 4.3, z: 0.6, color: 0xff3a3a }));
+  }
   for (const sx of [-1, 1]) A(strut([sx * 1.4, 0.95, 3.7], [sx * 1.4, 2.5, 3.7], 0.18, C.yellow));
   const k = K.build();
   core.add(mesh(k.p, M.paintFlat), mesh(k.l, M.glow));
@@ -49,7 +58,8 @@ function model(M) {
   const CK = new Kit();
   CK.add('p', cyl(1.9, 2.25, 0.5, 8, { y: 0.25, color: 0x5a626e }), cyl(1.5, 1.5, 0.06, 8, { y: 0.52, color: 0x3a414c }));
   for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; CK.add('p', box(0.8, 0.07, 0.3, { x: Math.cos(a) * 1.2, y: 0.53, z: Math.sin(a) * 1.2, ry: -a + Math.PI / 2, color: i % 2 ? C.black : C.yellow })); }
-  const ck = CK.build(); crown.add(mesh(ck.p, M.paintFlat));
+  for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + Math.PI / 8; CK.add('l', box(0.2, 0.16, 0.2, { x: Math.cos(a) * 2.12, y: 0.3, z: Math.sin(a) * 2.12, color: 0xffb02b })); }
+  const ck = CK.build(); crown.add(mesh(ck.p, M.paintFlat), mesh(ck.l, M.glow));
   const crownRing = mesh(part(new THREE.TorusGeometry(2.0, 0.12, 3, 16), { rx: Math.PI / 2, color: 0xffffff }), own(new THREE.MeshBasicMaterial({ color: 0xffd23a })), 'crownRing');
   crownRing.position.y = 0.05; crown.add(crownRing);
   core.add(crown);
@@ -57,12 +67,12 @@ function model(M) {
   const petals = [];
   const PK = new Kit();
   PK.add('p', box(3.25, 2.05, 0.45, { y: 1.02, color: 0x5c6573 }), box(3.0, 0.2, 0.5, { y: 1.95, color: 0x3a414c }), box(0.3, 1.6, 0.5, { y: 0.9, color: 0x3a414c }));
-  PK.add('p', box(2.2, 0.12, 0.47, { y: 0.35, color: C.violet }));
+  PK.add('g', box(2.2, 0.12, 0.47, { y: 0.35, color: C.violet }), box(3.27, 0.06, 0.47, { y: 2.06, color: 0x2be8ff }));
   const pk = PK.build();
   for (let i = 0; i < 6; i++) {
     const turn = new THREE.Group(); turn.rotation.y = (i / 6) * Math.PI * 2 + Math.PI / 6;
     const hinge = new THREE.Group(); hinge.position.set(0, 3.9, -2.9);
-    hinge.add(mesh(pk.p, M.paintFlat));
+    hinge.add(mesh(pk.p, M.paintFlat), mesh(pk.g, M.glow));
     turn.add(hinge); core.add(turn); petals.push(hinge);
   }
   // ---- radar dishes, launcher doors, hatch, vents, beacons (animated bits)
@@ -93,7 +103,8 @@ function model(M) {
   const WK = new Kit();
   for (const sx of [-1, 1]) WK.add('p', box(15, 0.9, 6, { x: sx * 7, z: 3.4, ry: sx * 0.55, color: 0x3a414c }), box(5, 0.7, 3, { x: sx * 14.5, z: 7.5, ry: sx * 0.55, color: 0x2c3038 }));
   WK.add('p', box(4.5, 2, 12, { z: 1, color: 0x4a515c }), part(new THREE.ConeGeometry(2.25, 4, 4), { z: -6.8, rx: -Math.PI / 2, ry: Math.PI / 4, color: 0x4a515c }));
-  for (const sx of [-1, 1]) WK.add('g', box(1.4, 0.6, 0.3, { x: sx * 2.2, z: 7.2, color: 0xff8a3a }), box(0.5, 0.5, 0.5, { x: sx * 16.5, z: 8.6, color: sx < 0 ? C.navRed : C.green }));
+  for (const sx of [-1, 1]) WK.add('g', box(1.4, 0.6, 0.3, { x: sx * 2.2, z: 7.2, color: 0xff8a3a }), box(0.9, 0.3, 0.32, { x: sx * 2.2, z: 7.25, color: 0xfff0c0 }), box(0.6, 0.6, 0.6, { x: sx * 16.5, z: 8.6, color: sx < 0 ? C.navRed : C.green }));
+  WK.add('g', box(2.2, 0.5, 1.6, { y: 1.1, z: -3.6, color: 0x2bd8c8 }), box(0.4, 0.4, 0.4, { y: -1.1, z: 1, color: C.navRed }), box(9, 0.12, 0.12, { y: 0.5, z: 1.6, color: C.violet }));
   const wk = WK.build(); bomber.add(mesh(wk.p, M.paintFlat), mesh(wk.g, M.glow));
   bomber.visible = false; g.add(bomber);
   g.userData = { core, heart, heartMat, eye, eyeMat, crown, crownRing, petals, dishes, launch, hatch, vents, blink, shield, bomber, yaw: 0, k: 0 };

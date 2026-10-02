@@ -8,7 +8,7 @@ import { BOSS_VIEW } from './fortress-boss.js';
 // 12 km up, at night: a night assault over a moonlit sea of cloud (level.cloudY), the city's lights
 // glittering through the gaps, searchlights sweeping, flak and tracers, the carrier lit up like a
 // city block. Each stage gets its own colour of night; the bonus arenas are power skies at night.
-const NIGHT = { night: 1, water: null, rain: 0, stars: 1, beams: 1, pyramids: 0, arc: [0, 4], cityCol: '#06060e', windows: 1 };
+const NIGHT = { night: 1, water: null, rain: 0, stars: 1, beams: 1, pyramids: 0, arc: [0, 4], cityCol: '#06060e', windows: 0.7 };
 const themes = {
   fortressDeck: { ...NIGHT, // FLIGHT DECK: moonlight, an electric-blue horizon, the coast's lights to the north-east
     skyTop: '#02041a', skyBot: '#21356f', sun: '#e8f0ff', sunDir: [-0.55, 0.42, -0.72],
@@ -35,17 +35,17 @@ const themes = {
     cloudSea: '#8e86dc', haze: 0.32,
   },
   // the SERVER CORE bonus arenas: night power skies over the clouds (cyan, magenta, violet)
-  fortressBonus: { ...NIGHT, power: 1,
+  fortressBonus: { ...NIGHT, power: 0.4,
     skyTop: '#040a2a', skyBot: '#1e5a8a', sun: '#e8fcff', sunDir: [0.4, 0.4, -0.7],
     fog: [80, 320], hemi: ['#a0c0ff', '#1a1838', 1.8], key: ['#c0e8ff', 1.2],
     cloud: '#3a5a9a', cloudShade: '#1c2a5a', city: 0, neon: 1.4, stars: 0.8, beams: 0.6, cloudSea: '#6a8ad8',
   },
-  fortressBonus2: { ...NIGHT, power: 1,
+  fortressBonus2: { ...NIGHT, power: 0.4,
     skyTop: '#12041e', skyBot: '#6a1e62', sun: '#ffe8f8', sunDir: [0.4, 0.4, -0.7],
     fog: [80, 320], hemi: ['#e0a8f0', '#2a1030', 1.8], key: ['#ffc0e8', 1.1],
     cloud: '#7a3a8a', cloudShade: '#3a1a4a', city: 0, neon: 1.4, stars: 0.8, beams: 0.6, cloudSea: '#b07ad0',
   },
-  fortressBonus3: { ...NIGHT, power: 1,
+  fortressBonus3: { ...NIGHT, power: 0.4,
     skyTop: '#06021e', skyBot: '#3a2280', sun: '#f0e8ff', sunDir: [0.4, 0.4, -0.7],
     fog: [80, 320], hemi: ['#b8a8ff', '#1e1438', 1.8], key: ['#d8c8ff', 1.1],
     cloud: '#5a42a8', cloudShade: '#2a1a5a', city: 0, neon: 1.4, stars: 0.8, beams: 0.6, cloudSea: '#8a7ae0',

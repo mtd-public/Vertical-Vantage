@@ -201,6 +201,8 @@ export function cannonModel(M) {
     bbox(0.04, 0.13, 0.66, 0.012, { x: 0.1, y: 0.0, z: 0.6, rz: 0.3, color: C.white }), // outer flank plate
     bbox(0.012, 0.03, 0.5, 0.004, { x: -0.112, y: 0.024, z: 0.62, rz: -0.18, color: C.blue }), // its blue edge
     bbox(0.12, 0.03, 0.56, 0.01, { y: -0.09, z: 0.62, color: C.gunDk }), // belly pan
+    ...[0.66, 0.7, 0.74, 0.78].map((z) => box(0.034, 0.008, 0.016, { x: 0.052, y: 0.116, z, color: C.black })), // a grille on the rear plate
+    ...[0, 1, 2, 3, 4].map((k) => box(0.026, 0.006, 0.02, { x: -0.052, y: 0.116, z: 0.8 + k * 0.022, color: k % 2 ? C.black : C.hazard })), // a hazard band
   );
   // exposed mechanics in the channel along the inner side: three cables (one hazard orange) clamped
   // down, and a hydraulic ram from the forearm into the receiver

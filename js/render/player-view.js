@@ -7,6 +7,7 @@
 import * as THREE from 'three';
 import { legsModel, cannonModel, CANNON_OPEN, addRim } from './player-models.js';
 import { T } from '../sim/tuning.js';
+import { puffTex, withAlpha } from './fx-player.js';
 
 export const WEAPON_COL = { blaster: 0x2be8ff, spread: 0xff7a2b, rapid: 0x9fff6a, rocket: 0xff3b5c };
 const LABEL = { blaster: 'BLSTR', spread: 'SPRD', rapid: 'PULSE', rocket: 'RCKT' };
@@ -16,7 +17,8 @@ const JET_COL = [0x7ff6ff, 0x7ff6ff, 0xffd23a];
 const KICK = { blaster: 1, spread: 1.5, rapid: 0.45, rocket: 2.2 }, HEAT = { blaster: 0.07, spread: 0.22, rapid: 0.045, rocket: 0.4 };
 const FLASH = { blaster: 1, spread: 1.15, rapid: 0.7, rocket: 1.3 }, TUCK = [1, 1, 1.18, 1.35];
 const _c = new THREE.Color(), _c2 = new THREE.Color(), _white = new THREE.Color(0xffffff), _dim = new THREE.Color(0x101418);
-const _v = new THREE.Vector3(), _v2 = new THREE.Vector3();
+const _v = new THREE.Vector3(), _q = new THREE.Quaternion(), _m = new THREE.Matrix4(), _s = new THREE.Vector3();
+const N_WISP = 24;
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 
 // A theme's neon, for the rim light at night: its horizon colour pushed to full saturation.
@@ -54,6 +56,15 @@ export class PlayerView {
     this.coreLight = new THREE.PointLight(0x2be8ff, 0.5, 0.9, 1.4);
     this.coreLight.position.set(0, 0, -0.36);
     this.cannon.add(this.coreLight);
+    // heat haze: wisps of vapour that curl off the vents under sustained fire (cannon space, one draw)
+    const wg = new THREE.PlaneGeometry(1, 1);
+    wg.setAttribute('aAlpha', (this.wispA = new THREE.InstancedBufferAttribute(new Float32Array(N_WISP), 1)));
+    this.wisps = new THREE.InstancedMesh(wg, withAlpha(new THREE.MeshBasicMaterial({ map: puffTex(), transparent: true, depthWrite: false, fog: false })), N_WISP);
+    this.wisps.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(N_WISP * 3), 3);
+    this.wisps.frustumCulled = false; this.wisps.count = 0; this.wisps.visible = false;
+    this.cannon.add(this.wisps);
+    this.wispData = Array.from({ length: N_WISP }, () => ({ life: 1, max: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, s: 0.1 }));
+    this.iWisp = 0; this.wispAcc = 0;
     this.M = M;
     this.pose = { x: 0.37, xp: 0.24, y: -0.31, z: -0.95, yaw: 0.26, pitch: 0, roll: 0.06, s: 0.64 }; // where the cannon sits (landscape x, portrait xp)
     this.reset();
@@ -226,6 +237,7 @@ export class PlayerView {
     au.quaternion.copy(c.quaternion).invert();
     au.scale.setScalar(ak);
     au.material.color.set(wcol).multiplyScalar(0.55 * (R.flashK < 1 ? 0.8 : 1));
+    this.updateWisps(dt);
     this.drawScreen(P, show, wcol);
     // the muzzle flash: a star facing back down the barrel and a plume along it, per weapon
     const fl = U.flash, tip = MZ[show]?.tip ?? -0.5;
@@ -242,6 +254,40 @@ export class PlayerView {
     _v.set(0, 0, tip).applyMatrix4(c.matrixWorld).project(this.cam);
     R.fx.pfx.setMuzzle(_v.x, _v.y, c.visible);
     R.fx.pfx.flashK = R.flashK;
+  }
+
+  // Vapour off the vents once the cannon runs hot: spawned faster the hotter it is, rising and drifting
+  // back, warm-tinted when white-hot.
+  updateWisps(dt) {
+    const c = this.cannon, hot = this.heat;
+    if (hot > 0.35 && c.visible) {
+      this.wispAcc += dt * (hot - 0.25) * 24;
+      while (this.wispAcc >= 1) {
+        this.wispAcc -= 1;
+        const w = this.wispData[this.iWisp]; this.iWisp = (this.iWisp + 1) % N_WISP;
+        const top = Math.random() < 0.7;
+        w.life = 0; w.max = 0.45 + Math.random() * 0.35; w.s = 0.05 + Math.random() * 0.04;
+        w.x = top ? (Math.random() - 0.5) * 0.07 : -0.1; w.y = top ? 0.15 : 0.11; w.z = -0.09 + Math.random() * 0.12;
+        w.vx = (top ? 0 : -0.12) + (Math.random() - 0.5) * 0.08; w.vy = 0.22 + Math.random() * 0.18; w.vz = 0.12 + Math.random() * 0.1;
+      }
+    } else this.wispAcc = 0;
+    let n = 0;
+    _q.copy(c.quaternion).invert(); // face the eye (the cannon's pass has its camera at the origin, unturned)
+    _c2.setRGB(1, 0.75, 0.55).lerp(_white, clamp01(1.4 - hot));
+    for (let i = 0; i < N_WISP; i++) {
+      const w = this.wispData[i];
+      if (w.life >= w.max) continue;
+      w.life += dt;
+      const f = w.life / w.max;
+      if (f >= 1) continue;
+      w.x += w.vx * dt; w.y += w.vy * dt; w.z += w.vz * dt;
+      _m.compose(_v.set(w.x, w.y, w.z), _q, _s.setScalar(w.s * (0.6 + f * 1.8)));
+      this.wisps.setMatrixAt(n, _m); this.wisps.setColorAt(n, _c2);
+      this.wispA.array[n] = 0.4 * (1 - f) * Math.min(1, f * 6);
+      n++;
+    }
+    this.wisps.count = n; this.wisps.visible = n > 0;
+    if (n) { this.wisps.instanceMatrix.needsUpdate = true; this.wisps.instanceColor.needsUpdate = true; this.wispA.needsUpdate = true; }
   }
 
   // The ammo screen (a 40 × 20 LCD in a 3 × 5 pixel font): the weapon's name on a bar in its colour,

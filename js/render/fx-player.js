@@ -55,7 +55,7 @@ function softRingTex() {
   }, false);
 }
 // a puff: a few overlapping soft blobs, so it isn't a perfect disc
-function puffTex() {
+export function puffTex() {
   return canvasTex(32, 32, (g) => {
     for (const [x, y, r, a] of [[16, 17, 13, 0.55], [11, 13, 8, 0.5], [21, 12, 8, 0.45], [20, 21, 8, 0.4], [12, 21, 7, 0.4]]) {
       const grd = g.createRadialGradient(x, y, 0, x, y, r);
@@ -65,7 +65,7 @@ function puffTex() {
   }, false);
 }
 // per-instance alpha for a transparent instanced material (smoke)
-function withAlpha(mat) {
+export function withAlpha(mat) {
   mat.onBeforeCompile = (s) => {
     s.vertexShader = 'attribute float aAlpha;\nvarying float vAlpha;\n' + s.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n\tvAlpha = aAlpha;');
     s.fragmentShader = 'varying float vAlpha;\n' + s.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n\tdiffuseColor.a *= vAlpha;');
@@ -148,11 +148,11 @@ export class PlayerFX {
     _c.set(stage === 2 ? 0xffd23a : 0x7ff6ff);
     this.ringAt(x, y, z, 0, 1, 0, 0.3, 1.5 + stage * 0.5, 0.28, _c, 0.8 * this.flashK);
   }
-  // Rocket launch: a puff of smoke at the muzzle.
+  // Rocket and spread shots: a puff of smoke at the muzzle.
   fire(e) {
-    if (e.weapon !== 'rocket' || !this.cam) return;
+    if ((e.weapon !== 'rocket' && e.weapon !== 'spread') || !this.cam) return;
     this.muzzleWorld(_a, 1.5);
-    const n = Math.max(1, Math.round(3 * this.fx.k));
+    const n = Math.max(1, Math.round((e.weapon === 'rocket' ? 3 : 2) * this.fx.k));
     for (let i = 0; i < n; i++) this.puff(_a.x + (Math.random() - 0.5) * 0.15, _a.y + (Math.random() - 0.5) * 0.15, _a.z + (Math.random() - 0.5) * 0.15, 0.05, 0.16 + Math.random() * 0.08, 0.3 + Math.random() * 0.15, 0.85, _right.x * 1.2 + (Math.random() - 0.5) * 0.6, 0.6 + Math.random() * 0.4, _right.z * 1.2 + (Math.random() - 0.5) * 0.6);
   }
   // A player shot hit the world: a flash, a ring on the surface, a hot spot, sparks off the normal.

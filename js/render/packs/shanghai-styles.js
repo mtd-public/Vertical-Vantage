@@ -5,9 +5,70 @@ import * as THREE from 'three';
 import { adUV } from '../ads.js';
 import { SIGN_COLS } from '../textures.js';
 
-const _c = new THREE.Color();
+const _c = new THREE.Color(), _a = new THREE.Color(), _b = new THREE.Color();
 const shade = (hex, k) => _c.set(hex).multiplyScalar(k).getHex();
 const TAU = Math.PI * 2;
+
+// ------------------------------------------------------------------ night helpers
+// Recolour a placed geometry by height: c0 at y0 → c1 at y1 (floodlight washes, uplit columns).
+function grad(g, y0, y1, c0, c1) {
+  const pos = g.attributes.position, col = g.attributes.color;
+  _a.set(c0); _b.set(c1);
+  for (let i = 0; i < pos.count; i++) {
+    const t = Math.max(0, Math.min(1, (pos.getY(i) - y0) / (y1 - y0)));
+    _c.copy(_a).lerp(_b, t);
+    col.setXYZ(i, _c.r, _c.g, _c.b);
+  }
+  return g;
+}
+// An LED strip round a w × d footprint at height y (the walkable edge reads at night).
+function edgeLED(K, H, w, d, y, color, o = {}) {
+  const t = o.t ?? 0.1, out = o.out ?? 0.06;
+  for (const f of H.faces(w, d)) K.add(o.key || 'neon', H.box(f.tx ? f.width + out * 2 : t, t, f.tz ? f.width + out * 2 : t, { x: f.nx * (f.half + out), y, z: f.nz * (f.half + out), color }));
+}
+// A floodlight wash over each face of a w × d block, from y0 (bright) up to y1 (dim), just proud of the wall.
+function wash(K, H, w, d, y0, y1, c0, c1, which = [0, 1, 2, 3], out = 0.025) {
+  const fs = H.faces(w, d);
+  for (const i of which) {
+    const f = fs[i], g = H.part(new THREE.PlaneGeometry(f.width, y1 - y0), { x: f.nx * (f.half + out), y: (y0 + y1) / 2, z: f.nz * (f.half + out), ry: f.ry });
+    K.add('glow', grad(g, y0, y1, c0, c1));
+  }
+}
+// A mast with a red aviation beacon (and a smaller one half way up).
+function mast(K, H, x, z, y0, h, col = '#ff2a2a') {
+  K.add('flat', H.cyl(0.05, 0.09, h, 4, { x, y: y0 + h / 2, z, color: '#2a2a32' }));
+  K.add('glow', H.box(0.26, 0.26, 0.26, { x, y: y0 + h + 0.1, z, color: col }), H.box(0.16, 0.16, 0.16, { x, y: y0 + h * 0.55, z, color: col }));
+}
+// A holographic ad on a pole: an ad-atlas panel both ways, a neon frame, a glowing emitter at its foot.
+function holoAd(K, H, x, z, y0, w, h, ad, ry, frame) {
+  const y = y0 + 1.6 + h / 2;
+  K.add('flat', H.cyl(0.06, 0.08, 1.6, 4, { x, y: y0 + 0.8, z, color: '#1e1e26' }));
+  K.add('glow', H.cyl(0.22, 0.22, 0.08, 6, { x, y: y0 + 1.6, z, color: frame }));
+  const nx = Math.sin(ry), nz = Math.cos(ry);
+  K.add('ads', H.atlasQuad(w, h, adUV(ad), { x: x + nx * 0.03, y, z: z + nz * 0.03, ry }), H.atlasQuad(w, h, adUV(ad + 7), { x: x - nx * 0.03, y, z: z - nz * 0.03, ry: ry + Math.PI }));
+  const tx = Math.cos(ry), tz = -Math.sin(ry);
+  for (const s of [-1, 1]) K.add('neon', H.box(0.07, h + 0.14, 0.07, { x: x + tx * s * (w / 2 + 0.04), y, z: z + tz * s * (w / 2 + 0.04), color: frame }));
+  K.add('neon', H.box(Math.abs(tx) * (w + 0.15) + 0.07, 0.07, Math.abs(tz) * (w + 0.15) + 0.07, { x, y: y + h / 2 + 0.04, z, color: frame }), H.box(Math.abs(tx) * (w + 0.15) + 0.07, 0.07, Math.abs(tz) * (w + 0.15) + 0.07, { x, y: y - h / 2 - 0.04, z, color: frame }));
+}
+// Light reflected on the water at height wy off the faces in `which`: columns of broken dashes trailing
+// out from the wall, bright near it and fading (a static shimmer: wide along the wall, thin across).
+function reflect(K, H, w, d, wy, c0, c1, rng, which = [0, 1, 2, 3], reach = 8, every = 2) {
+  const fs = H.faces(w, d);
+  for (const i of which) {
+    const f = fs[i], n = Math.max(1, Math.floor(f.width / every));
+    for (let k = 0; k < n; k++) {
+      const off = -f.width / 2 + (k + 0.5) * f.width / n;
+      for (let r = 0.4 + rng() * 0.5; r < reach; r += 0.7 + rng() * 0.9) {
+        const t = r / reach;
+        if (rng() < 0.25 + t * 0.45) continue;
+        const dw = (0.8 + rng() * 1.3) * (1 - t * 0.45), dd = 0.3 + rng() * 0.5;
+        _c.set(c0).lerp(_b.set(c1), t * 0.8);
+        K.add('glow', H.box(f.tx ? dw : dd, 0.02, f.tz ? dw : dd, { x: f.nx * (f.half + r) + f.tx * (off + (rng() - 0.5) * 0.6), y: wy, z: f.nz * (f.half + r) + f.tz * (off + (rng() - 0.5) * 0.6), color: _c.getHex() }));
+      }
+    }
+  }
+}
+const GOLD_LO = '#ffd27a', GOLD_HI = '#9a5a26', LED_GOLD = '#ffc640';
 
 // ------------------------------------------------------------------ the Bund (stage 1)
 const STONE = ['#d9c7a3', '#cbb894', '#e2d4b6', '#bfa982', '#d4bf98', '#c9b28c', '#c2b49a', '#d8cbb0'];
@@ -35,63 +96,86 @@ function balustrade(K, H, w, d, color, h = 0.55, every = 1.1) {
 
 function bund(K, p, th, rng, H) {
   const { w, d, thick: T } = p, t = p.tint >= 0 ? p.tint : 0, stone = STONE[t % STONE.length];
-  const wl = -p.h; // the waterline, in the platform's frame
+  const wl = -p.h, lit = (th.night || 0) > 0.5; // the waterline, in the platform's frame; floodlit after dark
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: stone }));
   K.add('flat', H.box(w + 0.3, 3.2, d + 0.3, { y: wl + 1.2, color: shade(stone, 0.62) })); // rusticated base, flood-stained
   K.add('flat', H.box(w + 0.32, 0.25, d + 0.32, { y: wl + 0.2, color: '#3a4a3a' }));
-  K.add('flat', H.box(w + 0.9, 0.55, d + 0.9, { y: -0.75, color: shade(stone, 1.12) })); // cornice
+  K.add(lit ? 'glow' : 'flat', H.box(w + 0.9, 0.55, d + 0.9, { y: -0.75, color: lit ? '#ffe2a2' : shade(stone, 1.12) })); // cornice (lit: the gold outline under the roof)
   K.add('flat', H.box(w + 0.5, 0.3, d + 0.5, { y: -1.2, color: shade(stone, 0.7) }));
-  K.add('flat', H.box(w + 0.4, 0.35, d + 0.4, { y: -4.6, color: shade(stone, 1.05) })); // string course
+  K.add(lit ? 'glow' : 'flat', H.box(w + 0.4, 0.35, d + 0.4, { y: -4.6, color: lit ? '#f4b45a' : shade(stone, 1.05) })); // string course
   balustrade(K, H, w, d, shade(stone, 1.1));
   windows(K, H, w, d, -2.7, wl + 3.5, rng, 0.18 + (th.night || 0) * 0.6);
-  // engaged columns on the wide faces: a two-storey colonnade under the cornice
+  if (lit) { // the floodlights: a row of lamps along the base throwing a gold wash up every face
+    wash(K, H, w, d, wl + 2.8, -1.35, '#ffc66e', '#6a3c22');
+    reflect(K, H, w + 0.3, d + 0.3, wl + 0.4, '#ffd27a', '#4a2c1a', rng, [0, 1, 2, 3], 8);
+    for (const f of H.faces(w, d)) for (let o = -f.width / 2 + 1.5; o < f.width / 2; o += 3.5) K.add('glow', H.box(f.tx ? 0.6 : 0.3, 0.25, f.tz ? 0.6 : 0.3, { x: f.nx * (f.half + 0.3) + f.tx * o, y: wl + 2.95, z: f.nz * (f.half + 0.3) + f.tz * o, color: '#fff6dc' }));
+  }
+  // engaged columns on the wide faces: a two-storey colonnade under the cornice (uplit at night)
   for (const f of H.faces(w, d)) {
     if (f.width < 12) continue;
     const n = Math.floor(f.width / 2.6);
     for (let k = 1; k < n; k++) {
       const off = -f.width / 2 + k * f.width / n, x = f.nx * (f.half + 0.12) + f.tx * off, z = f.nz * (f.half + 0.12) + f.tz * off;
-      K.add('flat', H.cyl(0.32, 0.36, 6.4, 6, { x, y: -5.1, z, color: shade(stone, 1.15) }), H.box(0.9, 0.35, 0.9, { x, y: -1.75, z, color: shade(stone, 1.2) }));
+      if (lit) K.add('glow', grad(H.cyl(0.32, 0.36, 6.4, 6, { x, y: -5.1, z }), -8.3, -1.9, '#fff2cc', '#c88a48'), H.box(0.9, 0.35, 0.9, { x, y: -1.75, z, color: '#ffe0a0' }));
+      else K.add('flat', H.cyl(0.32, 0.36, 6.4, 6, { x, y: -5.1, z, color: shade(stone, 1.15) }), H.box(0.9, 0.35, 0.9, { x, y: -1.75, z, color: shade(stone, 1.2) }));
     }
   }
-  // a doorway and a flagpole on the biggest ones
+  // a doorway and a flagpole on the biggest ones; a rooftop mast; a neon blade on some river fronts
   if (w * d > 300) {
     const f = H.faces(w, d)[2];
-    K.add('flat', H.box(0.2, 3.4, 3, { x: f.nx * (f.half + 0.05), y: wl + 4.8, color: '#2a221a' }));
+    K.add(lit ? 'glow' : 'flat', H.box(0.2, 3.4, 3, { x: f.nx * (f.half + 0.05), y: wl + 4.8, color: lit ? '#ffb85a' : '#2a221a' }));
     K.add('flat', H.cyl(0.07, 0.07, 6, 4, { x: -w / 2 + 1, y: 3, z: -d / 2 + 1, color: '#3a3a3a' }));
     K.add('glow', H.box(1.6, 1, 0.05, { x: -w / 2 + 1.85, y: 5.4, z: -d / 2 + 1, color: '#e0303a' }));
+    mast(K, H, -w / 2 + 1.2, d / 2 - 1.2, 0, 5 + rng() * 4);
+  }
+  if (lit && t % 3 === 1) { // a vertical neon sign on the river front, readable from the promenade
+    const f = H.faces(w, d)[2], cell = Math.floor(rng() * SIGN_COLS), r = [cell / SIGN_COLS, 0, (cell + 1) / SIGN_COLS, 1], off = (rng() - 0.5) * (f.width - 6);
+    const bx = f.nx * (f.half + 1.3), bz = off, y = -6.5;
+    K.add('flat', H.box(2.4, 8.4, 0.25, { x: bx, y, z: bz, color: '#15151c' }));
+    K.add('signs', H.atlasQuad(2.1, 8, r, { x: bx, y, z: bz + 0.14 }), H.atlasQuad(2.1, 8, r, { x: bx, y, z: bz - 0.14, ry: Math.PI }));
+    K.add('neon', H.box(2.5, 0.1, 0.32, { x: bx, y: y + 4.25, z: bz, color: '#ff2b8a' }), H.box(2.5, 0.1, 0.32, { x: bx, y: y - 4.25, z: bz, color: '#ff2b8a' }));
   }
 }
 
 function portico(K, p, th, rng, H) {
-  const { w, d, thick: T } = p, stone = STONE[2], wl = -p.h;
+  const { w, d, thick: T } = p, stone = STONE[2], wl = -p.h, lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: shade(stone, 0.92) }));
-  K.add('flat', H.box(w + 0.6, 0.5, d + 0.6, { y: -0.6, color: shade(stone, 1.15) }));
+  K.add(lit ? 'glow' : 'flat', H.box(w + 0.6, 0.5, d + 0.6, { y: -0.6, color: lit ? '#ffe2a2' : shade(stone, 1.15) }));
   K.add('flat', H.box(w + 0.35, 0.3, d + 0.35, { y: -1.05, color: shade(stone, 0.75) }));
   balustrade(K, H, w, d, shade(stone, 1.1));
-  // columns across the front (+x, toward the promenade) and a dark doorway between them
+  if (lit) wash(K, H, w, d, wl + 1.4, -1.25, '#ffc66e', '#6a3c22', [0, 1, 3]);
+  if (lit) reflect(K, H, w + 0.3, d + 0.3, wl + 0.4, '#ffd27a', '#4a2c1a', rng, [0, 1, 2], 3, 2.2);
+  // columns across the front (+x, toward the promenade) and a doorway between them (lit at night)
   const n = Math.max(2, Math.floor(d / 2.4)), colH = -1.2 - (wl + 1);
   for (let k = 0; k <= n; k++) {
     const z = -d / 2 + 0.5 + k * (d - 1) / n;
-    K.add('flat', H.cyl(0.34, 0.4, colH, 8, { x: w / 2 + 0.1, y: wl + 1 + colH / 2, z, color: '#f0e6d0' }), H.box(0.95, 0.35, 0.95, { x: w / 2 + 0.1, y: -1.4, z, color: '#f4ecdc' }));
+    if (lit) K.add('glow', grad(H.cyl(0.34, 0.4, colH, 8, { x: w / 2 + 0.1, y: wl + 1 + colH / 2, z }), wl + 1, -1.2, '#fff6dc', '#d0965a'), H.box(0.95, 0.35, 0.95, { x: w / 2 + 0.1, y: -1.4, z, color: '#ffe8b8' }));
+    else K.add('flat', H.cyl(0.34, 0.4, colH, 8, { x: w / 2 + 0.1, y: wl + 1 + colH / 2, z, color: '#f0e6d0' }), H.box(0.95, 0.35, 0.95, { x: w / 2 + 0.1, y: -1.4, z, color: '#f4ecdc' }));
   }
-  K.add('flat', H.box(0.15, colH - 1.5, d - 2, { x: w / 2 + 0.03, y: wl + 1 + (colH - 1.5) / 2, color: '#3a2e22' }));
+  K.add(lit ? 'glow' : 'flat', H.box(0.15, colH - 1.5, d - 2, { x: w / 2 + 0.03, y: wl + 1 + (colH - 1.5) / 2, color: lit ? '#7a4a26' : '#3a2e22' }));
   K.add('flat', H.box(w + 0.3, 1.6, d + 0.3, { y: wl + 0.6, color: shade(stone, 0.6) }));
 }
 
 // The copper dome: a columned stone drum, copper tiers (each flaring out a little) and a lantern.
 function copperDrum(K, p, th, rng, H) {
-  const r = p.r, T = p.thick, n = H.seg(20, 14);
+  const r = p.r, T = p.thick, n = H.seg(20, 14), lit = (th.night || 0) > 0.5;
   K.add('flat', H.cyl(r, r, T, n, { y: -T / 2, color: STONE[2] }));
   K.add('flat', H.cyl(r + 0.25, r + 0.25, 0.4, n, { y: -0.2, color: COPPER }));
-  for (let k = 0; k < 14; k++) { const a = k / 14 * TAU; K.add('flat', H.cyl(0.22, 0.25, T - 0.4, 5, { x: Math.cos(a) * (r + 0.15), y: -T / 2 - 0.2, z: Math.sin(a) * (r + 0.15), color: '#f2e8d4' })); }
+  if (lit) K.add('neon', H.part(new THREE.TorusGeometry(r + 0.3, 0.08, 3, n), { rx: Math.PI / 2, y: -0.02, color: LED_GOLD }));
+  for (let k = 0; k < 14; k++) {
+    const a = k / 14 * TAU, x = Math.cos(a) * (r + 0.15), z = Math.sin(a) * (r + 0.15);
+    if (lit) K.add('glow', grad(H.cyl(0.22, 0.25, T - 0.4, 5, { x, y: -T / 2 - 0.2, z }), -T, 0, '#fff4d8', '#d09a58'));
+    else K.add('flat', H.cyl(0.22, 0.25, T - 0.4, 5, { x, y: -T / 2 - 0.2, z, color: '#f2e8d4' }));
+  }
   for (let k = 0; k < 14; k++) { const a = (k + 0.5) / 14 * TAU; K.add('glow', H.box(0.7, 1.4, 0.7, { x: Math.cos(a) * (r - 0.25), y: -T / 2 - 0.2, z: Math.sin(a) * (r - 0.25), color: '#ffd28a' })); }
 }
 function copperDome(K, p, th, rng, H) {
-  const r = p.r, T = p.thick, n = H.seg(20, 14);
+  const r = p.r, T = p.thick, n = H.seg(20, 14), lit = (th.night || 0) > 0.5;
   K.add('flat', H.cyl(r, r + 0.7, T, n, { y: -T / 2, color: p.tint === 1 ? COPPER_DK : COPPER }));
   K.add('flat', H.cyl(r + 0.08, r + 0.08, 0.18, n, { y: -0.09, color: COPPER_HI }));
+  if (lit) K.add('neon', H.part(new THREE.TorusGeometry(r + 0.1, 0.08, 3, n), { rx: Math.PI / 2, y: -0.02, color: '#6affd0' })); // the lip in light: footing
   const ribs = Math.round(r * 2.2);
-  for (let k = 0; k < ribs; k++) { const a = k / ribs * TAU; K.add('flat', H.box(0.16, T, 0.2, { x: Math.cos(a) * (r + 0.36), y: -T / 2, z: Math.sin(a) * (r + 0.36), ry: -a, rz: 0.19 * Math.cos(0), color: GOLD })); }
+  for (let k = 0; k < ribs; k++) { const a = k / ribs * TAU; K.add(lit ? 'glow' : 'flat', H.box(0.16, T, 0.2, { x: Math.cos(a) * (r + 0.36), y: -T / 2, z: Math.sin(a) * (r + 0.36), ry: -a, rz: 0.19 * Math.cos(0), color: lit ? '#ffcf60' : GOLD })); }
 }
 function copperLantern(K, p, th, rng, H) {
   const r = p.r, T = p.thick;
@@ -99,13 +183,20 @@ function copperLantern(K, p, th, rng, H) {
   K.add('glow', H.cyl(r - 0.6, r - 0.6, T - 0.5, 8, { y: -T / 2 - 0.25, color: '#ffe6a0' }));
   for (let k = 0; k < 8; k++) { const a = k / 8 * TAU; K.add('flat', H.cyl(0.14, 0.14, T - 0.5, 4, { x: Math.cos(a) * (r - 0.25), y: -T / 2 - 0.25, z: Math.sin(a) * (r - 0.25), color: '#f4ecdc' })); }
   K.add('flat', H.cyl(r + 0.2, r + 0.2, 0.3, 10, { y: -T + 0.15, color: COPPER }));
+  if ((th.night || 0) > 0.5) K.add('neon', H.part(new THREE.TorusGeometry(r + 0.42, 0.07, 3, 12), { rx: Math.PI / 2, y: -0.05, color: '#6affd0' }));
 }
 
 function clockTower(K, p, th, rng, H) {
-  const { w, d, thick: T } = p, stone = STONE[0];
+  const { w, d, thick: T } = p, stone = STONE[0], lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: stone }));
+  if (lit) { // floodlit shaft, a gold LED outline round the top, a beacon mast
+    wash(K, H, w - 2.4, d - 2.4, -T, -0.9, '#ffc66e', '#7a4a26', [0, 1, 2, 3], 1.22);
+    edgeLED(K, H, w + 0.8, d + 0.8, -0.32, LED_GOLD, { t: 0.12 });
+    mast(K, H, w / 2 - 1.3, -d / 2 + 1.3, 0, 7);
+  }
   for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
-    K.add('flat', H.box(1.2, T, 1.2, { x: sx * (w / 2 - 0.3), y: -T / 2, z: sz * (d / 2 - 0.3), color: shade(stone, 1.12) })); // corner piers
+    if (lit) K.add('glow', grad(H.box(1.2, T, 1.2, { x: sx * (w / 2 - 0.3), y: -T / 2, z: sz * (d / 2 - 0.3) }), -T, 0, '#fff0c8', '#c88a48')); // corner piers, uplit
+    else K.add('flat', H.box(1.2, T, 1.2, { x: sx * (w / 2 - 0.3), y: -T / 2, z: sz * (d / 2 - 0.3), color: shade(stone, 1.12) })); // corner piers
     K.add('flat', H.cyl(0.05, 0.35, 1.6, 4, { x: sx * (w / 2 - 0.4), y: 0.8, z: sz * (d / 2 - 0.4), color: COPPER })); // little copper pinnacles
     K.add('glow', H.box(0.2, 0.2, 0.2, { x: sx * (w / 2 - 0.4), y: 1.7, z: sz * (d / 2 - 0.4), color: '#ff3a2a' }));
   }
@@ -130,14 +221,16 @@ function bundLedge(K, p, th, rng, H) {
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: shade(stone, 1.05) }), H.box(w + 0.15, 0.12, d + 0.15, { y: -0.06, color: GOLD }));
   const long = w > d, n = Math.floor((long ? w : d) / 1.2);
   for (let k = 0; k <= n; k++) { const o = -(long ? w : d) / 2 + k * (long ? w : d) / n; K.add('flat', H.box(long ? 0.3 : w * 0.7, 0.8, long ? d * 0.7 : 0.3, { x: long ? o : 0, y: -T - 0.4, z: long ? 0 : o, color: shade(stone, 0.85) })); }
+  if ((th.night || 0) > 0.5) { edgeLED(K, H, w + 0.15, d + 0.15, -0.16, LED_GOLD, { t: 0.09 }); K.add('glow', H.box(w * (long ? 0.9 : 0.5), 0.12, d * (long ? 0.5 : 0.9), { y: -T - 0.86, color: '#fff0c8' })); } // edge LEDs, an uplight under the bracket
 }
 
 function copperPyramid(K, p, th, rng, H) {
-  const { w, thick: T } = p, R = (w / 2) * Math.SQRT2, R1 = (w / 2 + 1) * Math.SQRT2;
+  const { w, thick: T } = p, R = (w / 2) * Math.SQRT2, R1 = (w / 2 + 1) * Math.SQRT2, lit = (th.night || 0) > 0.5;
   K.add('flat', H.cyl(R, R1, T, 4, { y: -T / 2, ry: Math.PI / 4, color: p.tint === 1 ? COPPER_HI : COPPER }));
-  K.add('flat', H.cyl(R + 0.05, R + 0.05, 0.15, 4, { y: -0.075, ry: Math.PI / 4, color: GOLD }));
-  for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) K.add('flat', H.box(0.2, T * 1.05, 0.2, { x: sx * (w / 2 + 0.5), y: -T / 2, z: sz * (w / 2 + 0.5), rx: -sz * 0.27, rz: sx * 0.27, color: COPPER_DK }));
+  K.add(lit ? 'neon' : 'flat', H.cyl(R + 0.05, R + 0.05, 0.15, 4, { y: -0.075, ry: Math.PI / 4, color: lit ? LED_GOLD : GOLD }));
+  for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) K.add(lit ? 'neon' : 'flat', H.box(0.2, T * 1.05, 0.2, { x: sx * (w / 2 + 0.5), y: -T / 2, z: sz * (w / 2 + 0.5), rx: -sz * 0.27, rz: sx * 0.27, color: lit ? '#6affd0' : COPPER_DK })); // the ridges, drawn in light at night
   if (p.tint === 1) K.add('flat', H.cyl(0.04, 0.2, 2.2, 4, { x: w / 2 - 0.3, y: 1.1, z: w / 2 - 0.3, color: GOLD }));
+  if (p.tint === 1 && lit) mast(K, H, -w / 2 + 0.4, -w / 2 + 0.4, 0, 6);
 }
 
 function pontoon(K, p, th, rng, H) {
@@ -145,6 +238,9 @@ function pontoon(K, p, th, rng, H) {
   K.add('flat', H.box(w, T + 0.4, d, { y: -(T + 0.4) / 2, color: '#2a3550' }), H.box(w - 0.1, 0.12, d - 0.1, { y: -0.06, color: '#8a909a' }));
   K.add('hazard', H.box(w, 0.04, 0.35, { y: 0.01, z: -d / 2 + 0.2 }), H.box(w, 0.04, 0.35, { y: 0.01, z: d / 2 - 0.2 }));
   K.add('neon', H.box(w + 0.1, 0.12, d + 0.1, { y: -T + 0.6, color: '#2be8ff' }));
+  edgeLED(K, H, w, d, -0.14, '#2be8ff', { t: 0.08, out: 0.04 }); // the deck edge, lit
+  reflect(K, H, w, d, -p.h + 0.4, '#2be8ff', '#14204a', rng, [0, 1, 2, 3], 4, 3);
+  for (const f of H.faces(w, d)) for (let o = -f.width / 2 + 2; o < f.width / 2 - 1; o += 4) K.add('glow', H.box(f.tx ? 0.5 : 0.12, 0.12, f.tz ? 0.5 : 0.12, { x: f.nx * (f.half + 0.05) + f.tx * o, y: -T + 1.3, z: f.nz * (f.half + 0.05) + f.tz * o, color: '#fff2c0' })); // portholes
   for (const f of H.faces(w, d)) for (let o = -f.width / 2 + 1.5; o < f.width / 2; o += 3) K.add('flat', H.cyl(0.35, 0.35, 0.7, 8, { x: f.nx * (f.half + 0.3) + f.tx * o, y: -T + 0.9, z: f.nz * (f.half + 0.3) + f.tz * o, rx: f.tx ? 0 : Math.PI / 2, rz: f.tx ? Math.PI / 2 : 0, color: '#151515' }));
   for (const [sx, sz] of [[-1, -1], [1, 1]]) {
     const x = sx * (w / 2 - 0.6), z = sz * (d / 2 - 0.6);
@@ -166,6 +262,7 @@ function ferry(K, p, th, rng, H) {
   balustrade(K, H, w - 1.2, d - 0.6, '#f4f4f0', 0.8, 1.4);
   K.add('neon', H.box(w - 1, 0.08, 0.08, { y: -2.3, z: d / 2 - 0.3, color: col === '#c8302a' ? '#ff5a2b' : '#2be8ff' }), H.box(w - 1, 0.08, 0.08, { y: -2.3, z: -d / 2 + 0.3, color: col === '#c8302a' ? '#ff5a2b' : '#2be8ff' }));
   K.add('flat', H.cyl(0.08, 0.08, 3, 4, { x: w / 2 - 1, y: 1.5, color: '#2a2a30' }));
+  edgeLED(K, H, w - 1, d - 0.4, -0.1, col === '#c8302a' ? '#ffb02a' : '#2be8ff', { t: 0.08, out: 0.02 }); // the sun deck's edge in light
   K.add('glow', H.box(0.25, 0.25, 0.25, { x: w / 2 - 1, y: 3.1, color: '#2bff7a' }), H.box(0.25, 0.25, 0.25, { x: -w / 2 + 1, y: 0.3, z: 0, color: '#ff2a2a' }));
 }
 
@@ -193,6 +290,7 @@ function ledBarge(K, p, th, rng, H) {
   const { w, d, thick: T } = p;
   K.add('flat', H.box(w, T + 0.3, d, { y: -(T + 0.3) / 2, color: '#22252e' }), H.box(w - 0.2, 0.1, d - 0.2, { y: -0.05, color: '#3a3e4a' }));
   K.add('neon', H.box(w + 0.1, 0.14, d + 0.1, { y: -0.5, color: p.tint === 1 ? '#2be8ff' : '#ff2bd6' }));
+  edgeLED(K, H, w - 0.2, d - 0.2, -0.08, '#fff0c8', { t: 0.08, out: 0.04 });
   for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
     const x = sx * (w / 2 - 0.9), z = sz * (d / 2 - 0.9);
     K.add('flat', H.cyl(0.5, 0.6, 0.8, 8, { x, y: 0.4, z, color: '#15151c' }));
@@ -203,6 +301,7 @@ function ledBarge(K, p, th, rng, H) {
 function ledCabin(K, p, th, rng, H) {
   const { w, d, thick: T } = p;
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: '#c8ccd4' }), H.box(w + 0.2, 0.15, d + 0.2, { y: -0.07, color: '#3a3c46' }));
+  edgeLED(K, H, w + 0.2, d + 0.2, -0.17, '#ff2bd6', { t: 0.08, out: 0.03 });
   for (const f of H.faces(w, d)) K.add('glow', H.box(f.tx ? f.width - 0.8 : 0.06, 0.9, f.tz ? f.width - 0.8 : 0.06, { x: f.nx * (f.half + 0.02), y: -1.1, z: f.nz * (f.half + 0.02), color: '#7fd8ff' }));
   K.add('flat', H.cyl(0.04, 0.04, 2.2, 4, { x: w / 2 - 0.3, y: 1.1, z: d / 2 - 0.3, color: '#2a2a30' }));
   K.add('glow', H.box(0.15, 0.15, 0.15, { x: w / 2 - 0.3, y: 2.25, z: d / 2 - 0.3, color: '#ff2a2a' }));
@@ -228,6 +327,16 @@ function bundWalk(K, p, th, rng, H) {
   }
   // flower beds on the land side
   for (let z = -d / 2 + 8; z < d / 2 - 4; z += 8) K.add('flat', H.box(1.2, 0.5, 3, { x: -w / 2 + 1.4, y: 0.25, z, color: '#4a3a2a' }), H.box(1, 0.3, 2.8, { x: -w / 2 + 1.4, y: 0.6, z, color: p.tint % 2 ? '#e0507a' : '#e8c040' }));
+  if ((th.night || 0) > 0.5) {
+    // the river rail lit gold, an LED line along the flood wall's lip, light seams in the paving
+    K.add('glow', H.box(0.27, 0.06, d, { x: rx, y: 1.04, color: '#ffd890' }));
+    reflect(K, H, w + 0.1, d, wl + 0.4, '#fff0c8', '#2a3a6a', rng, [2], 11, 2); reflect(K, H, w + 0.1, d, wl + 0.4, '#ffc66e', '#4a3020', rng, [3], 3, 3);
+    for (const sx of [-1, 1]) K.add('neon', H.box(0.1, 0.1, d + 0.1, { x: sx * (w / 2 + 0.06), y: -0.12, color: sx > 0 ? '#2be8ff' : LED_GOLD }));
+    K.add('neon', H.box(w + 0.1, 0.1, 0.1, { y: -0.12, z: -d / 2 - 0.06, color: LED_GOLD }), H.box(w + 0.1, 0.1, 0.1, { y: -0.12, z: d / 2 + 0.06, color: LED_GOLD }));
+    for (let z = -d / 2 + 6; z < d / 2 - 2; z += 12) K.add('glow', H.box(w - 3, 0.02, 0.14, { x: -0.6, y: 0.005, z, color: '#7fe8ff' }));
+    // holographic ad totems on the land side, between the flower beds
+    for (let z = -d / 2 + 12; z < d / 2 - 6; z += 16) holoAd(K, H, -w / 2 + 1.0, z, 0, 2.2, 1.4, (p.tint * 5 + (z | 0)) & 63, Math.PI / 2, p.tint % 2 ? '#ff2bd6' : '#2be8ff');
+  }
 }
 
 // ------------------------------------------------------------------ Pudong (stage 2)

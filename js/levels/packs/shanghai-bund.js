@@ -129,8 +129,10 @@ export default {
     { kind: 'twistTower', x: 520, z: -185, s: 1 },
     { kind: 'bottleOpener', x: 560, z: -95, s: 1 },
     { kind: 'pudongBank', x: 300, z: -60, len: 900 },
-    { kind: 'skyline', x: 440, z: 90, w: 220, d: 90, n: 18, hMin: 40, hMax: 150, color: '#6a5a8a' },
-    { kind: 'skyline', x: 620, z: -40, w: 160, d: 160, n: 16, hMin: 60, hMax: 200, color: '#6a5a8a' },
-    { kind: 'skyline', x: 430, z: -300, w: 200, d: 100, n: 14, hMin: 40, hMax: 130, color: '#6a5a8a' },
+    { kind: 'ledTowers', x: 440, z: 90, w: 220, d: 90, n: 18, hMin: 40, hMax: 150 },
+    { kind: 'ledTowers', x: 620, z: -40, w: 160, d: 160, n: 16, hMin: 60, hMax: 200 },
+    { kind: 'ledTowers', x: 430, z: -300, w: 200, d: 100, n: 14, hMin: 40, hMax: 130 },
+    { kind: 'riverBoats', x: 205, z: -60, len: 380, d: 100, n: 7 }, // tour boats on the Huangpu
+    { kind: 'ledTowers', x: -330, z: -60, w: 120, d: 420, n: 18, hMin: 30, hMax: 90, pal: ['#ffd890', '#ff5a2b', '#ff2bd6', '#ffd23a'] }, // Puxi behind the Bund
   ],
 };

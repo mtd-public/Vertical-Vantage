@@ -25,7 +25,7 @@ const themes = {
     skyTop: '#050822', skyBot: '#2c2456', sun: '#eef0ff', sunDir: [0.4, 0.55, -0.7], night: 1,
     fog: [60, 300], hemi: ['#7c82cc', '#22182c', 1.5], key: ['#b2c2ff', 0.9],
     cloud: '#2a2a4c', cloudShade: '#161832', city: 0.3, arc: [0, 4], cityCol: '#0e0c1e', cityH: 0.3, pyramids: 0,
-    windows: 1, neon: 1.4, water: '#131a40', rain: 0, stars: 0.5, beams: 0.6, cover: 0.2, haze: 0.34,
+    windows: 1, neon: 1.4, water: '#1e2858', rain: 0, stars: 0.5, beams: 0.6, cover: 0.2, haze: 0.34,
   },
   euroRome: { // the Colosseum at night: a full moon, neon projections, searchlights sweeping the clouds
     skyTop: '#04061c', skyBot: '#34183e', sun: '#f4f2ff', sunDir: [0.3, 0.45, -0.85], night: 1,

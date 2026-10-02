@@ -135,5 +135,7 @@ export default {
     { kind: 'sanGiorgio', x: 120, y: 0, z: -330, yaw: 0.3, s: 1.1 },
     { kind: 'mountain', x: -120, y: -6, z: -900, r: 420, h: 260, snow: 0.42, color: '#6a6488' }, // the Dolomites at dusk
     { kind: 'mountain', x: 420, y: -6, z: -860, r: 300, h: 220, snow: 0.45, color: '#6a6488' },
+    { kind: 'shoreLights', x: -260, y: 0, z: -560, len: 600, n: 9, rise: 30, seed: 651 }, // Mestre and the mainland, lit across the lagoon
+    { kind: 'shoreLights', x: 40, y: 0, z: 420, yaw: Math.PI, len: 700, n: 7, rise: 12, seed: 652 }, // the Lido
   ],
 };

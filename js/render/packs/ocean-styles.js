@@ -120,6 +120,40 @@ function inward(g) {
   return g;
 }
 const longAxis = (p) => (p.d >= p.w ? { L: p.d, W: p.w, along: 'z' } : { L: p.w, W: p.d, along: 'x' });
+// Neon tube lettering, 14-segment (the haven names its halls and its spine). Segments in a letter's
+// unit box (u -0.5..0.5, v -1..1): a top, b/c right, d bottom, e/f left, g/G middle halves, h/j
+// upper diagonals, i/l stems, k/m lower diagonals.
+const SEG = {
+  a: [-0.5, 1, 0.5, 1], b: [0.5, 1, 0.5, 0], c: [0.5, 0, 0.5, -1], d: [-0.5, -1, 0.5, -1], e: [-0.5, 0, -0.5, -1], f: [-0.5, 1, -0.5, 0],
+  g: [-0.5, 0, 0, 0], G: [0, 0, 0.5, 0], h: [-0.5, 1, 0, 0], i: [0, 1, 0, 0], j: [0.5, 1, 0, 0], k: [-0.5, -1, 0, 0], l: [0, 0, 0, -1], m: [0.5, -1, 0, 0],
+};
+const GLYPH = {
+  A: 'abcefgG', C: 'adef', D: 'abcdil', E: 'adefg', I: 'adil', K: 'efgjm', L: 'def', N: 'bcefhm', O: 'abcdef', R: 'abefgGm', S: 'acdfgG', T: 'ail', W: 'bcefkm',
+  '-': 'gG', '0': 'abcdef', '1': 'bc', '2': 'abdegG', '3': 'abcdG', '4': 'bcfgG', '7': 'abc',
+};
+// A word in neon tubes in a plane facing ry (reading axis (cos ry, 0, -sin ry)), centred at (x, y, z):
+// letters h tall, stacked down when vertical. A dim halo behind each tube.
+function neonWord(K, H, word, o) {
+  const h = o.h, w = h * 0.58, t = h * 0.15, n = word.length, step = o.vertical ? h * 1.28 : w * 1.45;
+  const cu = Math.cos(o.ry), su = Math.sin(o.ry), bx = -Math.sin(o.ry) * 0.05, bz = -Math.cos(o.ry) * 0.05, halo = dim(o.color, 0.3);
+  for (let i = 0; i < n; i++) {
+    const segs = GLYPH[word[i]];
+    if (!segs) continue;
+    const lu = o.vertical ? 0 : (i - (n - 1) / 2) * step, lv = o.vertical ? ((n - 1) / 2 - i) * step : 0;
+    for (const s of segs) {
+      const [u0, v0, u1, v1] = SEG[s], du = (u1 - u0) * w, dv = (v1 - v0) * h / 2, L = Math.sqrt(du * du + dv * dv);
+      const uc = lu + (u0 + u1) / 2 * w, vc = lv + (v0 + v1) / 2 * h / 2, rz = Math.atan2(dv, du);
+      K.add('glow', H.box(L + t * 0.5, t, 0.08, { x: o.x + uc * cu, y: o.y + vc, z: o.z - uc * su, ry: o.ry, rz, color: o.color }));
+      K.add('glow', H.box(L + t * 1.6, t * 2.4, 0.03, { x: o.x + uc * cu + bx, y: o.y + vc, z: o.z - uc * su + bz, ry: o.ry, rz, color: halo }));
+    }
+  }
+}
+// A neon word on a dark board flat on face f (centred `along` it at height y).
+function sign(K, H, f, along, y, word, h, color) {
+  const ww = word.length * h * 0.58 * 1.45;
+  K.add('flat', fbox(H, f, along, y, 0.1, ww + h * 0.8, h * 1.6, 0.16, { color: '#0c0e16' }));
+  neonWord(K, H, word, { x: f.nx * (f.half + 0.24) + f.tx * along, y, z: f.nz * (f.half + 0.24) + f.tz * along, ry: f.ry, h, color });
+}
 // An advert panel on face f (the haven sells itself to the sea): a dark frame and the ad.
 function adPanel(K, H, f, along, y, aw, ad) {
   K.add('flat', fbox(H, f, along, y, 0.1, aw + 0.5, aw / 2 + 0.5, 0.2, { color: '#14161e' }));
@@ -139,6 +173,7 @@ export const STYLES = {
     K.add('flat', H.box(w - 0.5, T - 0.3, d - 0.5, { y: -0.3 - (T - 0.3) / 2, color: STEEL }));
     K.add('flat', H.box(w + 0.05, 0.4, d + 0.05, { y: -0.5, color: RUST }));
     outline(K, H, w, d, led, -0.34, 0.11);
+    for (const f of faces(w, d)) for (let a = -f.width / 2 + 1.5, k = 0; a < f.width / 2 - 1; a += 3, k++) K.add('glow', fbox(H, f, a, 0.012, -0.75, 0.24, 0.03, 0.24, { color: k % 2 ? dim(led, 0.9) : COOLW })); // inset deck lights
     for (const f of faces(w, d)) {
       const n = Math.max(1, Math.round(f.width / 9));
       for (let k = 0; k <= n; k++) {
@@ -330,6 +365,7 @@ export const STYLES = {
       K.add('neon', H.box(f.tx ? f.width + 0.3 : 0.12, 0.14, f.tz ? f.width + 0.3 : 0.12, { x: f.nx * (f.half + 0.1), y: -0.55, z: f.nz * (f.half + 0.1), color: CYAN }));
       if (f.width > 30) adPanel(K, H, f, f.width * 0.18 * (p.tint ? -1 : 1), -3.8, 7, Math.floor(rng() * 64));
     }
+    sign(K, H, faces(w, d)[1], 0, -3.8, p.tint ? 'INTAKE' : 'DESAL 7', 1.2, p.tint ? MAGENTA : CYAN); // its name over the south end
     if (wl > -T) { waterline(K, H, w, d, wl); sheen(K, H, w, d, wl, COOLW, rng, { k: 0.35 }); }
   },
   // The intake tower: red and white bands washed in floodlight from the base and the gallery
@@ -667,6 +703,11 @@ export const STYLES = {
       if (f.nz !== 1) adPanel(K, H, f, 0, -T * 0.25 - 6, 12, Math.floor(rng() * 64)); // (the south face is the blade bay)
     }
     for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) K.add('glow', H.box(0.4, 0.4, 0.4, { x: sx * (w / 2 + 0.1), y: 0.3, z: sz * (d / 2 + 0.1), color: RED }));
+    { // OCEAN CORE down the south face, beside the blade bay
+      const f = faces(w, d)[1], hh = 2.6, n = 10, yc = -3 - (n * hh * 1.28) / 2;
+      K.add('flat', fbox(H, f, w / 2 - 1.75, yc, 0.1, hh * 1.4, n * hh * 1.28 + 1, 0.16, { color: '#0c0e16' }));
+      neonWord(K, H, 'OCEAN CORE', { x: f.nx * (f.half + 0.24) + f.tx * (w / 2 - 1.75), y: yc, z: f.nz * (f.half + 0.24) + f.tz * (w / 2 - 1.75), ry: f.ry, h: hh, vertical: true, color: CYAN });
+    }
     const mx = -w / 2 + 1.5, mz = -d / 2 + 1.5;
     K.add('flat', H.box(1.2, 1.2, 1.2, { x: mx, y: 0.6, z: mz, color: '#3a4252' }), H.cyl(0.25, 0.45, 26, 6, { x: mx, y: 13, z: mz, color: '#c8ccd2' }));
     for (let y = 4; y < 26; y += 5) K.add('glow', H.box(0.5, 0.25, 0.5, { x: mx, y, z: mz, color: RED }));

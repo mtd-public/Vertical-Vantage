@@ -3,6 +3,7 @@
 // Two passes: the world, then the arm cannon on top (its own scene and camera, depth cleared).
 import * as THREE from 'three';
 import { RETRO, RETRO_LINES } from './retro.js';
+import { Glow } from './post.js';
 import { Sky } from './sky.js';
 import { THEMES } from './themes.js';
 import { FX } from './fx.js';
@@ -74,6 +75,7 @@ export class GameRenderer {
     this.recoil = 0; this.flashT = 0; this.showCannon = true;
     this._land = {}; this._path = []; this.landing = null; this.voidAhead = false; this.dropH = 0; // the landing look-ahead (HUD reads these)
     this.hfov = 96; this.motion = 1; this.flashK = 1; this.beamsK = 1; this.size = [1, 1]; // Options: FOV, reduced motion / flash, quality
+    this.glow = new Glow(r); this.glowLevels = 2; // neon glow on night themes (post.js); Low quality turns it off
     this.kick = 1; this.swapT = 0; this.held = 'blaster'; this.shown = ''; this.spinV = 0;
     this.swayX = 0; this.swayY = 0; this.lastYaw = 0; this.lastPitch = 0;
     this.level = null;
@@ -108,8 +110,17 @@ export class GameRenderer {
     this.flashK = lowFlash ? 0.35 : 1;
     const Q = { low: [0.5, 0.35, 0, 1], med: [0.75, 0.65, 1, 1.5], high: [1, 1, 1, 2] }[quality] || [1, 1, 1, 2];
     this.fx.k = Q[0]; this.fx.rainK = Q[1]; this.beamsK = Q[2];
+    this.glowLevels = { low: 0, med: 1 }[quality] ?? 2;
+    this.setGlow();
     if (this.theme) this.sky.u.uBeams.value = this.theme.beams * this.beamsK;
     if (!RETRO) { this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, Q[3])); this.resize(...this.size); }
+  }
+
+  // The neon glow's strength: the theme's bloom (default: how night it is), a little less with the
+  // reduced-flash option, off on Low quality.
+  setGlow() {
+    const th = this.theme, k = th ? (th.bloom ?? th.night ?? 0) : 0;
+    this.glow.set(this.glowLevels ? k * (0.7 + 0.3 * this.flashK) : 0, this.glowLevels);
   }
 
   // ------------------------------------------------------------------ stage setup
@@ -152,6 +163,7 @@ export class GameRenderer {
     M.glass.emissive.set(th.night ? 0x1a2c48 : 0x0a1420);
     M.glass.color.set(th.night ? 0x223040 : 0x6a88a8);
     M.neon.color.setScalar(Math.min(1, th.neon));
+    this.setGlow();
     M.signs.color.setScalar(Math.min(1, 0.55 + th.neon * 0.45));
     M.ads.color.setScalar(th.night ? 1 : 0.9);
     this.fx.setRain(!!th.rain, this.scene);
@@ -563,6 +575,7 @@ export class GameRenderer {
     r.info.autoReset = false; r.info.reset(); // count both passes (smoke test reads draw calls)
     r.clear();
     r.render(this.scene, this.camera);
+    this.glow.apply(); // neon glow (night themes): after the world, before the arm cannon
     r.clearDepth();
     r.render(this.vmScene, this.vmCam);
   }

@@ -3,6 +3,8 @@
 import { STYLES } from './euro-styles.js';
 import { BACKDROPS } from './euro-backdrops.js';
 import { centurionModel, centurionUpdate } from './euro-boss.js';
+import shanghai from './shanghai.js';
+import seattle from './seattle.js';
 
 // Techy Italy, 2099, after dark: Pisa's marble projection-mapped under the moon, Amalfi at blue hour,
 // the Grand Canal at one in the morning, and Rome's Colosseum in neon by moonlight.
@@ -52,9 +54,18 @@ const themes = {
   },
 };
 
+// Style names this pack shares with packs merged before it (render/packs/index.js: the later pack wins
+// the merge, so the earlier pack's stages would draw with ours). Each shared name picks by the stage's
+// theme: ours, SHANGHAI's or SEATTLE's own look, looked up when the style runs.
+const OWN = new Set(Object.values(themes)), SHANGHAI = new Set(Object.values(shanghai.themes)), SEATTLE = new Set(Object.values(seattle.themes || {}));
+const shared = (name) => (K, p, th, rng, H) => {
+  const f = OWN.has(th) ? STYLES[name] : SHANGHAI.has(th) ? shanghai.styles[name] : SEATTLE.has(th) ? seattle.styles && seattle.styles[name] : null;
+  return (f || STYLES[name])(K, p, th, rng, H);
+};
+
 export default {
   themes,
-  styles: STYLES,
+  styles: { ...STYLES, lantern: shared('lantern'), gondola: shared('gondola'), fountain: shared('fountain') },
   backdrops: BACKDROPS,
   bosses: { centurion: { model: (M, e) => centurionModel(M, e), update: (R, e, g, dt, t, P) => centurionUpdate(R, e, g, dt, t, P) } },
 };

@@ -4,6 +4,7 @@
 import { SHANGHAI_STYLES } from './shanghai-styles.js';
 import { DRAGON_VIEW } from './shanghai-dragon.js';
 import { SHANGHAI_BACKDROPS } from './shanghai-backdrops.js';
+import seattle from './seattle.js';
 
 const themes = {
   // THE BUND by night: the colonial row floodlit gold (the key light comes in low off the river),
@@ -26,7 +27,7 @@ const themes = {
     skyTop: '#0a0420', skyBot: '#5a1a40', sun: '#ffe6d6', sunDir: [0.3, 0.55, -0.75], night: 1,
     fog: [50, 260], hemi: ['#c27a9c', '#2a1020', 1.5], key: ['#ffb490', 0.95],
     cloud: '#4a2446', cloudShade: '#261430', city: 0.95, arc: [-1.2, 1.4], cityCol: '#180c24', cityH: 1.5, pyramids: 0, windows: 1, neon: 1.4,
-    water: '#1a1034', rain: 0, stars: 0.5, beams: 0.8, haze: 0.28,
+    water: '#2a1c4e', rain: 0, stars: 0.5, beams: 0.8, haze: 0.28,
   },
   // PEARL TOWER at half past midnight, above a sea of hot-pink neon smog
   shanghaiPearl: {
@@ -56,9 +57,14 @@ const themes = {
   },
 };
 
+// 'ferry' is also a SEATTLE style, and this pack is merged after it (render/packs/index.js: the later
+// pack wins), so Seattle's stages keep their own ferry: pick by the stage's theme when the style runs.
+const OWN = new Set(Object.values(themes)), SEATTLE = new Set(Object.values(seattle.themes || {}));
+const ferry = (K, p, th, rng, H) => ((!OWN.has(th) && SEATTLE.has(th) && seattle.styles && seattle.styles.ferry) || SHANGHAI_STYLES.ferry)(K, p, th, rng, H);
+
 export default {
   themes,
-  styles: SHANGHAI_STYLES,
+  styles: { ...SHANGHAI_STYLES, ferry },
   backdrops: SHANGHAI_BACKDROPS,
   bosses: { dragon: DRAGON_VIEW },
 };

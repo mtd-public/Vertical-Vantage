@@ -512,8 +512,18 @@ function blimp(K, p, th, rng, H) {
 }
 
 // ------------------------------------------------------------------ the old town (stage 3)
+// A festoon of little lights strung along a w × d edge at height y, sagging between the corners.
+function festoon(K, H, w, d, y, sag, cols, every = 0.7, r = 0.11) {
+  for (const f of H.faces(w, d)) {
+    const n = Math.max(2, Math.round(f.width / every));
+    for (let k = 0; k <= n; k++) {
+      const t = k / n, off = -f.width / 2 + t * f.width;
+      K.add('glow', H.box(r * 2, r * 2, r * 2, { x: f.nx * (f.half + 0.05) + f.tx * off, y: y - sag * Math.sin(t * Math.PI), z: f.nz * (f.half + 0.05) + f.tz * off, color: cols[k % cols.length] }));
+    }
+  }
+}
 function stoneBank(K, p, th, rng, H) {
-  const { w, d, thick: T } = p, wl = -p.h, plaza = p.style === 'stonePlaza';
+  const { w, d, thick: T } = p, wl = -p.h, plaza = p.style === 'stonePlaza', lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T - 0.12, d, { y: -T / 2 - 0.06, color: '#5e5c64' }));
   K.add('flat', H.box(w + 0.1, 0.5, d + 0.1, { y: wl + 0.25, color: '#2e3a30' }));
   const tile = plaza ? 3 : 2.2;
@@ -525,13 +535,18 @@ function stoneBank(K, p, th, rng, H) {
   }
   for (const f of H.faces(w, d)) for (let o = -f.width / 2 + 2; o < f.width / 2 - 1; o += 6) {
     const x = f.nx * (f.half - 0.35) + f.tx * o, z = f.nz * (f.half - 0.35) + f.tz * o;
-    if (((o / 6) | 0) % 2) { K.add('flat', H.box(0.4, 0.5, 0.4, { x, y: 0.25, z, color: '#6a6870' })); continue; } // a bollard
+    if (((o / 6) | 0) % 2) { K.add('flat', H.box(0.4, 0.5, 0.4, { x, y: 0.25, z, color: '#6a6870' })); if (lit) K.add('glow', H.box(0.42, 0.08, 0.42, { x, y: 0.42, z, color: '#ffb050' })); continue; } // a bollard (a lit cap at night)
     K.add('flat', H.cyl(0.07, 0.09, 2.6, 4, { x, y: 1.3, z, color: '#2a1a14' }));
     K.add('glow', H.part(new THREE.SphereGeometry(0.32, 6, 4), { x, y: 2.75, z, sy: 1.3, color: '#ff3a24' }));
   }
+  if (lit) { // the bank's edge in warm light, the lanterns trembling on the canal
+    edgeLED(K, H, w, d, -0.14, '#ffb050', { t: 0.08, out: 0.04 });
+    reflect(K, H, w + 0.1, d + 0.1, wl + 0.4, '#ff6a3a', '#2a1030', rng, [0, 1, 2, 3], 4, 3);
+    if (plaza) for (const r of [12, 18, 24]) K.add('glow', H.part(new THREE.RingGeometry((r - 0.15) * Math.SQRT2, r * Math.SQRT2, 4, 1), { rx: -Math.PI / 2, rz: Math.PI / 4, y: 0.01, z: -3, color: '#ffb050' })); // lit squares round the pagoda
+  }
 }
 function garden(K, p, th, rng, H) {
-  const { w, d, thick: T } = p, wl = -p.h;
+  const { w, d, thick: T } = p, wl = -p.h, lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T - 0.1, d, { y: -T / 2 - 0.05, color: '#6a6870' }), H.box(w - 0.6, 0.12, d - 0.6, { y: -0.04, color: '#2f5a34' }));
   K.add('flat', H.box(w + 0.1, 0.5, d + 0.1, { y: wl + 0.25, color: '#2e3a30' }));
   for (const f of H.faces(w, d)) K.add('flat', H.box(f.tx ? f.width : 0.3, 0.2, f.tz ? f.width : 0.3, { x: f.nx * (f.half - 0.15), y: 0.0, z: f.nz * (f.half - 0.15), color: '#9a98a0' }));
@@ -540,17 +555,19 @@ function garden(K, p, th, rng, H) {
     K.add('flat', H.part(new THREE.IcosahedronGeometry(0.7 + rng() * 0.5, 0), { x, y: 0.4, z, sy: 0.7, color: '#1f4a28' }));
     if (rng() < 0.5) K.add('glow', H.box(0.2, 0.2, 0.2, { x: x + 0.3, y: 0.85, z, color: rng() < 0.5 ? '#ff7ab0' : '#ffe07a' }));
   }
-  for (const [sx, sz] of [[1, 1], [-1, -1]]) { // weeping willows at two corners
+  for (const [sx, sz] of [[1, 1], [-1, -1]]) { // weeping willows at two corners (uplit at night)
     const x = sx * (w / 2 - 2), z = sz * (d / 2 - 2);
     K.add('flat', H.cyl(0.25, 0.35, 4, 5, { x, y: 2, z, color: '#3a2a1e' }));
     for (let k = 0; k < 7; k++) { const a = k / 7 * TAU; K.add('flat', H.cyl(0.5, 0.15, 3.4, 4, { x: x + Math.cos(a) * 1.4, y: 3, z: z + Math.sin(a) * 1.4, rx: Math.sin(a) * 0.3, rz: -Math.cos(a) * 0.3, color: '#4a8a3a' })); }
     K.add('flat', H.part(new THREE.IcosahedronGeometry(1.8, 0), { x, y: 4.6, z, sy: 0.6, color: '#3e7a34' }));
+    if (lit) { K.add('glow', H.cyl(0.5, 0.6, 0.12, 6, { x, y: 0.08, z, color: '#7fffb0' })); for (let k = 0; k < 7; k++) { const a = (k + 0.5) / 7 * TAU; K.add('glow', H.box(0.12, 0.12, 0.12, { x: x + Math.cos(a) * 1.7, y: 2.2 + (k % 3) * 0.5, z: z + Math.sin(a) * 1.7, color: k % 2 ? '#fff0a0' : '#7fffd0' })); } } // fairy lights in the willow
   }
+  if (lit) { edgeLED(K, H, w, d, -0.12, '#ffb050', { t: 0.08, out: 0.04 }); reflect(K, H, w + 0.1, d + 0.1, wl + 0.4, '#ff8a4a', '#2a1030', rng, [0, 1, 2, 3], 3, 3); }
 }
 
 const HALL_WALL = ['#e6dccb', '#e2d6c2', '#ddd0bc', '#b8382c', '#e6dccb', '#e2d6c2', '#c84a32', '#b8302a'];
 function hall(K, p, th, rng, H) {
-  const { w, d, thick: T } = p, t = p.tint >= 0 ? p.tint : 0, wall = HALL_WALL[t % 8], red = '#a8231c';
+  const { w, d, thick: T } = p, t = p.tint >= 0 ? p.tint : 0, wall = HALL_WALL[t % 8], red = '#a8231c', lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: wall }), H.box(w + 0.2, 0.5, d + 0.2, { y: -T + 0.25, color: '#4a4650' }));
   for (const f of H.faces(w, d)) {
     const n = Math.max(1, Math.round(f.width / 3));
@@ -565,6 +582,11 @@ function hall(K, p, th, rng, H) {
         K.add('flat', H.box(f.tx ? ww : 0.08, 0.06, f.tz ? ww : 0.08, { x: x + f.nx * 0.02, y: y + g * wh, z: z + f.nz * 0.02, color: '#3a1a10' }));
         K.add('flat', H.box(f.tx ? 0.06 : 0.08, wh, f.tz ? 0.06 : 0.08, { x: x + f.nx * 0.02 + f.tx * g * ww, y, z: z + f.nz * 0.02 + f.tz * g * ww, color: '#3a1a10' }));
       }
+      if (lit && k % 2 === 0 && T > 3) { // a red lantern hung under the eave in front of every other bay
+        const lx = f.nx * (f.half + 0.9) + f.tx * off, lz = f.nz * (f.half + 0.9) + f.tz * off;
+        K.add('flat', H.box(0.03, 0.5, 0.03, { x: lx, y: -0.45, z: lz, color: '#1a1010' }));
+        K.add('glow', H.part(new THREE.SphereGeometry(0.28, 6, 4), { x: lx, y: -0.95, z: lz, sy: 1.25, color: (k / 2) % 2 ? '#ff4a2a' : '#ff2a3a' }));
+      }
     }
   }
   if (t === 4 || t === 5) { // market: neon sign blades out of the facade, a cloth awning
@@ -574,58 +596,77 @@ function hall(K, p, th, rng, H) {
       const bx = f.nx * (f.half + 1.1) + f.tx * off, bz = f.nz * (f.half + 1.1) + f.tz * off;
       K.add('flat', H.box(f.tx ? 0.25 : 1.9, 4.2, f.tz ? 0.25 : 1.9, { x: bx, y: -T / 2 + 0.6, z: bz, color: '#15151c' }));
       K.add('signs', H.atlasQuad(1.6, 3.9, r, { x: bx + f.tx * 0.14, y: -T / 2 + 0.6, z: bz + f.tz * 0.14, ry: Math.atan2(f.tx, f.tz) }), H.atlasQuad(1.6, 3.9, r, { x: bx - f.tx * 0.14, y: -T / 2 + 0.6, z: bz - f.tz * 0.14, ry: Math.atan2(-f.tx, -f.tz) }));
+      if (lit) K.add('neon', H.box(f.tx ? 0.3 : 2.0, 0.1, f.tz ? 0.3 : 2.0, { x: bx, y: -T / 2 + 2.75, z: bz, color: '#ff2bd6' }), H.box(f.tx ? 0.3 : 2.0, 0.1, f.tz ? 0.3 : 2.0, { x: bx, y: -T / 2 - 1.55, z: bz, color: '#2be8ff' }));
     }
     K.add('flat', H.box(f.tx ? f.width * 0.8 : 1.6, 0.12, f.tz ? f.width * 0.8 : 1.6, { x: f.nx * (f.half + 0.8), y: -T + 2.6, z: f.nz * (f.half + 0.8), rx: f.tz ? 0 : 0, color: t === 4 ? '#c83a2a' : '#2a6a5a' }));
+    if (lit) K.add('neon', H.box(f.tx ? f.width * 0.8 : 0.08, 0.08, f.tz ? f.width * 0.8 : 0.08, { x: f.nx * (f.half + 1.62), y: -T + 2.56, z: f.nz * (f.half + 1.62), color: '#ffe52b' })); // the awning's lit hem
+  } else if (lit && t !== 7 && (t + Math.floor(w)) % 3 === 0) { // a small vertical neon sign on a plain house
+    const f = H.faces(w, d)[(t + 1) % 4], cell = Math.floor(rng() * SIGN_COLS), r = [cell / SIGN_COLS, 0, (cell + 1) / SIGN_COLS, 1];
+    const bx = f.nx * (f.half + 0.7) + f.tx * f.width * 0.35, bz = f.nz * (f.half + 0.7) + f.tz * f.width * 0.35, h = Math.min(3.2, T - 0.8);
+    K.add('flat', H.box(f.tx ? 0.2 : 1.1, h + 0.2, f.tz ? 0.2 : 1.1, { x: bx, y: -T / 2, z: bz, color: '#15151c' }));
+    K.add('signs', H.atlasQuad(0.95, h, r, { x: bx + f.tx * 0.11, y: -T / 2, z: bz + f.tz * 0.11, ry: Math.atan2(f.tx, f.tz) }), H.atlasQuad(0.95, h, r, { x: bx - f.tx * 0.11, y: -T / 2, z: bz - f.tz * 0.11, ry: Math.atan2(-f.tx, -f.tz) }));
   }
 }
 
 // The curved-eave roof slab: dark tiles on top, a red fascia, upturned corners with a lantern under each.
+// At night the fascia is outlined in neon (the roof's edge reads for the jump) and a festoon of little
+// lights sags along it.
 const TILE = ['#3c3e48', '#34404a', '#3a3a42'], FASCIA = ['#a8231c', '#a8231c', '#e8e0d0'];
 function eave(K, p, th, rng, H) {
-  const { w, d, thick: T } = p, v = (p.tint >= 0 ? p.tint : 0) & 7, top = (p.tint & 8) !== 0, tile = TILE[v % 3];
+  const { w, d, thick: T } = p, v = (p.tint >= 0 ? p.tint : 0) & 7, top = (p.tint & 8) !== 0, tile = TILE[v % 3], lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T * 0.7, d, { y: -T * 0.35, color: tile }));
   for (let k = 1; k <= 3; k++) { // tile courses stepping in toward the ridge
     const ins = k * Math.min(w, d) * 0.09;
     for (const f of H.faces(w - ins * 2, d - ins * 2)) K.add('flat', H.box(f.tx ? f.width : 0.16, 0.07, f.tz ? f.width : 0.16, { x: f.nx * (f.half - 0.08), y: 0.02, z: f.nz * (f.half - 0.08), color: shade(tile, 1.35) }));
   }
   K.add('flat', H.box(w + 0.12, T * 0.35, d + 0.12, { y: -T * 0.8, color: FASCIA[v % 3] }));
-  K.add('flat', H.box(w + 0.16, 0.08, d + 0.16, { y: -T * 0.6, color: v === 1 ? '#e8b440' : '#d8a23a' }));
+  K.add(lit ? 'neon' : 'flat', H.box(w + 0.16, 0.08, d + 0.16, { y: -T * 0.6, color: v === 1 ? '#e8b440' : lit ? '#ffc640' : '#d8a23a' }));
+  if (lit) {
+    edgeLED(K, H, w + 0.12, d + 0.12, -T * 0.98, v === 2 ? '#ffd23a' : '#ff3a3a', { t: 0.1, out: 0.04 });
+    edgeLED(K, H, w, d, 0.0, v === 2 ? '#fff0c0' : '#ffb050', { t: 0.07, out: 0.02, key: 'glow' }); // the walkable lip
+    festoon(K, H, w + 0.4, d + 0.4, -T - 0.25, 0.45, v === 2 ? ['#ffe07a', '#fff4d0'] : ['#ffcf60', '#ff4a2a', '#ffe07a'], 0.8);
+  }
   for (const f of H.faces(w, d)) for (let o = -f.width / 2 + 0.8; o < f.width / 2 - 0.5; o += 1.4) K.add('flat', H.box(f.tx ? 0.3 : 0.5, 0.3, f.tz ? 0.3 : 0.5, { x: f.nx * (f.half - 0.25) + f.tx * o, y: -T - 0.15, z: f.nz * (f.half - 0.25) + f.tz * o, color: (o * 7 | 0) % 2 ? '#2a7a5a' : '#c83a2a' })); // brackets
   for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
     const x = sx * w / 2, z = sz * d / 2, a = Math.atan2(sz, sx);
     K.add('flat', H.box(1.6, 0.3, 0.4, { x: x + sx * 0.3, y: 0.25, z: z + sz * 0.3, ry: -a, rz: 0.5, color: tile })); // the upturned horn
-    K.add('flat', H.cyl(0.02, 0.14, 0.7, 4, { x: x + sx * 0.75, y: 0.75, z: z + sz * 0.75, rz: -sx * 0.5, rx: sz * 0.5, color: '#e8b440' }));
+    K.add(lit ? 'glow' : 'flat', H.cyl(0.02, 0.14, 0.7, 4, { x: x + sx * 0.75, y: 0.75, z: z + sz * 0.75, rz: -sx * 0.5, rx: sz * 0.5, color: lit ? '#ffd23a' : '#e8b440' }));
     K.add('flat', H.box(0.04, 0.8, 0.04, { x: x + sx * 0.3, y: -T - 0.4, z: z + sz * 0.3, color: '#1a1010' }));
     K.add('glow', H.part(new THREE.SphereGeometry(0.34, 6, 4), { x: x + sx * 0.3, y: -T - 1.05, z: z + sz * 0.3, sy: 1.3, color: '#ff3a24' }));
   }
   if (top && Math.min(w, d) > 6) K.add('flat', H.box(Math.max(w, d) > w ? 0.5 : w * 0.5, 0.35, Math.max(w, d) > w ? d * 0.5 : 0.5, { y: 0.17, color: shade(tile, 0.8) })); // a low ridge
 }
 function eaveTop(K, p, th, rng, H) {
-  const { w, d, thick: T } = p;
+  const { w, d, thick: T } = p, lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: '#3c3e48' }), H.cyl((w / 2 + 0.9) * Math.SQRT2, (w / 2) * Math.SQRT2, T * 0.45, 4, { y: -T * 0.78, ry: Math.PI / 4, color: '#34363f' }));
-  K.add('flat', H.box(w + 0.1, 0.12, d + 0.1, { y: -0.06, color: '#d8a23a' }));
+  K.add(lit ? 'neon' : 'flat', H.box(w + 0.1, 0.12, d + 0.1, { y: -0.06, color: lit ? '#ffc640' : '#d8a23a' }));
+  if (lit) K.add('neon', H.cyl((w / 2 + 0.95) * Math.SQRT2, (w / 2 + 0.95) * Math.SQRT2, 0.1, 4, { y: -T + 0.02, ry: Math.PI / 4, color: '#ff3a3a' }));
   K.add('flat', H.cyl(0.08, 0.12, 0.8, 5, { y: 0.4, color: '#d8a23a' }));
   K.add('glow', H.part(new THREE.SphereGeometry(0.3, 6, 4), { y: 0.95, color: '#ffd23a' }));
 }
 function pagodaCap(K, p, th, rng, H) {
   eaveTop(K, p, th, rng, H);
-  for (let k = 0; k < 6; k++) K.add('flat', H.cyl(0.45 - k * 0.05, 0.5 - k * 0.05, 0.25, 8, { y: 1.4 + k * 0.5, color: '#e8b440' }));
-  K.add('flat', H.cyl(0.04, 0.12, 2.6, 5, { y: 5, color: '#e8b440' }));
+  const lit = (th.night || 0) > 0.5;
+  for (let k = 0; k < 6; k++) K.add(lit ? 'glow' : 'flat', H.cyl(0.45 - k * 0.05, 0.5 - k * 0.05, 0.25, 8, { y: 1.4 + k * 0.5, color: lit ? (k % 2 ? '#ffd23a' : '#ffb030') : '#e8b440' }));
+  K.add(lit ? 'glow' : 'flat', H.cyl(0.04, 0.12, 2.6, 5, { y: 5, color: lit ? '#fff0b0' : '#e8b440' }));
   K.add('glow', H.part(new THREE.SphereGeometry(0.35, 6, 4), { y: 4.6, color: '#ffd23a' }));
+  if (lit) K.add('glow', H.box(0.3, 0.3, 0.3, { y: 6.4, color: '#ff2a2a' }));
 }
 function zigBridge(K, p, th, rng, H) {
-  const { w, d, thick: T } = p;
+  const { w, d, thick: T } = p, lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: '#a8a49c' }), H.box(w - 0.2, 0.08, d - 0.2, { y: -0.04, color: '#c4c0b6' }));
   for (const sx of [-1, 1]) {
-    K.add('flat', H.box(0.18, 0.12, d - 0.4, { x: sx * (w / 2 - 0.12), y: 0.62, color: '#d8d4ca' }));
+    K.add(lit ? 'glow' : 'flat', H.box(0.18, 0.12, d - 0.4, { x: sx * (w / 2 - 0.12), y: 0.62, color: lit ? '#ffd890' : '#d8d4ca' })); // the rail (lit warm at night)
     for (let z = -d / 2 + 0.6; z < d / 2 - 0.3; z += 1.3) K.add('flat', H.box(0.22, 0.62, 0.22, { x: sx * (w / 2 - 0.12), y: 0.31, z, color: '#cfcbc0' }));
   }
+  if (lit) for (const sx of [-1, 1]) K.add('neon', H.box(0.08, 0.08, d - 0.3, { x: sx * (w / 2 + 0.03), y: -0.1, color: '#ff4a6a' }));
 }
 function lantern(K, p, th, rng, H) {
-  const r = p.r, T = p.thick, hang = p.tint === 1, cy = -T * 0.5;
+  const r = p.r, T = p.thick, hang = p.tint === 1, cy = -T * 0.5, lit = (th.night || 0) > 0.5;
   K.add('glow', H.part(new THREE.SphereGeometry(1, H.seg(12, 8), H.seg(8, 6)), { y: cy, sx: r * 1.05, sz: r * 1.05, sy: T * 0.62, color: hang ? '#ff4a2a' : '#ff3424' }));
   K.add('flat', H.cyl(r * 0.75, r * 0.85, 0.16, 8, { y: -0.08, color: '#2a1410' }), H.cyl(r * 0.6, r * 0.7, 0.16, 8, { y: -T + 0.08, color: '#2a1410' }));
-  K.add('flat', H.cyl(r * 1.07, r * 1.07, 0.1, H.seg(12, 8), { y: cy, color: '#e8b440' }));
+  if (lit) K.add('neon', H.part(new THREE.TorusGeometry(r * 0.8, 0.06, 3, 10), { rx: Math.PI / 2, y: 0.01, color: '#ffd23a' })); // the top's rim: the landing ring
+  K.add(lit ? 'neon' : 'flat', H.cyl(r * 1.07, r * 1.07, 0.1, H.seg(12, 8), { y: cy, color: lit ? '#ffd23a' : '#e8b440' }));
   for (let k = 0; k < 6; k++) { const a = k / 6 * TAU; K.add('flat', H.box(0.05, T * 1.1, 0.05, { x: Math.cos(a) * r * 1.03, y: cy, z: Math.sin(a) * r * 1.03, color: '#7a1410' })); }
   K.add('flat', H.cyl(0.02, 0.12, 0.9, 4, { y: -T - 0.45, color: '#e8b440' }));
   if (hang) K.add('flat', H.box(0.05, 2.4, 0.05, { y: 1.2, color: '#1a1010' })); // its cord, up to the eave
@@ -637,11 +678,13 @@ function bigLantern(K, p, th, rng, H) {
   for (const y of [cy - T * 0.25, cy + T * 0.25]) K.add('flat', H.cyl(r * 1.02, r * 1.02, 0.12, H.seg(16, 10), { y, color: '#e8b440' }));
   for (let k = 0; k < 4; k++) K.add('flat', H.cyl(0.03, 0.18, 1.6, 4, { x: Math.cos(k * 1.57) * r * 0.5, y: -T - 0.8, z: Math.sin(k * 1.57) * r * 0.5, color: '#c8302a' }));
   K.add('neon', H.part(new THREE.TorusGeometry(r * 1.12, 0.07, 3, H.seg(20, 12)), { y: cy, rx: Math.PI / 2, color: '#ff2b5a' }));
+  if ((th.night || 0) > 0.5) K.add('neon', H.part(new THREE.TorusGeometry(r * 0.82, 0.07, 3, H.seg(20, 12)), { y: 0.02, rx: Math.PI / 2, color: '#ffd23a' }));
 }
 function dragonBoat(K, p, th, rng, H) {
-  const { w, d, thick: T } = p, gold = '#e8b440', hull = p.tint === 1 ? '#2a7a5a' : '#c8302a';
+  const { w, d, thick: T } = p, gold = '#e8b440', hull = p.tint === 1 ? '#2a7a5a' : '#c8302a', lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T + 0.5, d - 1.6, { y: -(T + 0.5) / 2, color: hull }), H.box(w * 0.7, T + 0.3, 1.6, { y: -(T + 0.3) / 2, z: d / 2 - 0.4, color: hull }));
-  K.add('flat', H.box(w + 0.06, 0.12, d - 1.6, { y: -0.3, color: gold }));
+  K.add(lit ? 'neon' : 'flat', H.box(w + 0.06, 0.12, d - 1.6, { y: -0.3, color: lit ? '#ffd23a' : gold }));
+  if (lit) K.add('neon', H.box(w + 0.08, 0.08, d - 1.6, { y: -T - 0.35, color: p.tint === 1 ? '#2bffb0' : '#ff3a5a' })); // its waterline in light
   for (let z = -d / 2 + 1.5; z < d / 2 - 1.2; z += 0.8) for (const sx of [-1, 1]) K.add('flat', H.box(0.06, 0.25, 0.5, { x: sx * (w / 2 + 0.02), y: -0.7, z, color: (z * 5 | 0) % 2 ? gold : '#2a6a4a' })); // scales
   // the head at the prow (local -Z), the curled tail at the stern
   const hz = -d / 2 - 0.3;
@@ -660,12 +703,13 @@ function dragonBoat(K, p, th, rng, H) {
   K.add('glow', H.part(new THREE.SphereGeometry(0.25, 6, 4), { y: 1.3, z: 0.5, color: '#ff3a24' }), H.box(0.04, 1.1, 0.04, { y: 0.6, z: 0.5, color: '#2a1a14' }));
 }
 function archBridge(K, p, th, rng, H) {
-  const { w, d, thick: T } = p, stone = '#a8a49c';
+  const { w, d, thick: T } = p, stone = '#a8a49c', lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: stone }), H.box(w, 0.08, d - 0.3, { y: -0.04, color: '#c4c0b6' }));
   const R = w / 2, sy = 3.4 / R; // a flattened arch under the span: the boats pass under it
   K.add('flat', H.part(new THREE.TorusGeometry(R - 0.3, 0.45, 4, H.seg(16, 10), Math.PI), { y: -T - 0.1 - 3.3 + 0.1, sy, sz: d / 0.9, color: shade(stone, 0.9) }));
+  if (lit) for (const sz of [-1, 1]) K.add('neon', H.part(new THREE.TorusGeometry(R - 0.3, 0.09, 3, H.seg(16, 10), Math.PI), { y: -T - 3.3, z: sz * (d / 2 + 0.06), sy, color: '#ff3a5a' })); // the arch drawn in red light on both faces
   for (const sx of [-1, 1]) {
-    K.add('flat', H.box(w, 0.12, 0.18, { y: 0.7, z: sx * (d / 2 - 0.12), color: '#d8d4ca' }));
+    K.add(lit ? 'glow' : 'flat', H.box(w, 0.12, 0.18, { y: 0.7, z: sx * (d / 2 - 0.12), color: lit ? '#ffd890' : '#d8d4ca' }));
     for (let x = -w / 2 + 0.6; x < w / 2; x += 1.4) K.add('flat', H.box(0.22, 0.7, 0.22, { x, y: 0.35, z: sx * (d / 2 - 0.12), color: '#cfcbc0' }));
     K.add('flat', H.cyl(0.07, 0.07, 1.8, 4, { x: sx * (w / 2 - 0.3), y: 0.9, z: d / 2 - 0.15, color: '#2a1a14' }));
     K.add('glow', H.part(new THREE.SphereGeometry(0.3, 6, 4), { x: sx * (w / 2 - 0.3), y: 1.95, z: d / 2 - 0.15, sy: 1.3, color: '#ff3a24' }));
@@ -675,13 +719,15 @@ function stoneStep(K, p, th, rng, H) {
   const { w, d, thick: T } = p;
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: '#a8a49c' }));
   for (let k = 1; k < 3; k++) K.add('flat', H.box(w + 0.02, 0.06, d + 0.02, { y: -k * T / 3, color: '#8a8680' }));
+  if ((th.night || 0) > 0.5) edgeLED(K, H, w, d, -0.1, '#ffb050', { t: 0.07, out: 0.03 });
 }
 function moonWall(K, p, th, rng, H) {
-  const { w, d, thick: T } = p, lintel = p.tint === 1;
+  const { w, d, thick: T } = p, lintel = p.tint === 1, lit = (th.night || 0) > 0.5;
   K.add('flat', H.box(w, T, d, { y: -T / 2, color: '#ece6da' }), H.box(w + 0.6, 0.35, d + 0.2, { y: -0.05, color: '#34363f' }), H.box(w + 0.7, 0.1, d + 0.2, { y: -0.3, color: '#2a2a32' }));
+  if (lit) edgeLED(K, H, w + 0.6, d + 0.2, -0.22, '#ffd23a', { t: 0.07, out: 0.03 });
   if (!lintel) K.add('flat', H.box(w + 0.05, 0.5, d + 0.05, { y: -T + 0.25, color: '#5a5860' }));
-  else for (const sx of [-1, 1]) { // the round moon gate's frame, on both faces of the wall
-    K.add('flat', H.part(new THREE.TorusGeometry(1.75, 0.16, 4, H.seg(24, 14)), { x: sx * (w / 2 + 0.02), y: -T - 1.3, ry: Math.PI / 2, color: '#3a3a44' }));
+  else for (const sx of [-1, 1]) { // the round moon gate's frame, on both faces of the wall (a full moon in light at night)
+    K.add(lit ? 'neon' : 'flat', H.part(new THREE.TorusGeometry(1.75, 0.16, 4, H.seg(24, 14)), { x: sx * (w / 2 + 0.02), y: -T - 1.3, ry: Math.PI / 2, color: lit ? '#fff0c0' : '#3a3a44' }));
     K.add('glow', H.part(new THREE.SphereGeometry(0.3, 6, 4), { x: sx * (w / 2 + 0.4), y: -T - 0.1, sy: 1.3, color: '#ff3a24' }));
   }
 }
@@ -690,6 +736,10 @@ function rockery(K, p, th, rng, H) {
   K.add('flat', H.part(new THREE.IcosahedronGeometry(1, 0), { y: -T / 2, sx: w * 0.55, sy: T / 2 + 0.15, sz: d * 0.55, color: col }));
   K.add('flat', H.part(new THREE.IcosahedronGeometry(1, 0), { x: w * 0.15, y: -0.1, z: -d * 0.1, sx: w * 0.42, sy: 0.3, sz: d * 0.42, color: shade(col, 1.12) }));
   for (let k = 0; k < 4; k++) K.add('flat', H.box(0.3, 0.3, 0.3, { x: (rng() - 0.5) * w * 0.9, y: -T * (0.3 + rng() * 0.5), z: (rng() - 0.5) * d * 0.9, color: '#2a2a30' }));
+  if ((th.night || 0) > 0.5) { // a pond light at the rock's foot, a little glowing ring on its top so you can find it
+    K.add('glow', H.box(0.3, 0.2, 0.3, { x: w * 0.42, y: -p.h + 0.45, z: d * 0.2, color: '#7fe8ff' }));
+    K.add('neon', H.part(new THREE.TorusGeometry(Math.min(w, d) * 0.3, 0.05, 3, 10), { rx: Math.PI / 2, x: w * 0.15, y: 0.21, z: -d * 0.1, color: '#7fe8ff' }));
+  }
 }
 
 // ------------------------------------------------------------------ the Pearl Tower (boss)

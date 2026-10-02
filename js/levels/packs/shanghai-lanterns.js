@@ -158,8 +158,8 @@ export default {
     { kind: 'jinmaoTower', x: 60, y: 0, z: -470, s: 1 },
     { kind: 'twistTower', x: 280, y: 0, z: -460, s: 1 },
     { kind: 'bottleOpener', x: 200, y: 0, z: -520, s: 1 },
-    { kind: 'skyline', x: 120, y: 0, z: -420, w: 360, d: 120, n: 22, hMin: 40, hMax: 160, color: '#2a1a3a' },
-    { kind: 'skyline', x: -260, y: 0, z: -300, w: 200, d: 120, n: 14, hMin: 30, hMax: 100, color: '#2a1a3a' },
-    { kind: 'skyline', x: 380, y: 0, z: -120, w: 120, d: 240, n: 12, hMin: 30, hMax: 110, color: '#2a1a3a' },
+    { kind: 'ledTowers', x: 120, y: 0, z: -420, w: 360, d: 120, n: 22, hMin: 40, hMax: 160 },
+    { kind: 'ledTowers', x: -260, y: 0, z: -300, w: 200, d: 120, n: 14, hMin: 30, hMax: 100, pal: ['#ff3a3a', '#ffb050', '#ff2bd6', '#ffd23a'] },
+    { kind: 'ledTowers', x: 380, y: 0, z: -120, w: 120, d: 240, n: 12, hMin: 30, hMax: 110 },
   ],
 };

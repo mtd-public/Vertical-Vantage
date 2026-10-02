@@ -258,7 +258,8 @@ function ggPlaza(K, p, th, rng, H) {
 function ggBooth(K, p, th, rng, H) {
   const { w, d, thick: T } = p;
   K.add('flat', H.box(w * 0.8, T - 0.4, d * 0.8, { y: -T / 2 - 0.2, color: CREAM }));
-  K.add('glow', H.box(w * 0.82, 0.9, d * 0.82, { y: -T + 1.6, color: 0xffe0a8 })); // lit inside
+  K.add('glass', H.box(w * 0.82, 0.9, d * 0.82, { y: -T + 1.6 }));
+  for (const sx of [-1, 1]) K.add('glow', H.box(0.06, 0.6, d * 0.5, { x: sx * (w * 0.41 + 0.01), y: -T + 1.6, color: 0xffd090 })); // the attendant's lit windows
   K.add('flat', H.box(w + 0.6, 0.4, d + 0.6, { y: -0.2, color: OR }));
   edgeRect(K, H, w + 0.6, d + 0.6, N_CYAN, { y: -0.38 });
   K.add('glow', H.box(0.4, 0.3, 0.2, { x: -0.5, y: -0.55, z: -d / 2 - 0.32, color: 0x3aff6a }), H.box(0.4, 0.3, 0.2, { x: 0.5, y: -0.55, z: -d / 2 - 0.32, color: 0xff3a3a }));
@@ -406,7 +407,10 @@ function sfLot(K, p, th, rng, H) {
   // and corner shops lit in the retaining walls where the hill drops away
   edgeRect(K, H, w + 0.1, d + 0.1, TERRACE, { y: -0.36, t: 0.08 });
   if (T > 7) for (const f of H.faces(w, d)) for (let off = -f.width / 2 + 2.2; off < f.width / 2 - 1.5; off += 3.4) {
-    if (rng() < 0.45) quad(K, H, 'glow', f, off, -2.7, 2.2, 1.5, rng() < 0.3 ? SHOP[Math.floor(rng() * SHOP.length)] : 0xffc880);
+    if (rng() < 0.45) {
+      quad(K, H, 'flat', f, off, -2.7, 2.3, 1.6, 0x2a2630, 0.03);
+      quad(K, H, 'glow', f, off, -2.75, 1.9, 1.15, rng() < 0.3 ? SHOP[Math.floor(rng() * SHOP.length)] & 0xbfbfbf : 0xe8b070, 0.05);
+    }
   }
   if (t === 6) { // Market Street: a wide boulevard with streetcar rails and palms
     K.add('flat', H.box(w, 0.32, 12, { y: -0.14, z: 0, color: ASPHALT }));
@@ -473,6 +477,8 @@ function victorian(K, p, th, rng, H) {
   K.add('flat', H.box(0.9, 2.1, 0.08, { x: w / 4, y: -T + 1.6, z: fz - 0.05, color: trim }));
   K.add('glow', H.box(0.3, 0.3, 0.1, { x: w / 4 + 0.75, y: -T + 2.4, z: fz - 0.08, color: 0xffd890 })); // the porch light
   for (let k = 0; k < 3; k++) K.add('flat', H.box(1.3, 0.18, 0.4, { x: w / 4, y: -T + 0.1 + k * 0.18, z: fz - 0.2 - (2 - k) * 0.35, color: 0xe8e4dc }));
+  const F = H.faces(w, d); // the back and the sides: rows of windows, some lit
+  for (const i of [1, 2, 3]) windowGrid(K, H, F[i], -T + 1.2, -0.8, rng, { bay: 2.4, floor: 3.1, ww: 0.8, wh: 1.4, lit: 0.5, palette: WARMWIN, dark: 0x3a4250 });
   // the neon outline: under the cornice, down the corners, round the bay, the gable, the roof's edges
   const nc = LADY_NEON[t];
   K.add('neon', H.box(w + 0.7, 0.1, 0.1, { y: -0.62, z: fz - 0.6, color: nc }));

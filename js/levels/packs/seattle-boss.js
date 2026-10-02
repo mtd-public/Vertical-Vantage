@@ -56,7 +56,7 @@ export default {
   lasers: [],
   backdrops: [
     { kind: 'rainier', x: 560, y: -200, z: 620, r: 460, h: 330, snow: 0.5, color: '#2e3540', haze: 0.5, glow: 1, snowColor: '#8a98aa' }, // Rainier, ghostly in the storm
-    { kind: 'skyline', x: 40, y: -190, z: 260, w: 340, d: 120, n: 26, hMin: 50, hMax: 170, color: '#1a2028', haze: 0.35 }, // downtown, lit, far below
-    { kind: 'skyline', x: -240, y: -190, z: -120, w: 140, d: 240, n: 14, hMin: 30, hMax: 90, color: '#1a2028', haze: 0.35 },
+    { kind: 'seaSkyline', x: 40, y: -190, z: 260, w: 340, d: 120, n: 26, hMin: 50, hMax: 170 }, // downtown, lit, far below
+    { kind: 'seaSkyline', x: -240, y: -190, z: -120, w: 140, d: 240, n: 14, hMin: 30, hMax: 90 },
   ],
 };

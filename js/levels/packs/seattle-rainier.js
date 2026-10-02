@@ -125,10 +125,10 @@ export default {
     { type: 'health', x: C1.x, y: C1.y + 1, z: C1.z },
   ],
   backdrops: [
-    { kind: 'rainier', x: 520, y: -60, z: 600, r: 440, h: 340, snow: 0.52, color: '#4a5462', haze: 0.3, glow: 1, snowColor: '#ffcfb4' }, // Rainier in the last light, the whole south-east
+    { kind: 'rainier', x: 520, y: -60, z: 600, r: 440, h: 340, snow: 0.52, color: '#2a3042', haze: 0.3, glow: 1, snowColor: '#9a7a98', rim: '#ffc8b0' }, // Rainier, the last light on its summit, the whole south-east
     { kind: 'ferryLights', x: -300, y: -60, z: 40, n: 4, haze: 0.3 }, // the Sound, west
     { kind: 'spaceNeedle', x: -160, y: -64, z: -520, s: 0.7 }, // the Needle, north
-    { kind: 'skyline', x: 0, y: -60, z: 300, w: 400, d: 120, n: 26, hMin: 60, hMax: 160, color: '#3a4250', haze: 0.45 },
+    { kind: 'seaSkyline', x: 0, y: -60, z: 300, w: 400, d: 120, n: 26, hMin: 60, hMax: 160 },
     { kind: 'portCranes', x: -120, y: -60, z: 360, n: 5, haze: 0.45 },
   ],
 };

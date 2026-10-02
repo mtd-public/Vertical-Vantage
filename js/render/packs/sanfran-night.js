@@ -49,9 +49,12 @@ export function windowGrid(K, H, f, y0, y1, rng, o = {}) {
     quad(K, H, on ? 'glow' : 'flat', f, -f.width / 2 + (c + 0.5) * sx, y0 + (r + 0.5) * sy, ww, wh, on ? pal[Math.floor(rng() * pal.length)] : o.dark, out);
   }
 }
-// A soft pool of light on the ground (a dim unlit disc a hair above the top).
-export function pool(K, H, x, z, r, color, y = 0.025) {
-  K.add('glow', H.part(new THREE.CircleGeometry(r, H.seg(12, 8)), { rx: -Math.PI / 2, x, y, z, color }));
+// A soft pool of light on the ground: an unlit disc a hair above the top, `color` at its centre fading
+// to o.rim (a night-ground dark) at its edge, so it reads as light rather than a decal.
+export function pool(K, H, x, z, r, color, y = 0.025, rim = 0x1c1a2c) {
+  const g = H.part(new THREE.CircleGeometry(r, H.seg(12, 8)), { rx: -Math.PI / 2, x, y, z });
+  const c0 = new THREE.Color(color), c1 = new THREE.Color(rim);
+  K.add('glow', paint(g, (px, py, pz) => { const k = Math.min(1, Math.sqrt((px - x) * (px - x) + (pz - z) * (pz - z)) / r); return _d.copy(c0).lerp(c1, k).getHex(); }));
 }
 // Hue ramp for iridescent neon: t in 0..1 round magenta → violet → cyan → green → gold → magenta.
 const IRI = [0xff3ad8, 0x9a5bff, 0x2be8ff, 0x3aff9a, 0xffd23a, 0xff3ad8];

@@ -34,7 +34,7 @@ function wing(M, sx) {
   hand.add(new THREE.Mesh(merge(P), M.paintFlat));
   // glowing leading edges, so the wing shape reads in the dark
   g.add(new THREE.Mesh(merge([box(3.0, 0.08, 0.08, { x: sx * 1.5, y: 0.1, z: -0.93, color: C.edge })]), M.glow));
-  hand.add(new THREE.Mesh(merge([box(2.7, 0.07, 0.07, { x: sx * 1.85, y: 0.06, z: -0.6, ry: sx * 0.1, color: C.edge })]), M.glow));
+  hand.add(new THREE.Mesh(merge([box(2.7, 0.07, 0.07, { x: sx * 1.85, y: 0.06, z: -0.6, ry: sx * 0.1, color: C.edge }), box(0.22, 0.16, 0.22, { x: sx * 3.25, y: 0.06, z: -0.5, color: sx < 0 ? 0xff2a2a : 0x2aff6a })]), M.glow)); // the edge, and a nav light on the wingtip
   g.userData.hand = hand;
   return g;
 }
@@ -84,10 +84,12 @@ export const stormcrow = {
     ]), M.paintFlat));
     const eye = new THREE.Mesh(merge([box(0.3, 0.2, 0.14, { x: 0.46, color: C.eye }), box(0.3, 0.2, 0.14, { x: -0.46, color: C.eye }), box(0.8, 0.06, 0.06, { y: 0.13, z: -0.05, color: 0xffb020 })]), M.glow);
     eye.name = 'eye'; eye.position.set(0, 0.42, -2.42); body.add(eye);
-    // glowing seams: a chevron on the chest, lines down the flanks, the tail fins' edges
+    // glowing seams: a chevron on the chest, lines down the flanks, the tail fins' edges; a strip
+    // down the belly and the back plate's edges so it reads against the storm from below and above
     body.add(new THREE.Mesh(merge([
       box(0.9, 0.06, 0.06, { x: 0.38, y: 0.72, z: -1.35, ry: -0.5, color: C.edge }), box(0.9, 0.06, 0.06, { x: -0.38, y: 0.72, z: -1.35, ry: 0.5, color: C.edge }),
       box(0.06, 0.06, 2.4, { x: 0.9, y: -0.1, z: -0.2, color: C.edge }), box(0.06, 0.06, 2.4, { x: -0.9, y: -0.1, z: -0.2, color: C.edge }),
+      box(0.08, 0.05, 1.7, { y: -0.86, z: 0.1, color: C.edge }), box(0.05, 0.05, 1.8, { x: 0.66, y: 0.75, z: 0.65, color: C.edge }), box(0.05, 0.05, 1.8, { x: -0.66, y: 0.75, z: 0.65, color: C.edge }),
     ]), M.glow));
     // the storm coil on its back
     const coil = new THREE.Group(); coil.name = 'coil'; coil.position.set(0, 0.75, 0.35); body.add(coil);

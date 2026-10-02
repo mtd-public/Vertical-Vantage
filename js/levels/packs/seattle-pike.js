@@ -104,12 +104,13 @@ export default {
     { type: 'health', x: 32, y: 27, z: -38 }, // on the giant cup
   ],
   backdrops: [
-    { kind: 'rainier', x: 520, y: -30, z: 600, r: 400, h: 280, snow: 0.5, color: '#56626a' }, // Rainier
+    { kind: 'rainier', x: 520, y: -30, z: 600, r: 400, h: 280, snow: 0.5, color: '#161a28', glow: 1, snowColor: '#3a4462', rim: '#a4b0d0', haze: 0.3 }, // Rainier, a moonlit ghost
     { kind: 'spaceNeedle', x: 70, y: -8, z: -640, s: 0.6 }, // the Needle, north over Belltown
     { kind: 'portCranes', x: -40, y: 0, z: 330, n: 4, haze: 0.5 }, // the port, south
-    { kind: 'hills', x: -420, y: -4, z: -40, len: 520, h: 46, n: 7, color: '#3e5a46', houses: 3 }, // Bainbridge, across the Sound
+    { kind: 'seaHills', x: -420, y: -4, z: -40, len: 520, h: 46, n: 7, lights: 18, color: '#141c22' }, // Bainbridge, across the Sound
     { kind: 'mountain', x: -760, y: -20, z: -200, r: 170, h: 120, snow: 0.5, color: '#5e6a72' }, // the Olympics
     { kind: 'mountain', x: -740, y: -20, z: 60, r: 160, h: 100, snow: 0.5, color: '#5e6a72' },
-    { kind: 'skyline', x: 300, y: -2, z: -40, w: 160, d: 300, n: 20, hMin: 40, hMax: 140, color: '#7a8488', haze: 0.6 }, // downtown, east
+    { kind: 'seaSkyline', x: 300, y: -2, z: -40, w: 160, d: 300, n: 20, hMin: 40, hMax: 140 }, // downtown, east, lit
+    { kind: 'seaBeams', x: 300, y: 0, z: -40, pts: [[0, 0, -120], [-20, 0, 60]], len: 300, r: 14, color: '#ffc8d8', opacity: 0.18 },
   ],
 };

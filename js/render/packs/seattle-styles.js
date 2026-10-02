@@ -1,11 +1,16 @@
 // SEATTLE pack platform styles. Each builds into Kit K in the platform's local frame: origin at its
 // centre, y = 0 at its top (where you stand), footprint p.w × p.d (rect) or radius p.r (disc).
 // Retro: flat-shaded primitives, vertex colours, a few neon accents (the pack's emerald).
+// Night: a rainy neon night. Emerald and teal neon, puddles holding the neon's reflections, LED edges
+// on every walkable top, the Needle ringed in light and MoPOP's skins glowing iridescent.
 import * as THREE from 'three';
 import { strut, struts, lathe, text } from './seattle-kit.js';
+import { edgeRect, edgeDisc, pool, paint, iri, quad, dots } from './sanfran-night.js';
 
 const TAU = Math.PI * 2, D2R = Math.PI / 180;
-export const EMERALD = 0x3ad88a;
+export const EMERALD = 0x3ad88a, TEAL = 0x2be8e0, N_AMBER = 0xffb040, N_PINK = 0xff3ad8, N_RED = 0xff2a1a, WARM = 0xffd890;
+// wet ground holding the neon: dim unlit puddles in the city's colours
+export const PUDDLE = [0x1a4a40, 0x163e56, 0x46183e, 0x3a2a14];
 export const CONCRETE = 0xb4b8ae, DARK = 0x2c3236, STEEL = 0x5a6064, WHITE = 0xe2e4de;
 export const ring = (H, r0, r1, y, color, n = 32) => H.part(new THREE.RingGeometry(r0, r1, H.seg(n, Math.max(12, n >> 1))), { rx: -Math.PI / 2, y, color });
 export const circle = (H, r, y, color, n = 32) => H.part(new THREE.CircleGeometry(r, H.seg(n, Math.max(12, n >> 1))), { rx: -Math.PI / 2, y, color });
@@ -18,9 +23,11 @@ export function tree(K, H, x, z, h = 4) {
   K.add('flat', H.part(new THREE.ConeGeometry(1.1, h * 0.55, 6), { x, y: 1.1 + h * 0.27, z, color: 0x2f5a3c }));
   K.add('flat', H.part(new THREE.ConeGeometry(0.8, h * 0.45, 6), { x, y: 1.1 + h * 0.62, z, color: 0x264a32 }));
 }
-export function lamp(K, H, x, z, h = 3.6) {
+// a lamp post; in = [dx, dz] puts its pool of light on the deck that way (off the edge it would float)
+export function lamp(K, H, x, z, h = 3.6, inward = null) {
   K.add('flat', H.cyl(0.07, 0.09, h, 5, { x, y: h / 2, z, color: 0x3a4044 }));
   K.add('glow', H.box(0.36, 0.22, 0.36, { x, y: h + 0.1, z, color: 0xf4f0d6 }));
+  if (inward) pool(K, H, x + inward[0], z + inward[1], 1.6, 0x22302e, 0.03);
 }
 // a low railing round a rect top (posts + a rail), on the faces listed
 export function railing(K, H, w, d, faces = [0, 1, 2, 3], col = 0x5a6064, hgt = 1.0) {
@@ -47,11 +54,12 @@ export function seaPlaza(K, p, th, rng, H) {
   slab(K, H, p);
   for (let x = -w / 2 + 4; x < w / 2 - 1; x += 4) K.add('flat', H.box(0.08, 0.02, d - 0.6, { x, y: 0.012, color: 0x7a8078 }));
   for (let z = -d / 2 + 4; z < d / 2 - 1; z += 4) K.add('flat', H.box(w - 0.6, 0.02, 0.08, { y: 0.012, z, color: 0x7a8078 }));
-  for (let i = 0; i < 5; i++) K.add('flat', H.box(1.5 + rng() * 3, 0.02, 1 + rng() * 2.5, { x: (rng() - 0.5) * (w - 6), y: 0.02, z: (rng() - 0.5) * (d - 6), ry: rng(), color: 0x6c7e84 })); // puddles
+  for (let i = 0; i < 7; i++) K.add('glow', H.box(1.5 + rng() * 3, 0.02, 1 + rng() * 2.5, { x: (rng() - 0.5) * (w - 6), y: 0.02, z: (rng() - 0.5) * (d - 6), ry: rng(), color: PUDDLE[i % 4] })); // puddles holding the neon
   for (const f of H.faces(w, d)) K.add('neon', H.box(f.tx ? f.width : 0.12, 0.12, f.tz ? f.width : 0.12, { x: f.nx * (f.half + 0.04), y: -0.45, z: f.nz * (f.half + 0.04), color: EMERALD }));
+  edgeRect(K, H, w, d, TEAL, { y: -0.08, t: 0.08 });
   K.add('flat', H.box(w + 0.08, 0.7, d + 0.08, { y: -p.h + 0.25, color: 0x3c4c40 })); // moss at the waterline
   for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) tree(K, H, sx * (w / 2 - 1.3), sz * (d / 2 - 1.3), 4 + rng() * 1.5);
-  for (let z = -d / 2 + 6; z < d / 2 - 4; z += 8) { lamp(K, H, -w / 2 + 0.6, z); lamp(K, H, w / 2 - 0.6, z); }
+  for (let z = -d / 2 + 6; z < d / 2 - 4; z += 8) { lamp(K, H, -w / 2 + 0.6, z, 3.6, [1.6, 0]); lamp(K, H, w / 2 - 0.6, z, 3.6, [-1.6, 0]); }
 }
 
 export function seaKiosk(K, p, th, rng, H) {
@@ -60,6 +68,9 @@ export function seaKiosk(K, p, th, rng, H) {
   K.add('flat', H.box(w * 0.84, thick * 0.62, d * 0.84, { y: -0.2 - thick * 0.31, color: col }));
   K.add('flat', H.box(w * 0.6, thick * 0.3, 0.05, { y: -thick * 0.42, z: d * 0.42 + 0.01, color: 0x1a2024 })); // service hatch
   K.add('glow', H.box(w * 0.6, 0.08, 0.06, { y: -thick * 0.25, z: d * 0.42 + 0.03, color: 0xfff0c0 }));
+  const nc = [EMERALD, N_PINK, TEAL, N_AMBER][(p.tint >= 0 ? p.tint : 0) % 4];
+  for (const f of H.faces(w, d)) K.add('glow', H.box(f.tx ? f.width + 0.08 : 0.08, 0.08, f.tz ? f.width + 0.08 : 0.08, { x: f.nx * (f.half + 0.02), y: -0.12, z: f.nz * (f.half + 0.02), color: nc })); // the counter's lit edge
+  K.add('glow', H.box(w * 0.6, thick * 0.2, 0.05, { y: -thick * 0.62, z: -d * 0.42 - 0.01, color: nc })); // a lit menu board
   for (const f of H.faces(w, d)) { // striped awning skirt under the counter
     const n = 4;
     for (let k = 0; k < n; k++) {
@@ -89,6 +100,8 @@ export function monoStation(K, p, th, rng, H) {
     K.add('glow', ...text(name, { px: 0.1, depth: 0.04, x: x - s * 0.1, y: 3.0, z: z - c * 0.1, ry: ry + Math.PI, color: EMERALD }));
   };
   if (west) sign(w / 2 - 0.3, 2, Math.PI / 2); else sign(0, -d / 2 + 0.3, 0);
+  edgeRect(K, H, w, d, EMERALD, { y: -0.12 });
+  for (const sz of [-1, 1]) K.add('glow', H.box(w - 1, 0.1, 0.3, { y: -1.45, z: sz * (d / 2 - 0.6), color: 0xd8f8ff })); // the soffit's light strips
   for (const z of [-4, 4]) K.add('flat', H.box(0.5, 0.45, 1.8, { x: -w / 2 + 0.6, y: 0.22, z, color: 0x4a6a58 })); // benches
   lamp(K, H, -w / 2 + 0.4, -d / 2 + 0.4, 3); lamp(K, H, -w / 2 + 0.4, d / 2 - 0.4, 3);
 }
@@ -101,14 +114,17 @@ export function monoBeam(K, p, th, rng, H) {
   for (let z = -d / 2 + 6; z < d / 2; z += 12) {
     K.add('flat', H.box(1.3, down - thick, 1.6, { y: -thick - (down - thick) / 2, z, color: 0xa4a8a0 }));
     K.add('flat', H.box(3.4, 0.9, 1.8, { y: -thick - 0.45, z, color: 0x9a9e96 }));
+    K.add('glow', H.box(0.4, 0.3, 1.9, { x: 1.5, y: -thick - 1.0, z, color: 0xd8f8ff }), H.box(0.4, 0.3, 1.9, { x: -1.5, y: -thick - 1.0, z, color: 0xd8f8ff }));
   }
+  for (const sx of [-1, 1]) K.add('neon', H.box(0.08, 0.1, d, { x: sx * (w / 2 + 0.03), y: -0.3, color: TEAL })); // the guideway's light line
 }
 
 export function monorail(K, p, th, rng, H) {
   const { w, d } = p, L = d * 0.82;
   K.add('flat', H.box(w * 0.96, 0.14, L, { y: -0.07, color: 0xdedfdc })); // roof (you stand here)
   K.add('flat', H.box(w, 1.2, L, { y: -0.74, color: 0xc4c8cc }));
-  K.add('glass', H.box(w + 0.05, 0.62, L - 0.6, { y: -0.92 }));
+  K.add('glow', H.box(w + 0.05, 0.62, L - 0.6, { y: -0.92, color: 0xffe2a8 })); // lit windows
+  for (const sx of [-1, 1]) K.add('glow', H.box(0.06, 0.08, L, { x: sx * (w / 2 + 0.04), y: -0.16, color: TEAL }), H.box(0.06, 0.1, L - 0.4, { x: sx * (w * 0.43 + 0.04), y: -3.9, color: EMERALD }));
   K.add('flat', H.box(w + 0.04, 1.1, L, { y: -1.88, color: 0xc0302c }));
   K.add('flat', H.box(w + 0.07, 0.14, L, { y: -1.38, color: 0xe8b03a }));
   K.add('flat', H.box(w * 0.86, 1.5, L - 0.4, { y: -3.15, color: 0x2a4a8a })); // the skirt that straddles the beam
@@ -117,7 +133,7 @@ export function monorail(K, p, th, rng, H) {
     const z0 = sz * L / 2;
     K.add('flat', H.box(w * 0.92, 2.3, 1.4, { y: -1.2, z: z0 + sz * 0.55, rx: sz * 0.42, color: 0xc0302c }));
     K.add('flat', H.box(w * 0.8, 0.9, 1.2, { y: -0.45, z: z0 + sz * 0.45, rx: sz * 0.62, color: 0xc4c8cc }));
-    K.add('glass', H.box(w * 0.7, 0.5, 0.1, { y: -0.7, z: z0 + sz * 0.95, rx: sz * 0.62 }));
+    K.add('glow', H.box(w * 0.7, 0.5, 0.1, { y: -0.7, z: z0 + sz * 0.95, rx: sz * 0.62, color: 0x9ae8ff }));
     for (const sx of [-1, 1]) K.add('glow', H.box(0.36, 0.2, 0.1, { x: sx * w * 0.3, y: -1.6, z: z0 + sz * 1.22, color: sz < 0 ? 0xfff6d8 : 0xff3a3a }));
   }
   for (const sx of [-1, 1]) K.add('glow', ...text('MONORAIL', { px: 0.13, depth: 0.04, x: sx * (w / 2 + 0.03), y: -2.05, z: 0, ry: sx * Math.PI / 2, color: 0xfff2d0 }));
@@ -144,10 +160,13 @@ export function mopop(K, p, th, rng, H) {
     K.add('flat', blob(H, r * (0.5 + rng() * 0.25), 1.6 + rng() * 1.8, r * (0.4 + rng() * 0.2), { x: Math.cos(a) * r * 0.75, y, z: Math.sin(a) * r * 0.75, ry: -a, rz: (rng() - 0.5) * 0.9, color: c }, -0.4));
   }
   K.add('flat', circle(H, r * 0.99, 0.004, tintTo(col, 0xffffff, 0.3), 18));
-  K.add('flat', ring(H, r * 0.6, r * 0.66, 0.012, shade(col, 0.6), 18));
-  for (let k = 0; k < 2; k++) { // ribbons of sheet metal curling off the hull
-    const a = rng() * TAU, c = BLOB[(t + 3 + k) % 5];
-    K.add('flat', H.part(new THREE.TorusGeometry(r * (1.0 + rng() * 0.25), 0.32, 3, H.seg(12, 7), Math.PI * (0.5 + rng() * 0.3)), { x: Math.cos(a) * r * 0.2, y: -1.4 - rng() * 1.5, z: Math.sin(a) * r * 0.2, ry: a, rx: 0.5 + rng() * 0.6, color: c }));
+  // night: the skins glow iridescent: the cap's ring and rim run through the hues, the ribbons are neon
+  const h0 = t * 0.21, hue = (x, y, z) => iri(h0 + Math.atan2(z, x) / TAU + y * 0.05);
+  K.add('neon', paint(ring(H, r * 0.6, r * 0.66, 0.012, 0xffffff, 18), hue));
+  K.add('neon', paint(H.part(new THREE.TorusGeometry(r * 1.05, 0.12, 3, H.seg(28, 16)), { rx: Math.PI / 2, y: -0.3 }), hue));
+  for (let k = 0; k < 2; k++) { // ribbons of sheet metal curling off the hull, lit
+    const a = rng() * TAU;
+    K.add('neon', paint(H.part(new THREE.TorusGeometry(r * (1.0 + rng() * 0.25), 0.32, 3, H.seg(12, 7), Math.PI * (0.5 + rng() * 0.3)), { x: Math.cos(a) * r * 0.2, y: -1.4 - rng() * 1.5, z: Math.sin(a) * r * 0.2, ry: a, rx: 0.5 + rng() * 0.6 }), (x, y, z) => iri(h0 + 0.4 + k * 0.3 + Math.atan2(z, x) / TAU * 0.6)));
   }
 }
 
@@ -156,18 +175,34 @@ export function fountain(K, p, th, rng, H) {
   K.add('flat', H.cyl(r, r * 1.02, p.thick, H.seg(n, 20), { y: -p.thick / 2, color: 0xa8aca4 }));
   K.add('flat', circle(H, r, 0.004, 0xc6c9c0, n));
   for (const [a, b, c] of [[r * 0.92, r, 0x6e8a7a], [r * 0.48, r * 0.54, 0x8a8e88], [r * 0.7, r * 0.72, 0x8a8e88]]) K.add('flat', ring(H, a, b, 0.01, c, n));
-  for (let k = 0; k < 16; k++) { const a = (k / 16) * TAU; K.add('flat', H.box(r * 0.36, 0.02, 0.08, { x: Math.cos(a) * r * 0.74, y: 0.012, z: Math.sin(a) * r * 0.74, ry: -a, color: 0x8a8e88 })); }
+  for (let k = 0; k < 16; k++) { const a = (k / 16) * TAU; K.add(k % 2 ? 'flat' : 'neon', H.box(r * 0.36, 0.02, 0.08, { x: Math.cos(a) * r * 0.74, y: 0.012, z: Math.sin(a) * r * 0.74, ry: -a, color: k % 2 ? 0x8a8e88 : TEAL })); }
   K.add('neon', torus(H, r + 0.02, 0.08, { y: -0.5, color: EMERALD }));
+  edgeDisc(K, H, r, TEAL, { y: -0.1, n: 40 });
+  for (let k = 0; k < 32; k++) { const a = (k / 32) * TAU; K.add('glow', H.box(0.3, 0.05, 0.3, { x: Math.cos(a) * r * 0.96, y: 0.03, z: Math.sin(a) * r * 0.96, color: iri(k / 16) })); } // the show lights round the rim
+}
+// The fountain's floor, drawn from the dome (which stands at its centre, p.thick above it): the style
+// name 'fountain' is also the EURO pack's, and the merged style table gives theirs, so the International
+// Fountain's basin is drawn here too, 3 cm over whatever the 'fountain' style drew. FR = its radius.
+function fountainFloor(K, H, y0, FR) {
+  const n = 40;
+  K.add('flat', circle(H, FR, y0 + 0.03, 0x9a9e98, n));
+  for (const [a, b, c] of [[FR * 0.48, FR * 0.54, 0x6a6e6a], [FR * 0.7, FR * 0.72, 0x6a6e6a]]) K.add('flat', ring(H, a, b, y0 + 0.036, c, n));
+  K.add('neon', ring(H, FR * 0.9, FR * 0.92, y0 + 0.036, TEAL, n));
+  for (let k = 0; k < 16; k++) { const a = (k / 16) * TAU; K.add(k % 2 ? 'flat' : 'neon', H.box(FR * 0.36, 0.02, 0.08, { x: Math.cos(a) * FR * 0.74, y: y0 + 0.04, z: Math.sin(a) * FR * 0.74, ry: -a, color: k % 2 ? 0x7a7e78 : TEAL })); }
+  for (let k = 0; k < 32; k++) { const a = (k / 32) * TAU; K.add('glow', H.box(0.3, 0.05, 0.3, { x: Math.cos(a) * FR * 0.96, y: y0 + 0.05, z: Math.sin(a) * FR * 0.96, color: iri(k / 16) })); } // the show lights round the rim
+  edgeDisc(K, H, FR + 0.2, TEAL, { y: y0 - 0.1, n });
+  K.add('neon', torus(H, FR + 0.25, 0.08, { y: y0 - 0.5, color: EMERALD }));
 }
 export function fountainDome(K, p, th, rng, H) {
   const r = p.r;
+  fountainFloor(K, H, -p.thick, 10);
   K.add('flat', lathe([[r * 0.72, 0], [r * 0.9, -0.6], [r, -1.4], [r * 1.03, -p.thick]], H.seg(20, 12), { color: 0xd2d8de }));
   K.add('flat', circle(H, r * 0.72, 0.004, 0xc0c8d0, 20));
   for (let k = 0; k < 10; k++) { // nozzles and their jets (a frozen moment of the show)
     const a = (k / 10) * TAU, x = Math.cos(a) * r * 0.95, z = Math.sin(a) * r * 0.95;
     K.add('flat', H.cyl(0.12, 0.12, 0.3, 5, { x, y: -1.2, z, color: 0x4a5058 }));
     const h = 1.0 + (k % 3) * 0.5;
-    K.add('glow', H.part(new THREE.ConeGeometry(0.32, h, 5), { x: x * 1.12, y: -1.2 + h / 2, z: z * 1.12, rx: Math.PI, color: 0xd8eef8 }));
+    K.add('glow', paint(H.part(new THREE.ConeGeometry(0.32, h, 5), { x: x * 1.12, y: -1.2 + h / 2, z: z * 1.12, rx: Math.PI }), (px, py) => (py > -1.2 + h * 0.6 ? 0xe8f8ff : iri(k / 10)))); // jets lit from below
   }
 }
 
@@ -182,18 +217,28 @@ export function needleBase(K, p, th, rng, H) {
   K.add('flat', circle(H, r, 0.004, 0xbcbeb6, n));
   for (let k = 0; k < 12; k++) { const a = (k / 12) * TAU; K.add('flat', H.box(r * 0.7, 0.02, 0.1, { x: Math.cos(a) * r * 0.55, y: 0.012, z: Math.sin(a) * r * 0.55, ry: -a, color: 0x7e827c })); }
   K.add('neon', ring(H, r - 0.5, r - 0.3, 0.014, EMERALD, n));
-  for (const L of LEGS) for (const s of [-6, 6]) { const a = (L + s) * D2R; K.add('flat', H.box(1.3, 0.7, 1.3, { x: Math.cos(a) * 10, y: 0.35, z: Math.sin(a) * 10, ry: -a, color: 0x5a5e5c })); }
+  for (const L of LEGS) for (const s of [-6, 6]) {
+    const a = (L + s) * D2R;
+    K.add('flat', H.box(1.3, 0.7, 1.3, { x: Math.cos(a) * 10, y: 0.35, z: Math.sin(a) * 10, ry: -a, color: 0x5a5e5c }));
+    K.add('glow', H.box(0.9, 0.12, 0.9, { x: Math.cos(a) * 11.2, y: 0.06, z: Math.sin(a) * 11.2, ry: -a, color: 0xf0f8ff })); // the leg's uplight
+  }
+  edgeDisc(K, H, r, TEAL, { y: -0.1, n: 40 });
 }
 export function needleCore(K, p, th, rng, H) {
   const r = p.r, top = p.h, Y = (yw) => yw - top; // world height → local
   K.add('flat', H.cyl(r, r, p.thick, H.seg(16, 10), { y: -p.thick / 2, color: 0xd6d8d2 }));
-  for (let yw = 8; yw < top; yw += 6) K.add('flat', H.cyl(r + 0.04, r + 0.04, 0.3, H.seg(16, 10), { y: Y(yw), color: 0xa8aaa4 }));
+  for (let yw = 8; yw < top; yw += 6) K.add(yw % 12 === 2 ? 'glow' : 'flat', H.cyl(r + 0.04, r + 0.04, 0.3, H.seg(16, 10), { y: Y(yw), color: yw % 12 === 2 ? 0xd8f0ff : 0xa8aaa4 })); // lit bands up the core
   for (const z of [-0.6, 0.6]) K.add('flat', H.box(0.12, 19, 0.12, { x: r + 0.08, y: Y(12.9), z, color: 0xffcc1a })); // lift guides
   const col = 0xeceee8;
   for (const L of LEGS) {
     for (const s of [-1, 1]) {
       const pt = (rad, yw, spread) => { const a = (L + s * spread) * D2R; return [Math.cos(a) * rad, Y(yw), Math.sin(a) * rad]; };
-      K.add('flat', ...struts([pt(10, 3.4, 6), pt(6.4, 11, 8), pt(3.2, 22, 14), pt(4.8, 33, 9), pt(7.6, 43, 7), pt(9.6, 49.2, 6)], 0.75, col));
+      const legPts = [pt(10, 3.4, 6), pt(6.4, 11, 8), pt(3.2, 22, 14), pt(4.8, 33, 9), pt(7.6, 43, 7), pt(9.6, 49.2, 6)];
+      K.add('flat', ...struts(legPts, 0.75, col));
+      for (let i = 1; i < legPts.length; i++) { // the legs strung with lights (the Needle ringed in light)
+        const [a, b] = [legPts[i - 1], legPts[i]];
+        for (let k = 0; k < 3; k++) { const u = (k + 0.5) / 3; K.add('glow', H.box(0.32, 0.32, 0.32, { x: a[0] + (b[0] - a[0]) * u, y: a[1] + (b[1] - a[1]) * u + 0.45, z: a[2] + (b[2] - a[2]) * u, color: 0xfff4dc })); }
+      }
     }
     // cross braces between the pair
     for (const [rad, yw, sp] of [[8.4, 6.5, 7], [4.4, 16, 11], [4.4, 28, 11], [7.2, 41.5, 7]]) {
@@ -208,6 +253,7 @@ export function needleRing(K, p, th, rng, H) {
   K.add('flat', circle(H, r, 0.004, 0x9ea4a0, n));
   K.add('flat', ring(H, r - 0.6, r - 0.45, 0.01, 0xffcc1a, n));
   K.add('neon', torus(H, r + 0.03, 0.07, { y: -p.thick + 0.1, color: EMERALD }));
+  edgeDisc(K, H, r, TEAL, { y: -0.1, n: 28 });
   for (let k = 0; k < 20; k++) { const a = (k / 20) * TAU; K.add('flat', H.box(0.06, 1, 0.06, { x: Math.cos(a) * (r - 0.12), y: 0.5, z: Math.sin(a) * (r - 0.12), color: STEEL })); }
   K.add('flat', torus(H, r - 0.12, 0.04, { y: 1.0, color: STEEL }));
   for (let k = 0; k < 8; k++) { const a = (k / 8) * TAU; K.add('flat', strut([Math.cos(a) * (r - 0.4), -p.thick, Math.sin(a) * (r - 0.4)], [Math.cos(a) * 2.7, -p.thick - 3, Math.sin(a) * 2.7], 0.22, 0x9a9c96)); }
@@ -222,6 +268,7 @@ export function needleLift(K, p, th, rng, H) {
   }
   K.add('flat', H.box(0.06, 0.06, d, { x: w / 2 - 0.05, y: 1.1, color: 0xffcc1a }));
   K.add('glow', H.cyl(0.8, 0.8, 0.05, 8, { y: -thick - 0.03, color: 0x7ff6d0 }));
+  for (const f of H.faces(w, d)) K.add('glow', H.box(f.tx ? f.width : 0.08, 0.08, f.tz ? f.width : 0.08, { x: f.nx * (f.half + 0.02), y: -0.1, z: f.nz * (f.half + 0.02), color: N_AMBER }));
 }
 export function needlePad(K, p, th, rng, H) {
   H.deck(K, p, th);
@@ -235,15 +282,17 @@ export function needleSaucer(K, p, th, rng, H) {
   for (const rr of [r * 0.45, r * 0.75]) K.add('flat', ring(H, rr, rr + 0.12, 0.01, 0x8e928c, n));
   for (let k = 0; k < 24; k++) { const a = (k / 24) * TAU; K.add('flat', H.box(r * 0.5, 0.02, 0.07, { x: Math.cos(a) * r * 0.72, y: 0.012, z: Math.sin(a) * r * 0.72, ry: -a, color: 0x9a9e98 })); }
   K.add('flat', lathe([[r, 0], [r + 0.35, -0.5], [r + 0.6, -1.5], [r + 0.3, -2.4], [r - 0.6, -3.1], [r * 0.5, -p.thick]], H.seg(n, 20), { color: 0xc0c4be }));
-  K.add('glass', H.cyl(r + 0.5, r + 0.62, 0.8, H.seg(n, 20), { y: -1.95 }));
+  K.add('glow', H.cyl(r + 0.5, r + 0.62, 0.8, H.seg(n, 20), { y: -1.95, color: 0xffd8a0 })); // the restaurant's windows, lit
+  edgeDisc(K, H, r, 0xfff0d0, { key: 'glow', y: -0.12, n: 48, t: 0.1 }); // the halo deck's rim: a ring of light
   for (let k = 0; k < 36; k++) { // the halo ribs flaring under the rim, and the rim lights
     const a = (k / 36) * TAU, c = Math.cos(a), s = Math.sin(a);
     K.add('flat', strut([c * r * 0.55, -p.thick - 0.2, s * r * 0.55], [c * (r + 1.0), -0.8, s * (r + 1.0)], 0.16, 0xe2e4de));
     if (k % 2 === 0) K.add('glow', H.box(0.2, 0.14, 0.2, { x: c * (r + 0.36), y: -0.45, z: s * (r + 0.36), color: k % 6 === 0 ? 0xff4a3a : 0xf4f6e8 }));
+    K.add('glow', H.box(0.22, 0.22, 0.22, { x: c * (r + 1.0), y: -0.85, z: s * (r + 1.0), color: k % 3 ? 0xd8f0ff : EMERALD })); // the rib tips' lamps
   }
   for (let k = 0; k < 40; k++) { const a = (k / 40) * TAU; K.add('flat', H.box(0.06, 1, 0.06, { x: Math.cos(a) * (r - 0.2), y: 0.5, z: Math.sin(a) * (r - 0.2), color: STEEL })); }
   K.add('flat', torus(H, r - 0.2, 0.05, { y: 1.0, color: STEEL }));
-  K.add('neon', torus(H, r + 0.62, 0.09, { y: -1.5, color: EMERALD }));
+  K.add('neon', torus(H, r + 0.62, 0.09, { y: -1.5, color: EMERALD }), torus(H, r + 0.4, 0.09, { y: -2.5, color: TEAL }));
 }
 export function needleCap(K, p, th, rng, H) {
   const r = p.r;
@@ -253,13 +302,16 @@ export function needleCap(K, p, th, rng, H) {
   K.add('flat', H.cyl(0.5, 0.6, 0.6, 6, { y: 0.3, color: STEEL }));
   K.add('glow', H.box(0.3, 0.3, 0.3, { y: 16.2, color: 0xff2a2a }));
   for (const a of [0.6, 2.7, 4.6]) K.add('glow', H.box(0.2, 0.2, 0.2, { x: Math.cos(a) * r * 0.8, y: 0.15, z: Math.sin(a) * r * 0.8, color: 0xff3a3a }));
+  edgeDisc(K, H, r * 0.86, EMERALD, { key: 'glow', y: -0.05, n: 28 });
+  K.add('glow', H.cyl(0.12, 0.12, 0.4, 5, { y: 6, color: 0xfff4dc }), H.cyl(0.1, 0.1, 0.4, 5, { y: 11, color: 0xfff4dc })); // the spire's lamps
 }
 
 export function glasshouse(K, p, th, rng, H) {
   const { w, d, thick } = p;
   K.add('flat', H.box(w, 1.2, d, { y: -thick + 0.6, color: 0x8a8e88 }));
-  K.add('glass', H.box(w - 0.1, thick - 1.3, d - 0.1, { y: -(thick - 1.2) / 2 - 0.05 }));
+  K.add('glow', paint(H.box(w - 0.1, thick - 1.3, d - 0.1, { y: -(thick - 1.2) / 2 - 0.05 }), (x, y, z) => iri(0.15 + (x / w) * 0.5 + (y < -thick / 2 ? 0.1 : 0)) & 0x7f7f7f)); // the glass garden, lit from inside
   K.add('glass', H.box(w, 0.12, d, { y: -0.06 }));
+  edgeRect(K, H, w, d, TEAL, { y: -0.14, t: 0.08 });
   for (let x = -w / 2; x <= w / 2 + 0.01; x += 2) for (const sz of [-1, 1]) K.add('flat', H.box(0.08, thick - 1.2, 0.08, { x, y: -(thick - 1.2) / 2, z: sz * d / 2, color: 0x2a3034 }));
   for (let z = -d / 2; z <= d / 2 + 0.01; z += 2) for (const sx of [-1, 1]) K.add('flat', H.box(0.08, thick - 1.2, 0.08, { x: sx * w / 2, y: -(thick - 1.2) / 2, z, color: 0x2a3034 }));
   for (let x = -w / 2 + 2; x < w / 2; x += 2) K.add('flat', H.box(0.06, 0.03, d, { x, y: 0.02, color: 0x2a3034 }));
@@ -277,7 +329,9 @@ export function arenaRoof(K, p, th, rng, H) {
   K.add('flat', H.box(w, 1.2, d, { y: -0.6, color: 0xa4aaa6 }));
   for (let x = -w / 2 + 2; x < w / 2; x += 2.6) K.add('flat', H.box(0.06, 0.02, d - 0.4, { x, y: 0.012, color: 0x7e8480 }));
   K.add('flat', H.box(w + 0.6, 0.5, d + 0.6, { y: -1.0, color: 0x3a4046 })); // fascia
-  K.add('glass', H.box(w - 2, thick - 1.4, d - 2, { y: -1.2 - (thick - 1.4) / 2 }));
+  K.add('glow', paint(H.box(w - 2, thick - 1.4, d - 2, { y: -1.2 - (thick - 1.4) / 2 }), (x, y) => (y > -thick * 0.45 ? 0x1e4a5a : 0x2a6a6a))); // the concourse glass, lit
+  edgeRect(K, H, w + 0.6, d + 0.6, EMERALD, { y: -1.26 });
+  edgeRect(K, H, w, d, TEAL, { y: -0.1, t: 0.08 });
   for (let x = -w / 2 + 1; x <= w / 2 - 1; x += 2.4) for (const sz of [-1, 1]) K.add('flat', H.box(0.1, thick - 1.4, 0.1, { x, y: -1.2 - (thick - 1.4) / 2, z: sz * (d / 2 - 1), color: 0x2a3034 }));
   for (const [sx, sz] of [[-1, -1], [1, 1]]) K.add('flat', H.box(4, 0.4, 1.2, { x: sx * (w / 2 - 1), y: 0.9, z: sz * (d / 2 + 0.2), rz: sx * 0.35, color: 0x3a4046 })); // the swooping corners
   K.add('glow', ...text('OFFSET ARENA', { px: 0.34, depth: 0.06, x: 0, y: -1.0, z: d / 2 + 0.33, color: EMERALD }));

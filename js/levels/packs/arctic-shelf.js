@@ -104,7 +104,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'arctic-shelf', name: 'ICE SHELF', sub: 'NORDAUSTLANDET · CALVING FRONT · BLIZZARD', theme: 'arcticWhiteout', song: 'permafrost',
+  id: 'arctic-shelf', name: 'ICE SHELF', sub: 'NORDAUSTLANDET · CALVING FRONT · 01:30 · NIGHT BLIZZARD', theme: 'arcticBlizzard', song: 'permafrost',
   seed: 9002, par: 360, killY: -0.6, water: 0,
   start: { x: -62, y: 1.2, z: 84, yaw: -1.0 },
   plats, lasers,
@@ -147,5 +147,12 @@ export default {
     { kind: 'arc-beaconlight', x: 26, y: 59.4, z: -222 }, // the camp's strobe: the one thing the whiteout can't hide
     { kind: 'arc-icefield', x: 0, y: 30, z: -560, len: 1400, h: 60, seed: 921 },
     { kind: 'arc-bergs', x: 0, y: 0, z: 0, r0: 220, r1: 420, n: 26, seed: 922 },
+    { kind: 'arc-lightcones', x: 0, y: 0, z: 0, k: 0.14, cones: [ // floodlights cutting the blizzard: the icebreaker, its A-frame, the drill rig
+      [41.5, 11.1, 31.7, 0, -1, -0.7, 12, 4.5], [50.5, 11.1, 31.7, 0, -1, -0.7, 12, 4.5], [41.5, 11.1, 52.3, 0, -1, 0.7, 12, 4.5], [50.5, 11.1, 52.3, 0, -1, 0.7, 12, 4.5],
+      [40.1, 10.7, 86.6, 0, -1, -0.45, 9, 3.6], [51.9, 10.7, 86.6, 0, -1, -0.45, 9, 3.6],
+      [-42.4, 47.8, -161.5, 0.7, -1, 0, 12, 4.2], [-49.6, 47.8, -161.5, -0.7, -1, 0, 12, 4.2],
+      [-46, 42, -157.8, 0, -1, -0.9, 9, 3.4], [-46, 42, -150.2, 0, -1, 0.9, 9, 3.4],
+      [-23.3, 45.8, -207.7, 0.4, -1, 0.8, 10, 4], [33.7, 45.3, -202.7, 0.4, -1, 0.8, 10, 4], [-0.3, 46.3, -235.2, 0.4, -1, 0.8, 10, 4],
+    ] },
   ],
 };

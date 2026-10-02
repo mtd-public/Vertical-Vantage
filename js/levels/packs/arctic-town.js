@@ -127,7 +127,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'arctic-town', name: 'LONGYEAR', sub: 'SVALBARD · 78°N · POLAR NIGHT · AURORA', theme: 'arcticAurora', song: 'permafrost',
+  id: 'arctic-town', name: 'LONGYEAR', sub: 'SVALBARD · 78°N · 22:10 · POLAR NIGHT · AURORA', theme: 'arcticAurora', song: 'permafrost',
   seed: 9001, par: 330, killY: -0.6, water: 0,
   start: { x: 40, y: G, z: 122, yaw: 0 },
   plats, lasers, drives,
@@ -167,5 +167,8 @@ export default {
     { kind: 'arc-snowfall', x: 0, y: 0, z: 0, n: 500, wind: 0.15, k: 0.7 },
     { kind: 'arc-townlights', x: 0, y: 0, z: 0, seed: 913 },
     { kind: 'arc-radomes', x: -320, y: 30, z: -140, n: 9, seed: 914 },
+    { kind: 'arc-streetlights', x: 0, y: 0, z: 0, lines: [[-100, 66, -12, 66, 1, 11], [-100, 47, -12, 47, 1, 11], [-100, 35, -12, 35, 1, 11], [-100, 17, -12, 17, 1, 11], [-100, 5, -12, 5, 1, 11], [-100, -27, -12, -27, 1, 11], [-2, 70, -2, -64, 1, 12], [20, 62, 20, -56, 1, 12], [47, 112, 47, 64, 1, 12]] }, // the town's streets
+    { kind: 'arc-lightcones', x: 0, y: 0, z: 0, base: 34, k: 0.1, domes: [[-160, -22, 7], [-188, -48, 8.5, 1], [-150, -62, 5.5], [-208, -12, 6.5, 1], [-176, 8, 5], [-218, -76, 7.5]], // the radome field, floodlit
+      cones: [[-37, 12.1, -128.3, 0, -1, -0.7, 12, 4.5], [-31, 12.1, -128.3, 0, -1, -0.7, 12, 4.5], [-37, 12.1, -107.7, 0, -1, 0.7, 12, 4.5], [-31, 12.1, -107.7, 0, -1, 0.7, 12, 4.5]] }, // the icebreaker's deck floods
   ],
 };

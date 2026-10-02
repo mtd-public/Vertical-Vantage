@@ -4,38 +4,41 @@ import { STYLES } from './arctic-styles.js';
 import { BACKDROPS } from './arctic-backdrops.js';
 import { polarisModel, polarisUpdate } from './arctic-boss.js';
 
-// The polar night with the aurora, the blizzard whiteout on the glacier, the vault in the mountain,
-// and the ice cavern under it.
+// Polar night all the way down, in ice blue, cyan and magenta: the aurora over neon Longyearbyen, a night
+// blizzard on the glacier front cut by floodlights, the vault in the mountain, the ice cavern lit from within.
 const themes = {
-  arcticAurora: { // LONGYEAR: polar night, a low moon, stars, the aurora (a backdrop) over a teal horizon
-    skyTop: '#02060f', skyBot: '#0e3040', sun: '#e8f4ff', sunDir: [0.55, 0.28, -0.75], night: 1,
-    fog: [80, 340], hemi: ['#8ab8e0', '#1c2638', 1.55], key: ['#b8d8ff', 0.95],
-    cloud: '#163248', cloudShade: '#0a1828', city: 0, arc: [0, 4], cityCol: '#0a1020', cityH: 0, pyramids: 0,
-    windows: 1, neon: 1.2, water: '#071824', rain: 0, stars: 1, beams: 0, cover: 0.1, haze: 0.28,
+  arcticAurora: { // LONGYEAR 22:10: polar night, a low moon, stars, the aurora (a backdrop) over a teal-violet horizon,
+    // the new port's lights across the fjord, the station's searchlights
+    skyTop: '#01030f', skyBot: '#14304e', sun: '#e8f4ff', sunDir: [0.55, 0.28, -0.75], night: 1,
+    fog: [80, 340], hemi: ['#6a8ed0', '#2a2444', 0.95], key: ['#a8c8ff', 0.6],
+    cloud: '#1a3654', cloudShade: '#0c1a30', city: 0.55, arc: [-1.57, 0.85], cityCol: '#08101e', cityH: 0.35, pyramids: 0,
+    windows: 1, neon: 1.3, water: '#06142a', rain: 0, stars: 1, beams: 0.45, cover: 0.1, haze: 0.28,
   },
-  arcticWhiteout: { // ICE SHELF: the blizzard: a white lid, the world fading out in 150 m, black water
-    skyTop: '#9aa8b6', skyBot: '#d8e2ea', sun: '#ffffff', sunDir: [0.2, 0.6, -0.6], night: 0,
-    fog: [22, 165], hemi: ['#f2f8ff', '#8a9aac', 1.85], key: ['#eef4ff', 1.05],
-    cloud: '#e6edf3', cloudShade: '#b4c0cc', city: 0, arc: [0, 4], cityCol: '#9aa8b6', cityH: 0, pyramids: 0,
-    windows: 0.2, neon: 0.8, water: '#0a1a24', rain: 0, stars: 0, beams: 0, cover: 1, haze: 0.82,
+  arcticBlizzard: { // ICE SHELF 01:30: a night blizzard: snow lit blue-grey by the camp's floodlights, the world
+    // fading out in 150 m, black water, searchlights sweeping the cloud
+    skyTop: '#060e1c', skyBot: '#20364c', sun: '#d8ecff', sunDir: [0.2, 0.6, -0.6], night: 1,
+    fog: [22, 150], hemi: ['#7a9ad0', '#2a2c48', 1.1], key: ['#b8d0ff', 0.6],
+    cloud: '#2e4460', cloudShade: '#16223a', city: 0, arc: [0, 4], cityCol: '#0a1424', cityH: 0, pyramids: 0,
+    windows: 0.9, neon: 1.3, water: '#06101c', rain: 0, stars: 0, beams: 0.6, cover: 1, haze: 0.75,
   },
-  arcticVault: { // THE VAULT: a clear polar night outside; inside, cold light and a deep blue dark
-    skyTop: '#01040c', skyBot: '#0a2032', sun: '#e8f4ff', sunDir: [-0.4, 0.3, 0.85], night: 1,
-    fog: [30, 175], hemi: ['#9ac8f0', '#18202e', 1.6], key: ['#c0e0ff', 0.85],
+  arcticVault: { // THE VAULT 00:40: a clear polar night outside, the lit port far below; inside, a deep blue dark
+    // cut by cold light strips and status LEDs
+    skyTop: '#01030c', skyBot: '#0c1e38', sun: '#e8f4ff', sunDir: [-0.4, 0.3, 0.85], night: 1,
+    fog: [30, 170], hemi: ['#6a96d8', '#1a1838', 0.62], key: ['#a8c8ff', 0.45],
+    cloud: '#10283a', cloudShade: '#081420', city: 0.4, arc: [1.57, 0.7], cityCol: '#060c18', cityH: 0.3, pyramids: 0,
+    windows: 1, neon: 1.3, water: null, rain: 0, stars: 0.9, beams: 0.3, cover: 0.05, haze: 0.3,
+  },
+  arcticCavern: { // COLD STORAGE 03:00: the ice cavern under the mountain, lit from within the ice, cyan and magenta
+    skyTop: '#020610', skyBot: '#0c1a34', sun: '#c8f0ff', sunDir: [0.2, 0.9, 0.3], night: 1,
+    fog: [38, 160], hemi: ['#5a9ad8', '#3a1a4c', 0.68], key: ['#a8eeff', 0.5],
     cloud: '#10283a', cloudShade: '#081420', city: 0, arc: [0, 4], cityCol: '#0a1020', cityH: 0, pyramids: 0,
-    windows: 0.9, neon: 1.25, water: null, rain: 0, stars: 0.9, beams: 0, cover: 0.05, haze: 0.3,
+    windows: 0.6, neon: 1.3, water: null, rain: 0, stars: 0, beams: 0, cover: 0, haze: 0.3,
   },
-  arcticCavern: { // COLD STORAGE: the ice cavern under the mountain, lit from within the ice
-    skyTop: '#020810', skyBot: '#0c2434', sun: '#c8f0ff', sunDir: [0.2, 0.9, 0.3], night: 1,
-    fog: [42, 165], hemi: ['#a8e0f8', '#1a2c3e', 1.7], key: ['#d0f2ff', 1.05],
-    cloud: '#10283a', cloudShade: '#081420', city: 0, arc: [0, 4], cityCol: '#0a1020', cityH: 0, pyramids: 0,
-    windows: 0.6, neon: 1.2, water: null, rain: 0, stars: 0, beams: 0, cover: 0, haze: 0.3,
-  },
-  arcticBonus: { // the SERVER CORE bonus arenas: an ice-blue power sky
-    skyTop: '#1a5ab8', skyBot: '#c8f8ff', sun: '#ffffff', sunDir: [-0.4, 0.6, -0.6], night: 0.2, power: 1,
-    fog: [70, 280], hemi: ['#f0fbff', '#4a6a8a', 1.75], key: ['#f0faff', 2.0],
-    cloud: '#f0fbff', cloudShade: '#a8d8f0', city: 0, arc: [0, 4], cityCol: '#93a9c8', windows: 0, neon: 1,
-    water: null, rain: 0, stars: 0.2, beams: 0,
+  arcticBonus: { // the SERVER CORE bonus arenas: an ice-blue power sky in the polar night
+    skyTop: '#020a2a', skyBot: '#1a3a62', sun: '#e8f8ff', sunDir: [-0.4, 0.6, -0.6], night: 1, power: 0.45,
+    fog: [70, 280], hemi: ['#a8d8f8', '#2a2a4c', 1.5], key: ['#e0f4ff', 1.15],
+    cloud: '#2a4a6a', cloudShade: '#14243e', city: 0, arc: [0, 4], cityCol: '#0a1424', windows: 1, neon: 1.3,
+    water: null, rain: 0, stars: 0.9, beams: 0,
   },
 };
 

@@ -113,7 +113,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'arctic-vault', name: 'THE VAULT', sub: 'PLATÅBERGET · SEED VAULT + WORLD ARCHIVE · -6 °C', theme: 'arcticVault', song: 'permafrost',
+  id: 'arctic-vault', name: 'THE VAULT', sub: 'PLATÅBERGET · SEED VAULT + WORLD ARCHIVE · 00:40 · -6 °C', theme: 'arcticVault', song: 'permafrost',
   seed: 9003, par: 330, killY: -40,
   start: { x: 0, y: 0, z: 100, yaw: 0 },
   plats, lasers,
@@ -156,5 +156,6 @@ export default {
     { kind: 'arc-peaks', x: 0, y: -2, z: 0, r0: 320, r1: 460, n: 20, seed: 932, skip: [1.2, 0.8] },
     { kind: 'arc-fjordview', x: 0, y: -60, z: 520, seed: 933 },
     { kind: 'arc-snowfall', x: 0, y: 0, z: 0, n: 600, wind: 0.3, k: 0.8, zMin: 36 }, // (outside only)
+    { kind: 'arc-lightcones', x: 0, y: 0, z: 0, k: 0.13, cones: [[-24.8, 6.6, 49.9, 0, -0.55, 1, 18, 6], [-23.2, 6.6, 49.9, 0.1, -0.55, 1, 18, 6]] }, // the flood mast over the apron
   ],
 };

@@ -41,7 +41,7 @@ P(rect(29, 20, 2.4, 2.4, 2.4, { thick: 2.4, style: 'arc-crate', tint: 1 }), rect
 P(rect(35, 0, 2, 10, 9, { thick: 9, style: 'arc-deepdoor' }));
 
 export default {
-  id: 'arctic-boss', name: 'COLD STORAGE', sub: 'PLATÅBERGET · -40 M · -18 °C · BOSS', theme: 'arcticCavern', song: 'polaris',
+  id: 'arctic-boss', name: 'COLD STORAGE', sub: 'PLATÅBERGET · -40 M · 03:00 · -18 °C · BOSS', theme: 'arcticCavern', song: 'polaris',
   seed: 9004, par: 240, killY: -10, objective: 'boss', bossName: 'POLARIS',
   arena: A,
   start: { x: -28, y: A.floor, z: 0, yaw: -Math.PI / 2 },

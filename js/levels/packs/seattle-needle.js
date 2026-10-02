@@ -38,7 +38,7 @@ P(disc(36, -50, 3.6, 5.5, { thick: 6.5, style: 'mopop', tint: 3 })); // a low sw
 const top5 = blob[4];
 
 // ---- the International Fountain, west
-const fountain = P(disc(-28, -58, 10, W, { thick: 6, style: 'fountain' }));
+const fountain = P(disc(-28, -58, 10, W, { thick: 6, style: 'seaFountain' }));
 P(disc(-28, -58, 3.2, 4.4, { thick: 2.4, style: 'fountainDome' }));
 
 // ---- THE SPACE NEEDLE

@@ -52,7 +52,7 @@ export class GameRenderer {
     r.autoClear = false;
     if (RETRO) canvas.classList.add('retro');
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(70, 1, 0.12, 900); // near 0.12: depth precision for decals far away
+    this.camera = new THREE.PerspectiveCamera(70, 1, 0.2, 900); // near 0.2: depth precision far away (less z-fight flicker), still clear of walls at the 0.45 m body radius
     this.camera.rotation.order = 'YXZ';
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
     this.sun = new THREE.DirectionalLight(0xffffff, 2);
@@ -460,6 +460,7 @@ export class GameRenderer {
 }
 
 // ------------------------------------------------------------------ materials
+export const ON_TOP = { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 };
 function makeMaterials() {
   const fac = facadeTextures(4);
   const swirl = canvasTex(64, 64, (g) => {
@@ -473,8 +474,10 @@ function makeMaterials() {
   return {
     paint: new THREE.MeshLambertMaterial({ vertexColors: true }),
     paintFlat: new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true }),
-    glow: new THREE.MeshBasicMaterial({ vertexColors: true }),
-    neon: new THREE.MeshBasicMaterial({ vertexColors: true }),
+    // lights, trims and lit panels often sit flush on a surface: a nudge toward the camera makes them win
+    // that depth tie every frame instead of flickering against it (z-fighting) as you move
+    glow: new THREE.MeshBasicMaterial({ vertexColors: true, ...ON_TOP }),
+    neon: new THREE.MeshBasicMaterial({ vertexColors: true, ...ON_TOP }),
     glass: new THREE.MeshLambertMaterial({ color: 0x6a88a8, emissive: 0x0a1420 }),
     facade: new THREE.MeshLambertMaterial({ map: fac.map, emissiveMap: fac.emissive, emissive: 0x000000, vertexColors: true }),
     concrete: new THREE.MeshLambertMaterial({ map: concreteTex(), vertexColors: true }),

@@ -104,6 +104,7 @@ export function options(S, back = 'back') {
       ${head('GRAPHICS')}
       <div class="opt"><span>Quality (particles, rain, sky)</span>${seg('quality', [['auto', 'AUTO'], ['low', 'LOW'], ['med', 'MED'], ['high', 'HIGH']])}</div>
       <div class="opt"><span>Resolution (reloads)</span>${seg('art', [['retro', '240p'], ['hd', '400p'], ['smooth', 'SMOOTH']])}</div>
+      <div class="opt"><span>PS1 vertex wobble (reloads)</span>${seg('wobble', [[false, 'OFF'], [true, 'ON']])}</div>
     </div>
     <div class="btns"><button class="btn" data-go="${back}">◀ BACK</button></div></div>`);
 }

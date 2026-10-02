@@ -11,13 +11,22 @@
 import * as THREE from 'three';
 
 const ARTS = ['retro', 'hd', 'smooth'];
+function readSettings() { try { return JSON.parse(localStorage.getItem('vertical-vantage.settings')) || {}; } catch (_) { return {}; } }
 function readArt() {
   const q = /[?&]art=([a-z]+)\b/.exec(location.search);
   if (q && ARTS.includes(q[1])) return q[1];
-  try { const s = JSON.parse(localStorage.getItem('vertical-vantage.settings')) || {}; return ARTS.includes(s.art) ? s.art : 'retro'; } catch (_) { return 'retro'; }
+  const s = readSettings(); return ARTS.includes(s.art) ? s.art : 'retro';
+}
+// PS1 vertex wobble (vertices snapped to the pixel grid). Off by default: on thin, far detail it reads as
+// flicker. Options → "PS1 wobble", or ?wobble=1 / ?wobble=0.
+function readWobble() {
+  const q = /[?&]wobble=([01])\b/.exec(location.search);
+  if (q) return q[1] === '1';
+  return readSettings().wobble === true;
 }
 
 export const ART = typeof location !== 'undefined' ? readArt() : 'retro';
+export const WOBBLE = typeof location !== 'undefined' ? readWobble() : false;
 export const RETRO = ART !== 'smooth';
 export const RETRO_LINES = ART === 'hd' ? 400 : 240; // internal vertical resolution (the shorter side)
 
@@ -45,16 +54,17 @@ const DITHER15 = `
 
 if (RETRO) {
   const C = THREE.ShaderChunk;
-  C.project_vertex = `${C.project_vertex}\n#define RETRO_SNAP\n${SNAP_GLSL}`;
+  if (WOBBLE) C.project_vertex = `${C.project_vertex}\n#define RETRO_SNAP\n${SNAP_GLSL}`;
   C.colorspace_fragment = `${C.colorspace_fragment}${DITHER15}`;
 }
 
-// Retro textures are point-sampled with no mipmaps (the chunky PS1 texel).
+// Retro textures are point-sampled up close (the chunky PS1 texel) but mipmapped in the distance, so far
+// facades, windows and deck planks don't shimmer and crawl as you move (they did with no mipmaps).
 export function retroTex(t) {
   t.colorSpace = THREE.SRGBColorSpace;
   if (!RETRO) { t.anisotropy = 4; return t; }
   t.magFilter = THREE.NearestFilter;
-  t.minFilter = THREE.NearestFilter;
-  t.generateMipmaps = false;
+  t.minFilter = THREE.NearestMipmapLinearFilter;
+  t.generateMipmaps = true;
   return t;
 }

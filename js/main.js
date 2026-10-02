@@ -22,7 +22,7 @@ import { Achievements } from './ui/achievements.js';
 const SKEY = 'vertical-vantage.settings', PKEY = 'vertical-vantage.progress';
 const TESTING_UNLOCK_ALL = true; // every stage of every pack is open in Stage Select (testing build)
 const DEFAULTS = {
-  art: 'retro', mouseSens: 1, padSens: 1, touchSens: 1, invertY: false, autoLook: true, touch: 'auto', cannon: true, quips: false,
+  art: 'retro', wobble: false, mouseSens: 1, padSens: 1, touchSens: 1, invertY: false, autoLook: true, touch: 'auto', cannon: true, quips: false,
   musicVol: 0.8, sfxVol: 0.9, fov: 96, calm: false, lowFlash: false, fireLatch: false, quality: 'auto',
 };
 const load = (k, d) => { try { return { ...d, ...(JSON.parse(localStorage.getItem(k)) || {}) }; } catch (_) { return { ...d }; } };
@@ -267,7 +267,7 @@ $('screen').addEventListener('click', (e) => {
     const [, key, raw] = go.split(':');
     const v = raw === 'true' ? true : raw === 'false' ? false : raw;
     G.settings[key] = v; save(SKEY, G.settings);
-    if (key === 'art') { location.reload(); return; }
+    if (key === 'art' || key === 'wobble') { location.reload(); return; }
     applySettings();
     Screens.options(G.settings, G.optionsBack === 'pause' ? 'toPause' : 'back');
     return;

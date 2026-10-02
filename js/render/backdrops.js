@@ -15,7 +15,7 @@ const MATS = {};
 function mats() {
   if (!MATS.solid) {
     MATS.solid = new THREE.MeshLambertMaterial({ vertexColors: true, flatShading: true, fog: false });
-    MATS.glow = new THREE.MeshBasicMaterial({ vertexColors: true, fog: false });
+    MATS.glow = new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2 }); // (lit panels flush on a landmark win the depth tie)
   }
   return MATS;
 }

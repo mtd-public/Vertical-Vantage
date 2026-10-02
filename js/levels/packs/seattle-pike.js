@@ -30,14 +30,14 @@ P(rect(-24, -105, 10, 8, 7.5, { thick: 5.5, style: 'pierShed', tint: 2 }));
 // ---- the Great Wheel on pier 57: ten gondolas round a 15 m wheel (you ride their roofs)
 const HUB = { x: -30, y: 21, z: -11 }, WR = 15, WP = 36;
 P(disc(HUB.x, HUB.z, 1.4, HUB.y + 0.7, { thick: 1.4, style: 'wheelHub' }));
-for (let i = 0; i < 10; i++) P(rect(HUB.x, HUB.z, 2.4, 2.4, HUB.y, { thick: 2.2, style: 'gondola', tint: i, move: orbit('xy', WR, WP, i / 10) })); // (gondola 0 is at three o'clock at t = 0)
+for (let i = 0; i < 10; i++) P(rect(HUB.x, HUB.z, 2.4, 2.4, HUB.y, { thick: 2.2, style: 'seaGondola', tint: i, move: orbit('xy', WR, WP, i / 10) })); // (gondola 0 is at three o'clock at t = 0)
 // from the wheel's one o'clock, a skyway of VENTI cups down to the market roof
 const arcade = P(box(20, 40, -90, -20, 15, { thick: 22, style: 'marketRoof' }));
 P(...chain(4021, { x: HUB.x + WR * 0.5, y: HUB.y + WR * 0.87, z: HUB.z }, { x: 20.5, y: 15, z: -26 }, { make: cup, maxStep: 7 }));
 
 // ---- the ferries crossing Elliott Bay (long axis along x, travelling in x)
 const FA = { x: -90, z: 13, amp: 34, period: 64, phase: 0 }, FB = { x: -96, z: -42, amp: 34, period: 70, phase: 0 }; // both head for the piers first
-for (const F of [FA, FB]) P(rect(F.x, F.z, 30, 12, 7, { thick: 6.5, style: 'ferry', tint: F === FA ? 0 : 1, move: mv('x', F.amp, F.period, F.phase), bob: bob(0.12, 5, F.phase) }));
+for (const F of [FA, FB]) P(rect(F.x, F.z, 30, 12, 7, { thick: 6.5, style: 'seaFerry', tint: F === FA ? 0 : 1, move: mv('x', F.amp, F.period, F.phase), bob: bob(0.12, 5, F.phase) }));
 const fx = (F) => F.x + F.amp * Math.sin(2 * Math.PI * F.phase); // where a ferry is at t = 0
 
 // ---- the hillclimb up the bluff, the market, the sign

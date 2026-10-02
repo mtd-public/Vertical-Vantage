@@ -1,5 +1,6 @@
 // Effects: pooled and instanced (doc 14 #17: no per-projectile lights; pools, not churn).
-//   shots / bolts   one InstancedMesh each, rebuilt from the sim lists every frame
+//   shots           the player's shots, muzzle smoke and impact sparks: fx-player.js (this.pfx)
+//   bolts           one InstancedMesh, rebuilt from the sim list every frame
 //   bits            sparks + debris: one InstancedMesh of little cubes with CPU physics
 //   booms           a few flat-shaded fireball shells, scaled and faded
 //   rain            line streaks moved in the vertex shader around the camera (night)
@@ -10,9 +11,9 @@
 import * as THREE from 'three';
 import { ringTex, glowTex } from './textures.js';
 import { seg } from './retro.js';
+import { PlayerFX } from './fx-player.js';
 
 const _o = new THREE.Object3D(), _c = new THREE.Color(), HOT = new THREE.Color(0xfff0a0), COOL = new THREE.Color(0xff4020);
-const SHOT_COL = { blaster: 0x7ff6ff, spread: 0xffa04a, rapid: 0x9fff6a, rocket: 0xff5a3a };
 
 export class FX {
   constructor(scene) {
@@ -20,17 +21,13 @@ export class FX {
     this.shake = 0;
     this.k = 1; this.rainK = 1; // quality preset: particle count and rain density multipliers
     // projectiles
-    const shotGeo = new THREE.BoxGeometry(0.2, 0.2, 1.8);
-    this.shots = new THREE.InstancedMesh(shotGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false }), 96);
-    this.shots.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(96 * 3), 3);
-    this.shots.frustumCulled = false; this.shots.count = 0;
     const boltGeo = new THREE.OctahedronGeometry(0.32, 0);
     this.bolts = new THREE.InstancedMesh(boltGeo, new THREE.MeshBasicMaterial({ color: 0xff3a8a, fog: false }), 64);
     this.bolts.frustumCulled = false; this.bolts.count = 0;
     const halo = new THREE.MeshBasicMaterial({ map: glowTex(), color: 0xff3a8a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
     this.boltHalo = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.6, 1.6), halo, 64);
     this.boltHalo.frustumCulled = false; this.boltHalo.count = 0;
-    scene.add(this.shots, this.bolts, this.boltHalo);
+    scene.add(this.bolts, this.boltHalo);
     // bits
     this.N = 260;
     this.bits = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffffff }), this.N);
@@ -106,6 +103,7 @@ export class FX {
       m.rotation.x = -Math.PI / 2; m.visible = false; m.userData = { life: 0, r: 6 };
       scene.add(m); this.waves.push(m);
     }
+    this.pfx = new PlayerFX(scene, this); // the player's shots, muzzle smoke, impact sparks, jet trails
   }
 
   // Arc dots along a flat [x, y, z, …] path (one point per 1/30 s), skipping the first few (they'd
@@ -211,23 +209,8 @@ export class FX {
   // ---- per frame
   update(dt, w, camera, t) {
     this.shake = Math.max(0, this.shake - dt * 1.8);
-    // shots: oriented along velocity
+    this.pfx.update(dt, w, camera, t); // the player's shots and their effects
     let n = 0;
-    for (const s of w.shots) {
-      if (n >= 96) break;
-      _o.position.set(s.x, s.y, s.z);
-      _o.lookAt(s.x + s.vx, s.y + s.vy, s.z + s.vz);
-      const k = s.kind === 'rocket' ? 2.2 : s.kind === 'spread' ? 0.8 : 1;
-      _o.scale.set(k, k, k * (s.kind === 'rocket' ? 0.7 : 1));
-      _o.updateMatrix();
-      this.shots.setMatrixAt(n, _o.matrix);
-      this.shots.setColorAt(n, _c.set(SHOT_COL[s.kind] || 0xffffff));
-      n++;
-    }
-    this.shots.count = n;
-    this.shots.instanceMatrix.needsUpdate = true;
-    if (this.shots.instanceColor) this.shots.instanceColor.needsUpdate = true;
-    n = 0;
     for (const b of w.bolts) {
       if (n >= 64) break;
       _o.position.set(b.x, b.y, b.z); _o.rotation.set(t * 7, t * 9, 0); _o.scale.setScalar(1); _o.updateMatrix();

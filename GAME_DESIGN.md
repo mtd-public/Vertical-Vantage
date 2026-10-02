@@ -304,3 +304,27 @@ mstr-gme-dsgn-tmpt `kits/`:
 - Stage select: two columns of packs on wide landscape screens, so all 10 fit on a tablet without
   scrolling; on phones a MORE PACKS cue shows until you've scrolled to the end.
 - Every pack boss's phase 2 toast now says IT'S ADAPTING! (only ARACHNE-9 climbs the walls).
+
+### claude/neon-visual-upgrade (neon night visual pass)
+
+- Every pack but Neo-Tokyo is now set at night (at most one blue-hour stage per pack), with techier
+  detail: LED edge strips on walkable tops, lit windows, holo signs, beacons, light pools, and lit
+  landmarks. The bonus arenas are night skies too.
+- The player: a rigged hard-surface arm cannon (a few draw calls) whose light strips, coil, core and
+  ammo screen take the weapon's colour; armoured legs; layered heel-jet flames; glowing tracer shots
+  with trails, impact sparks and rocket smoke; a theme-tinted rim light at night
+  (`player-models.js`, `player-view.js`, `fx-player.js`).
+- The enemies: one OmniCorp look with neon state lights (amber, then red, then strobing white before
+  they fire), a night rim light, new animation (banking drones, trotting crawlers, swinging coats,
+  sweeping turrets), debris deaths and new bolts (`enemy-models.js`, `enemy-view.js`, `fx-enemy.js`).
+- A neon glow (bloom) pass for night themes (`post.js`). It is weighted by saturation, so neon glows and
+  white barely does, and it is off on Low quality.
+- Less flicker, measured with a frozen-sim flicker heatmap. Night stages went from 0.75–1.4 % of pixels
+  flickering at walking pace to 0.3–0.7 %, with far more neon on screen. The fixes:
+  - mipmapped textures in the distance
+  - PS1 vertex wobble off by default (it's an option now)
+  - glow and neon materials win depth ties with the surfaces they sit on
+  - the camera's near plane moved from 0.12 m to 0.2 m
+- Seattle's fountain, wheel cars and ferries got their own style names; other packs had registered
+  the same names and won.
+

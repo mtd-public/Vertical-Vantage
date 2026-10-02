@@ -3,7 +3,7 @@
 // Interior walls carry their side and their room's floor in tint (see egypt-kit.js walls()): the
 // torches, glyph columns and friezes go on the inner face, at eye height.
 import * as THREE from 'three';
-import { COL, mix, shade, orient, strut, body, cap, bands, panel, archOn } from './egypt-styles.js';
+import { COL, mix, shade, orient, strut, body, cap, bands, panel, archOn, ledEdge, kufic, flood } from './egypt-styles.js';
 
 const F = (K, ...g) => K.add('flat', ...g);
 const G = (K, ...g) => K.add('glow', ...g);
@@ -51,17 +51,33 @@ function stars(K, H, p, y, rng, n, col = 0xffd060) {
   }
 }
 
-// Decorate the inner face of an interior wall: a dado, glyph columns between torches, a frieze.
+// A data panel on face f: a lapis screen in a cyan frame, a gold header, rows of glyph readouts.
+function dataPanel(K, H, f, off, y, w, h, rng, o = {}) {
+  panel(K, H, f, off, y, w, h, o.back ?? 0x0a1446, 'glow', 0.03);
+  for (const s of [-1, 1]) { panel(K, H, f, off, y + s * h / 2, w + 0.1, 0.07, o.frame ?? COL.cyan, 'neon', 0.045); panel(K, H, f, off + s * w / 2, y, 0.07, h, o.frame ?? COL.cyan, 'neon', 0.045); }
+  panel(K, H, f, off, y + h / 2 - 0.2, w * 0.8, 0.12, COL.gold, 'glow', 0.05);
+  const rows = Math.max(2, Math.floor((h - 0.5) / 0.28));
+  for (let r = 0; r < rows; r++) {
+    let u = -w / 2 + 0.2;
+    while (u < w / 2 - 0.3) { const l = 0.1 + rng() * 0.45; if (u + l > w / 2 - 0.2) break; if (rng() < 0.8) panel(K, H, f, off + u + l / 2, y + h / 2 - 0.45 - r * 0.28, l, 0.1, rng() < 0.82 ? COL.cyan : (rng() < 0.5 ? COL.gold : 0xff3a8a), 'glow', 0.05); u += l + 0.1; }
+  }
+}
+// Decorate the inner face of an interior wall: a dado, glyph columns between torches, a frieze, and
+// the data dynasty's light: a cyan LED line along the floor, a gold one over the frieze, data panels.
 function tombDress(K, p, H, rng, o = {}) {
   const { side, floor } = decode(p), f = innerFace(p, H, side);
   if (f.width < 1.5) return;
   const y = (h) => floor + h - p.h; // a height above the room's floor, in the piece's local frame
   if (y(0) < -p.thick || y(1.0) > 0) return; // (a lintel over a door: nothing at eye height)
   panel(K, H, f, 0, y(0.45), f.width, 0.8, o.dado ?? 0x6a2a1a, 'flat', 0.02);
+  panel(K, H, f, 0, y(0.1), f.width, 0.1, o.led ?? COL.cyan, 'neon', 0.03); // the floor line
+  panel(K, H, f, 0, y(0.86), f.width, 0.06, COL.gold, 'neon', 0.03);
   if (y(4.6) < -0.3) {
     const fr = o.frieze ?? [COL.lapis, 0xc89030, 0xa83a2a];
     const n = Math.floor(f.width / 1.2);
     for (let k = 0; k < n; k++) panel(K, H, f, -f.width / 2 + (k + 0.5) * (f.width / n), y(4.6), f.width / n - 0.08, 0.5, fr[k % fr.length], 'flat', 0.025);
+    panel(K, H, f, 0, y(4.98), f.width, 0.08, COL.gold, 'neon', 0.03);
+    panel(K, H, f, 0, y(4.22), f.width, 0.05, COL.cyan, 'neon', 0.03);
   }
   const step = o.torchEvery ?? 8;
   const nT = Math.max(1, Math.floor(f.width / step));
@@ -69,7 +85,14 @@ function tombDress(K, p, H, rng, o = {}) {
     const off = -f.width / 2 + (k + 0.5) * (f.width / nT);
     if (o.torches !== false && f.width > 4) torch(K, H, f, off, y(2.7));
     for (const d of [-2.2, -1.2, 1.2, 2.2]) if (Math.abs(off + d) < f.width / 2 - 0.4 && rng() < 0.85) glyphColumn(K, H, f, off + d, y(3.6), 4, 0.42, Math.floor(rng() * 50), o.glyph ?? COL.cyan);
+    const edge = off + f.width / nT / 2; // between this torch's glyphs and the next: a data panel
+    if (k < nT - 1 && f.width / nT > 6.4 && y(3.6) < -0.2) dataPanel(K, H, f, edge, y(2.4), 1.4, 2.0, rng);
   }
+}
+// A cable run along a wall face: a bundle of cables with LED nodes.
+function cableRun(K, H, f, y, rng, col = COL.cyan) {
+  for (const dy of [0, 0.14, 0.28]) panel(K, H, f, 0, y + dy, f.width, 0.1, [0x1a1a24, 0x2a1a30, 0x14202a][Math.round(dy * 7) % 3], 'flat', 0.06 + dy * 0.1);
+  for (let u = -f.width / 2 + 1.5; u < f.width / 2 - 1; u += 3 + rng() * 3) panel(K, H, f, u, y + 0.14, 0.3, 0.42, rng() < 0.6 ? col : COL.magenta, 'glow', 0.12);
 }
 
 export const TOMB = {
@@ -79,30 +102,38 @@ export const TOMB = {
     F(K, H.box(p.w, 0.05, p.d, { y: -0.025, color: 0xcab48a }));
     for (let x = -p.w / 2 + 2; x < p.w / 2; x += 2) F(K, H.box(0.05, 0.02, p.d, { x, y: 0.005, color: 0x9a8460 }));
     for (let z = -p.d / 2 + 3; z < p.d / 2; z += 3) F(K, H.box(p.w, 0.02, 0.05, { z, y: 0.005, color: 0x9a8460 }));
+    ledEdge(K, H, p, COL.gold, -0.08, 0.08, 0.03); // its edges (and every pit's lip) lit gold
+    if (p.w >= 8 && p.d >= 8) for (const [a, b] of [[-1, 0], [1, 0]]) N(K, H.box(0.08, 0.02, p.d - 1.2, { x: a * (p.w / 2 - 0.9) + b, y: 0.012, color: COL.cyan })); // inlaid data lines
   },
-  'eg-tombStep'(K, p, th, rng, H) { body(K, p, H, COL.limeDk); cap(K, p, H, 0xcab48a); },
+  'eg-tombStep'(K, p, th, rng, H) { body(K, p, H, COL.limeDk); cap(K, p, H, 0xcab48a); N(K, H.box(p.w, 0.06, 0.06, { y: -0.06, z: p.d / 2 + 0.03, color: COL.gold }), H.box(p.w, 0.06, 0.06, { y: -0.06, z: -p.d / 2 - 0.03, color: COL.gold })); },
   'eg-tombWall'(K, p, th, rng, H) {
     body(K, p, H, COL.lime);
     tombDress(K, p, H, rng);
   },
-  'eg-tombCeil'(K, p, th, rng, H) { // the night sky of Nut: lapis and gold stars
+  'eg-tombCeil'(K, p, th, rng, H) { // the night sky of Nut: lapis and gold stars, a data lattice across it
     body(K, p, H, 0x2a2018);
     G(K, H.box(p.w, 0.05, p.d, { y: -p.thick - 0.02, color: 0x16225a }));
     stars(K, H, p, -p.thick - 0.06, rng, Math.min(60, Math.floor(p.w * p.d / 8)));
+    for (let x = -p.w / 2 + 3; x < p.w / 2 - 1; x += 6) N(K, H.box(0.06, 0.02, p.d - 0.4, { x, y: -p.thick - 0.07, color: 0x2a8ad8 }));
+    for (let z = -p.d / 2 + 3; z < p.d / 2 - 1; z += 6) N(K, H.box(p.w - 0.4, 0.02, 0.06, { z, y: -p.thick - 0.07, color: 0x2a8ad8 }));
+    for (const f of H.faces(p.w, p.d)) N(K, H.box(f.tx ? f.width : 0.1, 0.1, f.tz ? f.width : 0.1, { x: f.nx * (f.half - 0.1), y: -p.thick - 0.08, z: f.nz * (f.half - 0.1), color: COL.gold })); // a gold cornice light
   },
-  'eg-sarcophagus'(K, p, th, rng, H) { // a server sarcophagus: granite, a gilded lid, status lights along its flanks
+  'eg-sarcophagus'(K, p, th, rng, H) { // a server sarcophagus: granite, a gilded lid, status lights along its flanks, a holo eye over it
     const t = p.tint >= 0 ? p.tint : 0;
     F(K, H.box(p.w - 0.1, p.thick - 0.3, p.d - 0.1, { y: -(p.thick + 0.3) / 2, color: COL.granite }));
     F(K, H.box(p.w + 0.1, 0.3, p.d + 0.1, { y: -0.15, color: COL.graniteDk }));
     F(K, H.box(p.w - 0.3, 0.06, p.d - 0.3, { y: 0.0, color: COL.gold }));
-    const long = p.d > p.w;
+    ledEdge(K, H, p, COL.cyan, -0.32, 0.06, 0.07);
     for (const f of H.faces(p.w - 0.1, p.d - 0.1)) {
-      if (f.width < 2) { panel(K, H, f, 0, -0.9, 0.5, 0.7, COL.gold, 'flat', 0.02); continue; }
+      if (f.width < 2) { panel(K, H, f, 0, -0.9, 0.5, 0.7, COL.gold, 'flat', 0.02); glyph(K, H, f, 0, -0.9, 0.42, 1 + t, COL.cyan, 'glow', 0.04); continue; }
       const n = Math.floor(f.width / 0.5);
       for (let k = 0; k < n; k++) G(K, H.box(f.tx ? 0.14 : 0.04, 0.08, f.tz ? 0.14 : 0.04, { x: f.nx * (f.half + 0.03) + f.tx * (-f.width / 2 + (k + 0.5) * (f.width / n)), y: -0.7 - (k % 3) * 0.2, z: f.nz * (f.half + 0.03) + f.tz * (-f.width / 2 + (k + 0.5) * (f.width / n)), color: (k + t) % 4 ? 0x2bff9a : 0xff3a5a }));
       N(K, H.box(f.tx ? f.width - 0.2 : 0.04, 0.05, f.tz ? f.width - 0.2 : 0.04, { x: f.nx * (f.half + 0.03), y: -1.3, z: f.nz * (f.half + 0.03), color: COL.cyan }));
     }
-    void long;
+    // the holo projection: an outlined eye of Horus floating high over the lid (thin strokes: a projection, not a ledge)
+    const ey = 3.4, long = p.d > p.w, eye = (u, v, w, h) => G(K, H.box(long ? 0.04 : w, h, long ? w : 0.04, { x: long ? 0 : u, y: ey + v, z: long ? u : 0, color: COL.cyan }));
+    eye(0, 0.32, 1.5, 0.06); eye(0, -0.3, 1.2, 0.06); eye(-0.75, 0, 0.06, 0.5); eye(0.75, 0.02, 0.06, 0.4); eye(0, 0, 0.36, 0.36); eye(-0.2, -0.62, 0.06, 0.6); eye(0.35, -0.55, 0.5, 0.06);
+    G(K, H.cyl(0.18, 0.24, 0.06, 6, { y: 0.03, z: long ? p.d / 2 - 0.5 : 0, x: long ? 0 : p.w / 2 - 0.5, color: COL.cyan })); // its projector
   },
   'eg-pedestal'(K, p, th, rng, H) {
     body(K, p, H, COL.granite);
@@ -141,7 +172,12 @@ export const TOMB = {
         torch(K, H, f, off, y(2.8));
         for (const d of [-2.5, 2.5]) glyphColumn(K, H, f, off + d, y(4.6), 3, 0.45, i * 5 + d, COL.cyan);
         for (let c = 0; c < 6; c++) panel(K, H, f, off, y(8 + c * 1.1), 8.02, 0.9, c % 2 ? COL.lime : COL.limeSh, 'flat', 0.08 + c * 0.22); // the corbels step in
+        for (let c = 0; c < 6; c += 2) panel(K, H, f, off, y(8 + c * 1.1 - 0.47), 8.02, 0.07, c % 4 ? COL.gold : COL.cyan, 'neon', 0.1 + c * 0.22); // a light line under each lit corbel
         panel(K, H, f, off, y(0.4), 8.02, 0.8, 0x6a2a1a, 'flat', 0.02);
+        panel(K, H, f, off, y(0.08), 8.02, 0.1, COL.cyan, 'neon', 0.03); // the floor line
+        panel(K, H, f, off + 4, y(3.4), 0.12, 6.6, COL.gold, 'neon', 0.04); // a gold light pilaster between steps
+        panel(K, H, f, off, y(6.6), 3.2, 0.9, 0x0a1446, 'glow', 0.04); // a data band over the torch
+        for (let j = 0; j < 7; j++) panel(K, H, f, off - 1.35 + j * 0.45, y(6.6), 0.26, 0.26 + (j % 3) * 0.12, j % 3 ? COL.cyan : COL.gold, 'glow', 0.05);
       }
     } else if (f.width > 4) tombDress(K, p, H, rng);
   },
@@ -149,6 +185,7 @@ export const TOMB = {
     body(K, p, H, 0x2a2018);
     G(K, H.box(10, 0.05, p.d, { y: -p.thick - 0.02, color: 0x16225a }));
     stars(K, H, { w: 10, d: p.d }, -p.thick - 0.06, rng, 10);
+    for (const sx of [-1, 1]) N(K, H.box(0.08, 0.04, p.d, { x: sx * 4.6, y: -p.thick - 0.07, color: COL.cyan }));
   },
   'eg-portcullis'(K, p, th, rng, H) { // a granite portcullis: grooved, a scanner line along its foot
     body(K, p, H, COL.granite);
@@ -160,17 +197,19 @@ export const TOMB = {
     F(K, H.box(p.w, 0.05, p.d, { y: -0.025, color: COL.granite }));
     for (let x = -p.w / 2 + 3.5; x < p.w / 2; x += 3.5) F(K, H.box(0.05, 0.02, p.d, { x, y: 0.005, color: COL.graniteDk }));
     for (let z = -p.d / 2 + 4; z < p.d / 2; z += 4) F(K, H.box(p.w, 0.02, 0.05, { z, y: 0.005, color: COL.graniteDk }));
-    N(K, H.part(new THREE.RingGeometry(5.6, 5.8, H.seg(24, 14)), { rx: -Math.PI / 2, y: 0.02, color: COL.gold }));
+    N(K, H.part(new THREE.RingGeometry(5.6, 5.8, H.seg(24, 14)), { rx: -Math.PI / 2, y: 0.02, color: COL.gold }), H.part(new THREE.RingGeometry(4.8, 4.9, H.seg(24, 14)), { rx: -Math.PI / 2, y: 0.02, color: COL.cyan }));
+    for (let k = 0; k < 8; k++) { const a = (k / 8) * Math.PI * 2; N(K, H.box(0.08, 0.02, 3.2, { x: Math.cos(a) * 7.6, y: 0.02, z: Math.sin(a) * 7.6, ry: -a + Math.PI / 2, color: COL.cyan })); } // data lines radiating from the ring
   },
   'eg-graniteWall'(K, p, th, rng, H) {
     body(K, p, H, COL.granite);
     const { side, floor } = decode(p), f = innerFace(p, H, side);
     for (let y = floor + 2.2; y < p.h; y += 2.2) panel(K, H, f, 0, y - p.h, f.width, 0.05, COL.graniteDk, 'flat', 0.02); // the granite courses
     tombDress(K, p, H, rng, { dado: 0x3a1a1a, frieze: [COL.gold, COL.lapis], glyph: COL.cyan, torchEvery: 9 });
+    if (f.width > 8 && floor + 9 < p.h) { cableRun(K, H, f, floor + 7.2 - p.h, rng); for (let y = floor + 11; y < p.h - 1; y += 3.5) panel(K, H, f, 0, y - p.h, f.width - 1, 0.08, y % 7 < 3.5 ? COL.gold : COL.cyan, 'neon', 0.03); } // up the walls to the relieving chambers
   },
   'eg-graniteCeil'(K, p, th, rng, H) {
     body(K, p, H, COL.graniteDk);
-    for (let x = -p.w / 2 + 2.2; x < p.w / 2; x += 4) F(K, H.box(3.4, 0.4, p.d, { x, y: -p.thick - 0.2, color: COL.granite })); // the nine roof beams
+    for (let x = -p.w / 2 + 2.2; x < p.w / 2; x += 4) { F(K, H.box(3.4, 0.4, p.d, { x, y: -p.thick - 0.2, color: COL.granite })); N(K, H.box(0.06, 0.06, p.d, { x: x + 1.72, y: -p.thick - 0.2, color: COL.cyan })); } // the nine roof beams
     stars(K, H, p, -p.thick - 0.45, rng, 24, 0x7ae0ff);
   },
   'eg-kingServer'(K, p, th, rng, H) { // the king's server: a lidless granite coffer packed with glowing racks
@@ -178,13 +217,16 @@ export const TOMB = {
     F(K, H.box(p.w - 0.6, 0.05, p.d - 0.6, { y: 0.0, color: 0x0c1020 }));
     for (let k = 0; k < 6; k++) G(K, H.box(p.w - 0.9, 0.04, 0.12, { y: 0.03, z: -p.d / 2 + 0.9 + k * ((p.d - 1.8) / 5), color: k % 2 ? COL.cyan : 0x2bff9a }));
     for (const f of H.faces(p.w, p.d)) { panel(K, H, f, 0, -p.thick / 2, Math.min(2.2, f.width - 0.4), 0.9, COL.gold, 'flat', 0.02); glyph(K, H, f, 0, -p.thick / 2, 0.55, 4, COL.lapis, 'flat', 0.05); }
+    ledEdge(K, H, p, COL.gold, -0.08, 0.08, 0.03);
     G(K, H.part(new THREE.TorusGeometry(0.35, 0.07, 3, 8), { y: 2.0, color: COL.cyan }), H.box(0.12, 1.0, 0.12, { y: 1.15, color: COL.cyan }), H.box(0.7, 0.12, 0.12, { y: 1.55, color: COL.cyan })); // a holographic ankh
+    for (let k = 0; k < 3; k++) G(K, H.part(new THREE.TorusGeometry(1.2 + k * 0.5, 0.025, 3, 16), { rx: Math.PI / 2, y: 2.6 + k * 0.5, color: k % 2 ? COL.gold : COL.cyan })); // data rings orbiting it
   },
   'eg-beam'(K, p, th, rng, H) { // a relieving chamber's granite beam, data lines along it
     body(K, p, H, COL.granite);
     for (let x = -p.w / 2 + 3.5; x < p.w / 2; x += 3.5) F(K, H.box(0.06, p.thick + 0.02, p.d + 0.02, { x, y: -p.thick / 2, color: COL.graniteDk }));
     cap(K, p, H, mix(COL.granite, 0xffffff, 0.08));
     for (const sz of [-1, 1]) N(K, H.box(p.w, 0.06, 0.04, { y: -p.thick / 2, z: sz * (p.d / 2 + 0.02), color: (p.tint >= 0 ? p.tint : 0) % 2 ? COL.cyan : COL.magenta }));
+    ledEdge(K, H, p, COL.gold, -0.06, 0.06, 0.03); // its top edges, so you can judge the hop
   },
   'eg-shaftWall'(K, p, th, rng, H) {
     body(K, p, H, COL.lime);
@@ -195,18 +237,22 @@ export const TOMB = {
   'eg-shaftLedge'(K, p, th, rng, H) {
     body(K, p, H, COL.limeDk);
     cap(K, p, H, 0xcab48a);
-    const free = H.faces(p.w, p.d)[p.x < 0 ? 2 : 3];
-    N(K, H.box(0.05, 0.06, p.d, { x: free.nx * (free.half + 0.03), y: -0.06, color: (p.tint >= 0 ? p.tint : 0) % 2 ? COL.gold : COL.cyan }));
+    const free = H.faces(p.w, p.d)[p.x < 0 ? 2 : 3], lc = (p.tint >= 0 ? p.tint : 0) % 2 ? COL.gold : COL.cyan;
+    N(K, H.box(0.08, 0.1, p.d, { x: free.nx * (free.half + 0.04), y: -0.08, color: lc }));
+    for (const sz of [-1, 1]) N(K, H.box(p.w, 0.08, 0.06, { y: -0.08, z: sz * (p.d / 2 + 0.03), color: lc }));
+    G(K, H.box(0.5, 0.05, 0.3, { x: free.nx * (free.half - 0.25), y: -p.thick - 0.03, color: lc })); // an under-light (you see it from below)
   },
   'eg-starFloor'(K, p, th, rng, H) {
     body(K, p, H, COL.limeDk);
     F(K, H.box(p.w, 0.05, p.d, { y: -0.025, color: 0x1a2a6a }));
     stars(K, H, p, 0.02, rng, 8);
+    ledEdge(K, H, p, COL.gold, -0.08, 0.08, 0.03);
   },
   'eg-starWall'(K, p, th, rng, H) {
     body(K, p, H, 0x1a2a6a);
     const { side } = decode(p), f = innerFace(p, H, side);
     for (let k = 0; k < Math.floor(f.width / 1.6); k++) for (let r = 0; r < 4; r++) G(K, H.box(f.tx ? 0.28 : 0.03, 0.28, f.tz ? 0.28 : 0.03, { x: f.nx * (f.half + 0.03) + f.tx * (-f.width / 2 + 0.8 + k * 1.6 + (r % 2) * 0.8), y: -1.2 - r * 2, z: f.nz * (f.half + 0.03) + f.tz * (-f.width / 2 + 0.8 + k * 1.6 + (r % 2) * 0.8), color: 0xffd060 }));
+    if (f.width > 3) { for (const y of [-0.4, -8.6]) panel(K, H, f, 0, y, f.width, 0.08, COL.cyan, 'neon', 0.04); for (let k = 0; k < Math.floor(f.width / 1.6); k++) panel(K, H, f, -f.width / 2 + 0.8 + k * 1.6, -4.5, 0.06, 8, 0x2a6ad8, 'neon', 0.035); } // a star map's grid
   },
   'eg-starCeil'(K, p, th, rng, H) { // the Star Chamber's roof: the capstone's light pours down the opening
     body(K, p, H, 0x101a50);
@@ -219,12 +265,14 @@ export const TOMB = {
     body(K, p, H, 0x6a5038);
     F(K, H.box(p.w, 0.05, p.d, { y: -0.025, color: 0x8a6a48 }));
     for (let k = 0; k < Math.floor(p.w * p.d / 20); k++) F(K, H.part(new THREE.DodecahedronGeometry(0.4 + rng() * 0.5, 0), { x: (rng() - 0.5) * (p.w - 1), y: -0.15, z: (rng() - 0.5) * (p.d - 1), sy: 0.4, color: 0x7a5a3e }));
+    ledEdge(K, H, p, COL.magenta, -0.1, 0.08, 0.03); // the pit's lip
   },
   'eg-rockWall'(K, p, th, rng, H) {
     body(K, p, H, 0x5a4230);
     const { side, floor } = decode(p), f = innerFace(p, H, side);
     for (let k = 0; k < Math.floor(f.width / 2.4); k++) F(K, H.part(new THREE.DodecahedronGeometry(1.0 + rng() * 0.8, 0), { x: f.nx * f.half + f.tx * (-f.width / 2 + 1.2 + k * 2.4), y: floor - p.h + 1 + rng() * 6, z: f.nz * f.half + f.tz * (-f.width / 2 + 1.2 + k * 2.4), color: 0x6a4e36 }));
     if (f.width > 8) torch(K, H, f, 0, floor - p.h + 2.6);
+    if (f.width > 4 && floor - p.h + 4 < 0) cableRun(K, H, { ...f, half: f.half + 1.1 }, floor - p.h + 3.6, rng, COL.magenta); // the server farm's cables, run in along the raw rock
   },
   'eg-rockCeil'(K, p, th, rng, H) {
     body(K, p, H, 0x4a3628);
@@ -250,7 +298,10 @@ export const TOMB = {
     for (const [x, z] of [[-30, -24], [30, -24], [-30, 24], [30, 24]]) { // braziers in the corners
       F(K, H.cyl(0.9, 0.5, 1.4, 6, { x, y: 0.7, z, color: COL.bronze }));
       G(K, H.part(new THREE.ConeGeometry(0.75, 1.3, 6), { x, y: 2.0, z, color: 0xff9a30 }), H.part(new THREE.ConeGeometry(0.4, 0.9, 5), { x, y: 2.1, z, color: 0xfff0a0 }));
+      N(K, H.part(new THREE.RingGeometry(1.5, 1.62, 12), { rx: -Math.PI / 2, y: 0.02, x, z, color: COL.gold }));
     }
+    for (const sx of [-1, 1]) for (let z = -24; z <= 24; z += 6) N(K, H.box(6, 0.02, 0.08, { x: sx * 24, y: 0.015, z, color: 0x2a6ad8 })); // data lines under the colonnades
+    for (const sx of [-1, 1]) N(K, H.box(0.1, 0.02, 52, { x: sx * 21, y: 0.015, z: -1, color: COL.cyan }));
   },
   'eg-pylon'(K, p, th, rng, H) { // the hall's walls: sandstone reliefs, glyph columns, a winged sun over the gate
     body(K, p, H, 0x8a6e4e);
@@ -263,7 +314,14 @@ export const TOMB = {
       glyphColumn(K, H, f, off, y(9.5), 6, 0.6, k + side * 13, k % 3 ? COL.cyan : COL.gold);
     }
     panel(K, H, f, 0, y(0.6), f.width, 1.2, 0x3a2a20, 'flat', 0.02);
+    panel(K, H, f, 0, y(0.1), f.width, 0.1, COL.cyan, 'neon', 0.03); // the floor line
+    panel(K, H, f, 0, y(1.26), f.width, 0.08, COL.gold, 'neon', 0.03);
     panel(K, H, f, 0, y(11.2), f.width, 0.5, COL.lapis, 'flat', 0.03);
+    for (let k = 0; k <= n; k++) { const off = -f.width / 2 + k * (f.width / n); if (Math.abs(off) < f.width / 2 - 0.5) panel(K, H, f, off, y(5.6), 0.14, 8.6, k % 2 ? COL.gold : 0x2a6ad8, 'neon', 0.04); } // light pilasters between the glyph columns
+    if (side === 0 && Math.abs(p.x) < 1 && f.width > 30) { // over the throne: the eye of Horus, projected in cyan light
+      const e = (u, v, w, h, c = COL.cyan) => panel(K, H, f, u, y(17 + v), w, h, c, 'glow', 0.2);
+      e(0, 1.3, 7, 0.22); e(0, -1.1, 5.6, 0.22); e(-3.5, 0.1, 0.22, 2.4); e(3.3, 0.2, 0.22, 2); e(0, 0, 1.6, 1.6, COL.gold); e(-0.9, -2.6, 0.22, 3); e(1.6, -2.2, 2.6, 0.22); e(0, 2.4, 6, 0.16, COL.gold);
+    }
     N(K, H.box(f.tx ? f.width : 0.05, 0.08, f.tz ? f.width : 0.05, { x: f.nx * (f.half + 0.05), y: y(10.8), z: f.nz * (f.half + 0.05), color: COL.gold }));
     if (side === 1 && Math.abs(p.x) < 1 && p.thick < 5) { // the gate's lintel: the winged sun disc
       G(K, H.cyl(0.9, 0.9, 0.1, 12, { x: 0, y: -1.4, z: f.nz * (f.half + 0.12), rx: Math.PI / 2, color: 0xffb030 }));
@@ -286,6 +344,9 @@ export const TOMB = {
     for (const sx of [-1, 1]) F(K, H.part(new THREE.ConeGeometry(0.3, 2.0, 3), { x: sx * 1.0, y: 9.3, z: z + 0.3, rz: sx * 0.4, color: COL.white })); // its plumes
     F(K, H.box(0.18, 2.6, 0.18, { x: -0.9, y: 5.6, z: z + 1.4, rx: 0.4, color: COL.gold }), H.box(0.18, 2.6, 0.18, { x: 0.9, y: 5.6, z: z + 1.4, rx: 0.4, color: COL.lapis })); // crook and flail
     G(K, H.box(0.9, 0.12, 0.06, { y: 7.9, z: z + 1.12, color: COL.cyan }));
+    ledEdge(K, H, p, COL.gold, -0.2, 0.08, 0.14);
+    for (const sx of [-1, 1]) N(K, H.box(0.1, 7, 0.1, { x: sx * 2.75, y: 3.5, z: z - 0.28, color: COL.cyan })); // the throne's back, edged in light
+    N(K, H.box(5.6, 0.1, 0.1, { y: 7.05, z: z - 0.28, color: COL.gold }));
   },
   'eg-column'(K, p, th, rng, H) { // a papyrus column: painted bands, an open-flower capital, its abacus the perch
     const t = p.tint >= 0 ? p.tint : 0;
@@ -296,6 +357,8 @@ export const TOMB = {
     F(K, H.cyl(p.r, p.r, 0.4, 10, { y: -0.2, color: COL.limeDk }));
     cap(K, p, H, 0xcab48a, null, 0, 10);
     N(K, H.cyl(p.r * 0.75, p.r * 0.75, 0.08, 10, { y: -p.thick + 0.6, color: COL.cyan }));
+    for (let y = -4.4; y > -p.thick + 1; y -= 2.8) N(K, H.cyl(p.r * 0.77, p.r * 0.77, 0.08, 10, { y, color: y < -6 ? COL.gold : COL.cyan })); // light rings up the shaft
+    ledEdge(K, H, p, COL.gold, -0.1, 0.07, 0.03); // its perch, outlined
   },
   'eg-canopic'(K, p, th, rng, H) { // a canopic jar: alabaster, its lid a god's head (human, baboon, jackal, falcon)
     const t = p.tint >= 0 ? p.tint : 0, pts = [];
@@ -318,6 +381,8 @@ export const TOMB = {
     cap(K, p, H, COL.gold, null, 0, 10);
     F(K, H.box(0.22, 3.0, 0.22, { x: 0, y: 1.5, z: -0.7, color: COL.gold }), H.box(0.22, 3.0, 0.22, { x: 0, y: 1.5, z: 0.7, color: COL.gold }));
     N(K, H.cyl(p.r * 1.06, p.r * 1.06, 0.08, 10, { y: -1, color: COL.cyan }));
+    ledEdge(K, H, p, COL.cyan, -0.08, 0.07, 0.03);
+    for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2 + 0.4; N(K, H.box(0.08, p.thick - 1.4, 0.08, { x: Math.cos(a) * p.r * 1.0, y: -1.4 - (p.thick - 1.4) / 2, z: Math.sin(a) * p.r * 1.0, color: COL.gold })); }
   },
   'eg-scalePan'(K, p, th, rng, H) { // a scale pan on three chains; the heart (left) or Ma'at's feather (right)
     const pts = [new THREE.Vector2(0.01, -p.thick), new THREE.Vector2(p.r * 0.6, -p.thick + 0.05), new THREE.Vector2(p.r, -0.1), new THREE.Vector2(p.r + 0.1, 0.05)];

@@ -77,7 +77,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'shanghai-pudong', name: 'PUDONG HEIGHTS', sub: 'LUJIAZUI · 12:10 · SMOG', theme: 'shanghaiSmog', song: 'skyway2000',
+  id: 'shanghai-pudong', name: 'PUDONG HEIGHTS', sub: 'LUJIAZUI · 02:10 · NEON RAIN', theme: 'shanghaiNeon', song: 'skyway2000',
   seed: 5002, par: 330, killY: -24,
   start: { x: 0, y: 22.3, z: 22, yaw: 0 },
   plats, lasers,
@@ -88,7 +88,7 @@ export default {
   ],
   exit: { x: 0, y: 96, z: -134, yaw: 0 },
   portal: { x: 36, y: 11.4, z: 34 },
-  bonusStyle: { theme: 'bonusDay', music: 'skyway2000', weapon: 'rapid', tag: 'LUJIAZUI' },
+  bonusStyle: { theme: 'shanghaiBonusCyan', music: 'skyway2000', weapon: 'rapid', tag: 'LUJIAZUI' },
   enemies: [
     { type: 'walker', x: 28, y: 30, z: -16 },
     { type: 'guard', x: -30, y: 28, z: -18 },
@@ -117,9 +117,9 @@ export default {
   ],
   backdrops: [
     { kind: 'pearlTower', x: 240, y: -60, z: 60, s: 1.1 },
-    { kind: 'bundRow', x: -420, y: -40, z: -60, yaw: -Math.PI / 2, s: 1.3 },
-    { kind: 'skyline', x: 260, y: -60, z: -200, w: 200, d: 160, n: 20, hMin: 60, hMax: 200, color: '#9aa0a8' },
-    { kind: 'skyline', x: -260, y: -60, z: -300, w: 260, d: 120, n: 18, hMin: 60, hMax: 180, color: '#9aa0a8' },
-    { kind: 'skyline', x: 0, y: -60, z: 300, w: 400, d: 120, n: 22, hMin: 40, hMax: 140, color: '#9aa0a8' },
+    { kind: 'bundRow', x: -420, y: -40, z: -60, yaw: Math.PI / 2, s: 1.3 },
+    { kind: 'ledTowers', x: 260, y: -60, z: -200, w: 200, d: 160, n: 20, hMin: 60, hMax: 200 },
+    { kind: 'ledTowers', x: -260, y: -60, z: -300, w: 260, d: 120, n: 18, hMin: 60, hMax: 180 },
+    { kind: 'ledTowers', x: 0, y: -60, z: 300, w: 400, d: 120, n: 22, hMin: 40, hMax: 140 },
   ],
 };

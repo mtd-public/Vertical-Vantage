@@ -33,7 +33,7 @@ const perches = [60, 180, 300].map((a) => { const [x, z] = at(20, a); const p = 
 const on = (p, up = 1) => ({ x: p.x, y: p.h + up, z: p.z });
 
 export default {
-  id: 'shanghai-boss', name: 'PEARL TOWER', sub: 'ORIENTAL PEARL · 21:30 · SMOG SEA · BOSS', theme: 'shanghaiPearl', song: 'jadeDragon',
+  id: 'shanghai-boss', name: 'PEARL TOWER', sub: 'ORIENTAL PEARL · 00:30 · NEON SMOG · BOSS', theme: 'shanghaiPearl', song: 'jadeDragon',
   seed: 5004, par: 230, killY: -26, cloudY: -32, objective: 'boss', bossName: 'JADE DRAGON',
   arena: A,
   start: { x: 0, y: A.floor, z: 12.5, yaw: 0 },
@@ -65,9 +65,9 @@ export default {
     { kind: 'twistTower', x: -170, y: -40, z: -300, s: 1.1 },
     { kind: 'bottleOpener', x: -40, y: -40, z: -360, s: 1.05 },
     { kind: 'jinmaoTower', x: -250, y: -40, z: -200, s: 1 },
-    { kind: 'bundRow', x: 380, y: -40, z: 40, yaw: Math.PI / 2, s: 1.2 },
-    { kind: 'skyline', x: -260, y: -40, z: -360, w: 260, d: 90, n: 18, hMin: 50, hMax: 150, color: '#3a2a5a' },
-    { kind: 'skyline', x: 120, y: -40, z: -420, w: 280, d: 90, n: 16, hMin: 40, hMax: 130, color: '#3a2a5a' },
-    { kind: 'skyline', x: -380, y: -40, z: 120, w: 90, d: 280, n: 14, hMin: 40, hMax: 120, color: '#3a2a5a' },
+    { kind: 'bundRow', x: 380, y: -40, z: 40, yaw: -Math.PI / 2, s: 1.2 },
+    { kind: 'ledTowers', x: -260, y: -40, z: -360, w: 260, d: 90, n: 18, hMin: 50, hMax: 150 },
+    { kind: 'ledTowers', x: 120, y: -40, z: -420, w: 280, d: 90, n: 16, hMin: 40, hMax: 130 },
+    { kind: 'ledTowers', x: -380, y: -40, z: 120, w: 90, d: 280, n: 14, hMin: 40, hMax: 120 },
   ],
 };

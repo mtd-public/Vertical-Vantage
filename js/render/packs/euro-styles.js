@@ -96,6 +96,76 @@ function merlons(K, p, H, col, edges = [0, 1, 2, 3], size = 0.7, gap = 1.4, h = 
 // Little hover jets under a floating stepping stone (unlit discs, cyan).
 function jets(K, H, pts, y, r = 0.32, col = COL.cyan) { for (const [x, z] of pts) G(K, H.cyl(r, r * 0.8, 0.08, 8, { x, y, z, color: col })); }
 
+// ------------------------------------------------------------------ night helpers (2099: the old stones in light)
+const _c = new THREE.Color(), _a = new THREE.Color(), _b = new THREE.Color();
+const night = (th) => (th.night || 0) > 0.5;
+// Recolour a placed geometry by height: c0 at y0 → c1 at y1 (projections, washes, uplit columns).
+function grad(g, y0, y1, c0, c1) {
+  const pos = g.attributes.position, col = g.attributes.color;
+  _a.set(c0); _b.set(c1);
+  for (let i = 0; i < pos.count; i++) { const t = Math.max(0, Math.min(1, (pos.getY(i) - y0) / (y1 - y0))); _c.copy(_a).lerp(_b, t); col.setXYZ(i, _c.r, _c.g, _c.b); }
+  return g;
+}
+// The projection show: arch-headed panels of light on a face (the arcades, mapped), coloured c0 → c1 up them.
+function archLight(K, H, f, off, yBot, w, h, c0, c1, out = 0.06) {
+  const x = f.nx * (f.half + out) + f.tx * off, z = f.nz * (f.half + out) + f.tz * off;
+  G(K, grad(H.box(f.tx ? w : 0.08, h - w / 2, f.tz ? w : 0.08, { x, y: yBot + (h - w / 2) / 2, z }), yBot, yBot + h, c0, c1));
+  G(K, grad(H.cyl(w / 2, w / 2, 0.08, 8, { x, y: yBot + h - w / 2, z, rx: f.tz ? 0 : Math.PI / 2, rz: f.tz ? Math.PI / 2 : 0 }), yBot, yBot + h, c0, c1));
+}
+// A row of them along the faces in `which` (as arcade() does).
+function arcadeLight(K, p, H, which, yBot, h, spacing, c0, c1, o = {}) {
+  const fs = H.faces(p.w, p.d);
+  for (const i of which) {
+    const f = fs[i], n = Math.max(1, Math.floor((f.width - (o.pad ?? 1)) / spacing));
+    for (let k = 0; k < n; k++) archLight(K, H, f, (k - (n - 1) / 2) * spacing, yBot, o.w ?? spacing * 0.55, h, c0, c1, o.out ?? 0.06);
+  }
+}
+// Arch-headed light panels round a disc (as ringArches() does).
+function ringLight(K, H, rr, n, yBot, h, w, c0, c1) {
+  for (let k = 0; k < n; k++) {
+    const a = ((k + 0.5) / n) * Math.PI * 2, x = Math.cos(a) * rr, z = Math.sin(a) * rr, ry = -a + Math.PI / 2;
+    G(K, grad(H.box(w, h - w / 2, 0.1, { x, y: yBot + (h - w / 2) / 2, z, ry }), yBot, yBot + h, c0, c1));
+    G(K, grad(H.cyl(w / 2, w / 2, 0.1, 8, { x, y: yBot + h - w / 2, z, rz: Math.PI / 2, ry: Math.PI - a }), yBot, yBot + h, c0, c1));
+  }
+}
+// A neon line round a block (rect) or a disc at height y: the projected outlines, and lit walkable edges.
+function outline(K, p, H, y, color, o = {}) {
+  const t = o.t ?? 0.1, grow = o.grow ?? 0.06;
+  if (p.kind === 'disc') K.add(o.key || 'neon', H.part(new THREE.TorusGeometry(p.r + grow, t * 0.6, 3, H.seg(32, 18)), { rx: Math.PI / 2, y, color }));
+  else for (const f of H.faces(p.w, p.d)) K.add(o.key || 'neon', H.box(f.tx ? f.width + grow * 2 : t, t, f.tz ? f.width + grow * 2 : t, { x: f.nx * (f.half + grow), y, z: f.nz * (f.half + grow), color }));
+}
+// A mast with a red aviation beacon.
+function mast(K, H, x, z, y0, h, col = 0xff2a2a) {
+  F(K, H.cyl(0.05, 0.09, h, 4, { x, y: y0 + h / 2, z, color: 0x2a2a32 }));
+  G(K, H.box(0.26, 0.26, 0.26, { x, y: y0 + h + 0.1, z, color: col }), H.box(0.16, 0.16, 0.16, { x, y: y0 + h * 0.55, z, color: col }));
+}
+// A small holographic sign: a glowing panel in a neon frame, facing ry, its emitter below it.
+function holo(K, H, x, y, z, w, h, ry, col, frame) {
+  const nx = Math.sin(ry), nz = Math.cos(ry), tx = Math.cos(ry), tz = -Math.sin(ry);
+  G(K, grad(H.part(new THREE.PlaneGeometry(w, h), { x, y, z, ry }), y - h / 2, y + h / 2, col, 0xffffff), grad(H.part(new THREE.PlaneGeometry(w, h), { x: x - nx * 0.02, y, z: z - nz * 0.02, ry: ry + Math.PI }), y - h / 2, y + h / 2, col, 0xffffff));
+  for (const s of [-1, 1]) N(K, H.box(Math.abs(tx) * 0.06 + Math.abs(nx) * 0.06, h + 0.12, Math.abs(tz) * 0.06 + Math.abs(nz) * 0.06, { x: x + tx * s * (w / 2 + 0.03), y, z: z + tz * s * (w / 2 + 0.03), color: frame }));
+  N(K, H.box(Math.abs(tx) * (w + 0.12) + 0.06, 0.06, Math.abs(tz) * (w + 0.12) + 0.06, { x, y: y + h / 2 + 0.03, z, color: frame }), H.box(Math.abs(tx) * (w + 0.12) + 0.06, 0.06, Math.abs(tz) * (w + 0.12) + 0.06, { x, y: y - h / 2 - 0.03, z, color: frame }));
+}
+// Light reflected on the water at height wy off the faces in `which`: columns of broken dashes.
+function reflect(K, H, w, d, wy, c0, c1, rng, which = [0, 1, 2, 3], reach = 8, every = 2) {
+  const fs = H.faces(w, d);
+  for (const i of which) {
+    const f = fs[i], n = Math.max(1, Math.floor(f.width / every));
+    for (let k = 0; k < n; k++) {
+      const off = -f.width / 2 + (k + 0.5) * f.width / n;
+      for (let r = 0.4 + rng() * 0.5; r < reach; r += 0.7 + rng() * 0.9) {
+        const t = r / reach;
+        if (rng() < 0.25 + t * 0.45) continue;
+        const dw = (0.8 + rng() * 1.3) * (1 - t * 0.45), dd = 0.3 + rng() * 0.5;
+        _c.set(c0).lerp(_b.set(c1), t * 0.8);
+        G(K, H.box(f.tx ? dw : dd, 0.02, f.tz ? dw : dd, { x: f.nx * (f.half + r) + f.tx * (off + (rng() - 0.5) * 0.6), y: wy, z: f.nz * (f.half + r) + f.tz * (off + (rng() - 0.5) * 0.6), color: _c.getHex() }));
+      }
+    }
+  }
+}
+// The projection palette: cyan, magenta, violet, gold; and the moonlit marble's lit trim.
+const PJ = { cyan: 0x2be8ff, magenta: 0xff2bd6, violet: 0x7a3aff, deep: 0x1a2a8a, gold: 0xffc640, white: 0xe8f6ff, pink: 0xff6ab8 };
+
 // ------------------------------------------------------------------ the styles
 export const STYLES = {
   // ---- generic
@@ -103,35 +173,63 @@ export const STYLES = {
 
   // ---- PISA
   euroStreet(K, p, th, rng, H) {
-    const g = H.meterBox(p.w, p.thick, p.d, 6, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: 0xc8b49a });
+    const g = H.meterBox(p.w, p.thick, p.d, 6, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: night(th) ? 0x9a92a0 : 0xc8b49a });
     g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
+    if (night(th)) for (let o = -260; o <= 260; o += 40) { // the town's lit street grid round the Campo
+      G(K, H.box(0.3, 0.03, p.d, { x: o + 7, y: 0.02, color: (o / 40) % 2 ? 0x2be8ff : 0xffc070 }), H.box(p.w, 0.03, 0.3, { z: o + 13, y: 0.02, color: (o / 40) % 2 ? 0xffc070 : 0xff2bd6 }));
+    }
   },
   lawn(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.stone, { thick: p.thick });
-    F(K, H.box(p.w, 0.06, p.d, { y: -0.03, color: COL.lawn }));
+    F(K, H.box(p.w, 0.06, p.d, { y: -0.03, color: lit ? 0x2e6a3a : COL.lawn }));
     // mown stripes, then gravel paths: the south gate to the Duomo, a ring round the buildings
-    for (let x = -p.w / 2 + 6; x < p.w / 2; x += 12) F(K, H.box(6, 0.02, p.d - 1, { x, y: 0.005, color: COL.lawnDk }));
-    const path = (x, z, w, d) => F(K, H.box(w, 0.04, d, { x, y: 0.01, z, color: COL.gravel }));
-    path(0, 40, 6, 40); path(-20, 18, 120, 5); path(-74, -16, 5, 70); path(30, -2, 5, 30); path(-12, -46, 110, 5);
+    for (let x = -p.w / 2 + 6; x < p.w / 2; x += 12) F(K, H.box(6, 0.02, p.d - 1, { x, y: 0.005, color: lit ? 0x285e34 : COL.lawnDk }));
+    const paths = [[0, 40, 6, 40], [-20, 18, 120, 5], [-74, -16, 5, 70], [30, -2, 5, 30], [-12, -46, 110, 5]];
+    for (const [x, z, w, d] of paths) {
+      F(K, H.box(w, 0.04, d, { x, y: 0.01, z, color: lit ? 0xb8b8cc : COL.gravel }));
+      if (!lit) continue;
+      // LED lines along both edges of every path, and path lights every few metres: the routes glow
+      const long = d > w, len = long ? d : w;
+      for (const s of [-1, 1]) G(K, H.box(long ? 0.12 : len, 0.03, long ? len : 0.12, { x: x + (long ? s * (w / 2 + 0.06) : 0), y: 0.02, z: z + (long ? 0 : s * (d / 2 + 0.06)), color: s > 0 ? PJ.cyan : PJ.magenta }));
+      for (let o = -len / 2 + 3; o < len / 2; o += 9) for (const s of [-1, 1]) {
+        const px = x + (long ? s * (w / 2 + 0.6) : o), pz = z + (long ? o : s * (d / 2 + 0.6));
+        F(K, H.cyl(0.08, 0.1, 0.8, 5, { x: px, y: 0.4, z: pz, color: 0x2a2a32 }));
+        G(K, H.box(0.24, 0.16, 0.24, { x: px, y: 0.86, z: pz, color: 0xe8f6ff }));
+      }
+    }
     // a white kerb round the lawn
     for (const f of H.faces(p.w, p.d)) F(K, H.box(f.tx ? f.width : 0.6, 0.3, f.tz ? f.width : 0.6, { x: f.nx * (f.half - 0.3), y: 0.0, z: f.nz * (f.half - 0.3), color: COL.marble }));
+    if (lit) outline(K, p, H, 0.16, PJ.cyan, { grow: -0.3, t: 0.08 });
   },
   cityWall(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.stone);
     bands(K, p, H, -2, -p.thick, 2.2, COL.stoneDk, 0.12);
     cap(K, p, H, 0xb09878);
     const long = p.w > p.d ? [0, 1] : [2, 3];
     merlons(K, p, H, COL.stone, long);
     const fs = H.faces(p.w, p.d);
-    for (const i of long) { const f = fs[i]; for (let o = -f.width / 2 + 4; o < f.width / 2 - 2; o += 7) F(K, H.box(f.tx ? 0.3 : 0.1, 1.4, f.tz ? 0.3 : 0.1, { x: f.nx * (f.half + 0.03) + f.tx * o, y: -4, z: f.nz * (f.half + 0.03) + f.tz * o, color: COL.dark })); }
+    for (const i of long) { const f = fs[i]; for (let o = -f.width / 2 + 4; o < f.width / 2 - 2; o += 7) K.add(lit ? 'glow' : 'flat', H.box(f.tx ? 0.3 : 0.1, 1.4, f.tz ? 0.3 : 0.1, { x: f.nx * (f.half + 0.03) + f.tx * o, y: -4, z: f.nz * (f.half + 0.03) + f.tz * o, color: lit ? 0xffb050 : COL.dark })); } // arrow slits, lit from inside
+    if (lit) { // the wall walk's edges in light, a projected gold line along the battlements, wall lamps
+      for (const i of long) { const f = fs[i]; N(K, H.box(f.tx ? f.width : 0.08, 0.08, f.tz ? f.width : 0.08, { x: f.nx * (f.half - 0.62), y: 0.04, z: f.nz * (f.half - 0.62), color: PJ.gold })); }
+      outline(K, p, H, -0.5, PJ.violet, { t: 0.12 });
+      for (const i of long) { const f = fs[i]; for (let o = -f.width / 2 + 7.5; o < f.width / 2 - 2; o += 14) G(K, grad(H.box(f.tx ? 1.2 : 0.1, 6, f.tz ? 1.2 : 0.1, { x: f.nx * (f.half + 0.06) + f.tx * o, y: -p.thick + 3.4, z: f.nz * (f.half + 0.06) + f.tz * o }), -p.thick + 0.4, -p.thick + 6.4, 0xffc070, 0x3a2a40)); } // floodlit pools up the wall
+    }
   },
   wallTower(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, 0xc0a682);
     bands(K, p, H, -3, -p.thick, 3, COL.stoneDk, 0.14);
     cap(K, p, H, 0xa89070, COL.stoneDk, 0.4);
     merlons(K, p, H, 0xc0a682, [0, 1, 2, 3], 0.8, 1.6, 1.0);
-    for (const f of H.faces(p.w, p.d)) arch(K, H, f, 0, -7, 1.0, 2.2, COL.dark);
+    for (const f of H.faces(p.w, p.d)) arch(K, H, f, 0, -7, 1.0, 2.2, lit ? 0xffb050 : COL.dark, 0.04, lit ? 'glow' : 'flat');
     G(K, H.box(0.3, 0.3, 0.3, { x: p.w / 2 - 0.4, y: 1.4, z: p.d / 2 - 0.4, color: 0xff3a2a }));
+    if (lit) {
+      outline(K, p, H, -0.25, PJ.gold, { t: 0.12, grow: 0.16 });
+      for (const f of H.faces(p.w, p.d)) archLight(K, H, f, 0, -p.thick + 1, Math.min(4, f.width - 2), Math.min(8, p.thick - 9), PJ.deep, PJ.violet, 0.05);
+      mast(K, H, -p.w / 2 + 0.6, -p.d / 2 + 0.6, 0, 6);
+    }
   },
   vespa(K, p, th, rng, H) {
     const c = VESPA[(p.tint >= 0 ? p.tint : 0) % VESPA.length], hw = p.w / 2, hd = p.d / 2;
@@ -146,108 +244,145 @@ export const STYLES = {
     F(K, H.box(p.w - 0.6, 0.2, p.d - 1.2, { y: -0.85, color: 0x3a3c46 }));
     jets(K, H, [[-0.6, -1], [0.6, -1], [-0.6, 1], [0.6, 1]], -0.97);
   },
+  // Pisa by night: the Campo's marble wears a projection show. The blind arcades become arch-shaped
+  // panels of light (deep blue up into violet, magenta or cyan), the colonnades are uplit, the stripes
+  // and cornices drawn in neon, the domes' ribs in light: every roof's edge reads for the jump.
   baptistery(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.marble);
     bands(K, p, H, -1, -p.thick + 0.5, 1.1, COL.stripe, 0.12);
-    ringArches(K, H, p.r + 0.02, 20, -p.thick + 0.4, 6.5, 1.4, 0x6a6a70); // blind arcade
-    colonnade(K, H, p.r + 0.15, 40, -4.2, -1.0, 0.1, COL.marble); // the loggia
+    if (lit) ringLight(K, H, p.r + 0.04, 20, -p.thick + 0.4, 6.5, 1.4, PJ.deep, PJ.cyan); // the blind arcade, projected
+    else ringArches(K, H, p.r + 0.02, 20, -p.thick + 0.4, 6.5, 1.4, 0x6a6a70); // blind arcade
+    if (lit) for (let k = 0; k < 40; k++) { const a = (k / 40) * Math.PI * 2; G(K, grad(H.cyl(0.1, 0.1, 3.2, 5, { x: Math.cos(a) * (p.r + 0.15), y: -2.6, z: Math.sin(a) * (p.r + 0.15) }), -4.2, -1, 0xffffff, PJ.pink)); } // the loggia, uplit
+    else colonnade(K, H, p.r + 0.15, 40, -4.2, -1.0, 0.1, COL.marble); // the loggia
     F(K, H.cyl(p.r + 0.25, p.r + 0.25, 0.4, H.seg(32, 18), { y: -0.8, color: COL.marbleSh }));
     F(K, H.cyl(p.r - 1.5, p.r - 1.5, 3.4, H.seg(32, 18), { y: -2.6, color: 0x5a5a62 }));
     cap(K, p, H, COL.lead);
-    G(K, H.box(1.6, 3, 0.1, { y: -p.thick + 1.5, z: p.r + 0.1, color: 0x6a4a2a }));
+    G(K, H.box(1.6, 3, 0.1, { y: -p.thick + 1.5, z: p.r + 0.1, color: lit ? 0xffc070 : 0x6a4a2a }));
+    if (lit) { outline(K, p, H, -0.06, PJ.cyan, { grow: 0.28 }); outline(K, p, H, -4.4, PJ.magenta, { grow: 0.08 }); outline(K, p, H, -p.thick + 7.1, PJ.violet, { grow: 0.06 }); }
   },
   baptisteryUpper(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.marble);
     bands(K, p, H, -0.6, -p.thick, 0.9, COL.stripe, 0.1);
     for (let k = 0; k < 12; k++) { // gothic gables round the rim (low, so the walk round stays clear)
       const a = (k / 12) * Math.PI * 2, x = Math.cos(a) * (p.r + 0.1), z = Math.sin(a) * (p.r + 0.1);
-      F(K, H.part(new THREE.ConeGeometry(0.9, 1.8, 3), { x, y: -1.2, z, ry: -a, color: COL.marbleSh }));
+      if (lit) G(K, grad(H.part(new THREE.ConeGeometry(0.9, 1.8, 3), { x, y: -1.2, z, ry: -a }), -2.1, -0.3, PJ.violet, PJ.pink));
+      else F(K, H.part(new THREE.ConeGeometry(0.9, 1.8, 3), { x, y: -1.2, z, ry: -a, color: COL.marbleSh }));
       F(K, H.part(new THREE.ConeGeometry(0.14, 1.1, 4), { x: Math.cos(a + 0.26) * (p.r - 0.1), y: 0.5, z: Math.sin(a + 0.26) * (p.r - 0.1), color: COL.marble }));
     }
     cap(K, p, H, COL.lead);
+    if (lit) outline(K, p, H, -0.05, PJ.cyan, { grow: 0.08 });
   },
   dome(K, p, th, rng, H) { // a step of a dome: lead and terracotta ribs (0: the Baptistery, 1: the Duomo)
-    const base = p.tint === 1 ? COL.lead : COL.terracotta, rib = p.tint === 1 ? COL.marble : COL.lead;
+    const lit = night(th), base = p.tint === 1 ? COL.lead : COL.terracotta, rib = p.tint === 1 ? COL.marble : COL.lead;
     body(K, p, H, base, { seg: H.seg(24, 14) });
     F(K, H.part(new THREE.TorusGeometry(p.r - 0.12, 0.22, 4, H.seg(24, 14)), { rx: Math.PI / 2, y: -0.12, color: base }));
     const n = p.r > 4 ? 12 : 8;
-    for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2; F(K, H.box(0.3, p.thick, 0.3, { x: Math.cos(a) * (p.r + 0.04), y: -p.thick / 2, z: Math.sin(a) * (p.r + 0.04), ry: -a, color: rib })); }
+    for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2; K.add(lit ? 'glow' : 'flat', H.box(0.3, p.thick, 0.3, { x: Math.cos(a) * (p.r + 0.04), y: -p.thick / 2, z: Math.sin(a) * (p.r + 0.04), ry: -a, color: lit ? (p.tint === 1 ? PJ.white : PJ.gold) : rib })); } // the ribs, drawn in light at night
     cap(K, p, H, p.tint === 1 ? 0x9aa4ac : 0xd07848);
+    if (lit) outline(K, p, H, -0.04, p.tint === 1 ? PJ.cyan : PJ.magenta, { grow: 0.12 });
   },
   lantern(K, p, th, rng, H) {
     body(K, p, H, COL.marble, { seg: 10 });
     colonnade(K, H, p.r + 0.08, 8, -p.thick + 0.2, -0.3, 0.08, COL.marbleSh);
-    F(K, H.cyl(p.r + 0.2, p.r + 0.2, 0.2, 10, { y: -0.1, color: COL.gold }));
+    K.add(night(th) ? 'neon' : 'flat', H.cyl(p.r + 0.2, p.r + 0.2, 0.2, 10, { y: -0.1, color: night(th) ? PJ.gold : COL.gold }));
     G(K, H.cyl(p.r - 0.4, p.r - 0.4, p.thick - 0.6, 10, { y: -p.thick / 2, color: 0xffe0a0 }));
   },
   duomo(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.marble);
     bands(K, p, H, -0.9, -p.thick, 1.0, COL.stripe, 0.1);
+    if (lit) { arcadeLight(K, p, H, [0, 1], -p.thick + 0.6, 7, 3.2, PJ.deep, PJ.magenta); arcadeLight(K, p, H, [0, 1], -6.2, 3.4, 1.6, PJ.violet, PJ.cyan, { w: 0.8 }); }
     arcade(K, p, H, [0, 1], -p.thick + 0.6, 7, 3.2, 0x8a8c90, { pilaster: COL.marble });
     arcade(K, p, H, [0, 1], -6.2, 3.4, 1.6, 0x5a5c64, { w: 0.8 });
     F(K, H.box(p.w + 0.5, 0.5, p.d + 0.5, { y: -0.35, color: COL.marbleSh }));
     cap(K, p, H, COL.lead);
     N(K, H.box(p.w + 0.6, 0.08, 0.08, { y: -0.62, z: p.d / 2 + 0.27, color: COL.cyan }), H.box(p.w + 0.6, 0.08, 0.08, { y: -0.62, z: -p.d / 2 - 0.27, color: COL.cyan }));
+    if (lit) { outline(K, p, H, -0.12, PJ.white, { grow: 0.26, t: 0.08 }); outline(K, p, H, -p.thick + 8.2, PJ.magenta, { grow: 0.06 }); }
   },
   duomoAisle(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.marble);
     bands(K, p, H, -0.8, -p.thick, 1.0, COL.stripe, 0.1);
+    if (lit) arcadeLight(K, p, H, [0, 1, 2, 3], -p.thick + 0.6, 6.2, 3.0, PJ.deep, PJ.violet);
     arcade(K, p, H, [0, 1, 2, 3], -p.thick + 0.6, 6.2, 3.0, 0x8a8c90, { pilaster: COL.marble });
     F(K, H.box(p.w + 0.4, 0.4, p.d + 0.4, { y: -0.3, color: COL.marbleSh }));
     cap(K, p, H, COL.lead);
+    if (lit) { outline(K, p, H, -0.1, PJ.cyan, { grow: 0.21, t: 0.08 }); outline(K, p, H, -p.thick + 7.2, PJ.magenta, { grow: 0.06 }); }
   },
-  transept(K, p, th, rng, H) { STYLES.duomoAisle(K, p, th, rng, H); arcade(K, p, H, [0, 1], -5.5, 3, 1.6, 0x5a5c64, { w: 0.8 }); },
+  transept(K, p, th, rng, H) {
+    STYLES.duomoAisle(K, p, th, rng, H);
+    if (night(th)) arcadeLight(K, p, H, [0, 1], -5.5, 3, 1.6, PJ.violet, PJ.cyan, { w: 0.8 });
+    arcade(K, p, H, [0, 1], -5.5, 3, 1.6, 0x5a5c64, { w: 0.8 });
+  },
   duomoFacade(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.marble);
     bands(K, p, H, -0.7, -p.thick, 1.0, COL.stripe, 0.1);
     const fs = H.faces(p.w, p.d), west = fs[3], east = fs[2];
-    for (let k = 0; k < 7; k++) arch(K, H, west, (k - 3) * 3.6, -p.thick + 0.6, 2.6, 8.5, 0x7a7c80); // the blind arches below
-    for (const k of [-1, 0, 1]) arch(K, H, west, k * 7.2, -p.thick + 0.6, 2.2, 5.2, COL.bronze, 0.08); // three bronze doors
-    for (let tier = 0; tier < 4; tier++) { // four tiers of little open galleries
+    for (let k = 0; k < 7; k++) { if (lit) archLight(K, H, west, (k - 3) * 3.6, -p.thick + 0.6, 2.6, 8.5, PJ.deep, k % 2 ? PJ.magenta : PJ.cyan); else arch(K, H, west, (k - 3) * 3.6, -p.thick + 0.6, 2.6, 8.5, 0x7a7c80); } // the blind arches below
+    for (const k of [-1, 0, 1]) arch(K, H, west, k * 7.2, -p.thick + 0.6, 2.2, 5.2, lit ? 0xffb050 : COL.bronze, 0.08, lit ? 'glow' : 'flat'); // three bronze doors (lit from within at night)
+    for (let tier = 0; tier < 4; tier++) { // four tiers of little open galleries (each lit its own colour at night)
       const y = -p.thick + 10.5 + tier * 2.5, n = tier < 2 ? 16 : tier === 2 ? 10 : 6;
       F(K, H.box(0.5, 0.25, p.d * (1 - tier * 0.2), { x: -p.w / 2 - 0.25, y: y - 0.1, color: COL.marbleSh }));
-      for (let k = 0; k < n; k++) arch(K, H, west, (k - (n - 1) / 2) * (p.d * (1 - tier * 0.2) / n), y, 0.7, 2.0, 0x4a4a52, 0.3);
+      if (lit) N(K, H.box(0.08, 0.08, p.d * (1 - tier * 0.2), { x: -p.w / 2 - 0.52, y: y - 0.2, color: [PJ.cyan, PJ.magenta, PJ.gold, PJ.white][tier] }));
+      for (let k = 0; k < n; k++) arch(K, H, west, (k - (n - 1) / 2) * (p.d * (1 - tier * 0.2) / n), y, 0.7, 2.0, lit ? [0x2a6aff, 0xb02ad0, 0xd08a20, 0x8ac8ff][tier] : 0x4a4a52, 0.3, lit ? 'glow' : 'flat');
     }
     for (const k of [-1, 1]) F(K, H.part(new THREE.ConeGeometry(0.4, 1.6, 4), { x: -p.w / 2 + 0.6, y: 0.8, z: k * (p.d / 2 - 0.5), color: COL.marble }));
-    F(K, H.box(0.6, 2.4, 0.5, { x: -p.w / 2 + 0.6, y: 1.2, color: COL.gold })); // the Madonna on the gable
+    K.add(lit ? 'glow' : 'flat', H.box(0.6, 2.4, 0.5, { x: -p.w / 2 + 0.6, y: 1.2, color: lit ? PJ.gold : COL.gold })); // the Madonna on the gable (in gold light)
     for (let k = 0; k < 4; k++) arch(K, H, east, (k - 1.5) * 5, -p.thick + 12, 1.2, 3, 0x5a5c64);
     cap(K, p, H, COL.lead);
+    if (lit) outline(K, p, H, -0.08, PJ.white, { grow: 0.08 });
   },
   domeDrum(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.marble);
     bands(K, p, H, -0.5, -p.thick, 0.8, COL.stripe, 0.08);
-    ringArches(K, H, p.r + 0.03, 16, -p.thick + 0.8, 2.2, 0.8, 0x3a3c44);
+    if (lit) ringLight(K, H, p.r + 0.05, 16, -p.thick + 0.8, 2.2, 0.8, PJ.violet, PJ.cyan);
+    else ringArches(K, H, p.r + 0.03, 16, -p.thick + 0.8, 2.2, 0.8, 0x3a3c44);
     F(K, H.cyl(p.r + 0.2, p.r + 0.2, 0.3, H.seg(28, 16), { y: -0.2, color: COL.marbleSh }));
     cap(K, p, H, COL.lead);
+    if (lit) outline(K, p, H, -0.05, PJ.cyan, { grow: 0.24 });
   },
   apse(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.marble);
     bands(K, p, H, -0.9, -p.thick, 1.0, COL.stripe, 0.1);
-    ringArches(K, H, p.r + 0.03, 14, -p.thick + 0.6, 7, 2.2, 0x8a8c90);
+    if (lit) ringLight(K, H, p.r + 0.05, 14, -p.thick + 0.6, 7, 2.2, PJ.deep, PJ.magenta);
+    else ringArches(K, H, p.r + 0.03, 14, -p.thick + 0.6, 7, 2.2, 0x8a8c90);
     colonnade(K, H, p.r + 0.15, 28, -3.6, -0.8, 0.09, COL.marble);
     F(K, H.cyl(p.r + 0.25, p.r + 0.25, 0.4, H.seg(28, 16), { y: -0.6, color: COL.marbleSh }));
     cap(K, p, H, COL.lead);
+    if (lit) outline(K, p, H, -0.08, PJ.white, { grow: 0.3, t: 0.09 });
   },
   camposanto(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.marble);
+    if (lit) arcadeLight(K, p, H, [0, 1, 2, 3], -p.thick + 0.5, 7.2, 2.2, PJ.deep, 0x4a8bff);
     arcade(K, p, H, [0, 1, 2, 3], -p.thick + 0.5, 7.2, 2.2, 0x9a9ca0, { pilaster: COL.marbleSh });
     F(K, H.box(p.w + 0.4, 0.5, p.d + 0.4, { y: -0.4, color: COL.marbleSh }));
     cap(K, p, H, COL.lead);
     // the gothic tabernacle over the south door
     F(K, H.box(4, 3, 1.2, { y: -p.thick + 6.5, z: p.d / 2 + 0.6, color: COL.marble }), H.part(new THREE.ConeGeometry(2.4, 2, 4), { y: -p.thick + 9, z: p.d / 2 + 0.6, ry: Math.PI / 4, color: COL.marbleSh }));
-    arch(K, H, H.faces(p.w, p.d)[1], 0, -p.thick + 0.3, 2, 4.6, COL.bronze, 0.7);
+    arch(K, H, H.faces(p.w, p.d)[1], 0, -p.thick + 0.3, 2, 4.6, lit ? 0xffb050 : COL.bronze, 0.7, lit ? 'glow' : 'flat');
+    if (lit) { outline(K, p, H, -0.1, PJ.cyan, { grow: 0.26, t: 0.09 }); for (let x = -p.w / 2 + 10; x < p.w / 2 - 4; x += 22) mast(K, H, x, -p.d / 2 + 1.5, 0, 5 + rng() * 3); }
   },
   pisa(K, p, th, rng, H) { // a storey of the Leaning Tower: an open gallery of columns round a shadowed core
-    const r = p.r, t = p.thick, base = t > 6;
+    const r = p.r, t = p.thick, base = t > 6, lit = night(th);
+    // at night the gallery columns are uplit, cyan at the foot to white at the arches, storey after storey
+    const col = (rr, n, y0, y1, cr) => { if (!lit) return colonnade(K, H, rr, n, y0, y1, cr, COL.marble); for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2; G(K, grad(H.cyl(cr, cr, y1 - y0, 5, { x: Math.cos(a) * rr, y: (y0 + y1) / 2, z: Math.sin(a) * rr }), y0, y1, PJ.cyan, 0xf0f8ff)); } };
     if (base) { // the ground storey: a tall blind arcade, engaged columns
       F(K, H.cyl(r, r, t, H.seg(32, 18), { y: -t / 2, color: COL.marble }));
-      ringArches(K, H, r + 0.02, 15, -t + 0.6, t - 2.2, 2.4, 0x9a9890);
-      colonnade(K, H, r + 0.12, 15, -t, -1.2, 0.18, COL.marble);
-      G(K, H.box(1.6, 3.2, 0.1, { y: -t + 1.6, z: r + 0.12, color: 0x6a4a2a }));
+      if (lit) ringLight(K, H, r + 0.04, 15, -t + 0.6, t - 2.2, 2.4, PJ.deep, PJ.magenta);
+      else ringArches(K, H, r + 0.02, 15, -t + 0.6, t - 2.2, 2.4, 0x9a9890);
+      col(r + 0.12, 15, -t, -1.2, 0.18);
+      G(K, H.box(1.6, 3.2, 0.1, { y: -t + 1.6, z: r + 0.12, color: lit ? 0xffc070 : 0x6a4a2a }));
     } else {
-      F(K, H.cyl(r - 1.0, r - 1.0, t, H.seg(28, 16), { y: -t / 2, color: 0x7a786e })); // the core in shadow
-      ringArches(K, H, r - 0.95, 30, -t + 0.4, t - 1.4, 0.8, 0x3c3a40); // doors and windows on the core
-      colonnade(K, H, r - 0.3, H.seg(30, 20), -t + 0.25, -0.95, 0.15, COL.marble);
+      F(K, H.cyl(r - 1.0, r - 1.0, t, H.seg(28, 16), { y: -t / 2, color: lit ? 0x3a3450 : 0x7a786e })); // the core in shadow
+      if (lit) ringLight(K, H, r - 0.93, 30, -t + 0.4, t - 1.4, 0.8, PJ.violet, PJ.magenta); // doors and windows on the core, lit
+      else ringArches(K, H, r - 0.95, 30, -t + 0.4, t - 1.4, 0.8, 0x3c3a40); // doors and windows on the core
+      col(r - 0.3, H.seg(30, 20), -t + 0.25, -0.95, 0.15);
       F(K, H.part(new THREE.TorusGeometry(r - 0.3, 0.32, 4, H.seg(30, 20)), { rx: Math.PI / 2, y: -1.0, color: COL.marble })); // the arches' band
       F(K, H.cyl(r - 0.05, r - 0.05, 0.25, H.seg(30, 20), { y: -t + 0.12, color: COL.marbleSh })); // plinth
     }
@@ -255,16 +390,19 @@ export const STYLES = {
     F(K, H.cyl(r + 0.05, r + 0.05, 0.1, H.seg(32, 18), { y: -0.6, color: COL.stripe }));
     cap(K, p, H, COL.marble);
     N(K, H.part(new THREE.TorusGeometry(r + 0.2, 0.05, 3, H.seg(32, 18)), { rx: Math.PI / 2, y: -0.56, color: COL.cyan }));
+    if (lit) N(K, H.part(new THREE.TorusGeometry(r + 0.21, 0.06, 3, H.seg(32, 18)), { rx: Math.PI / 2, y: -0.06, color: PJ.white })); // the gallery floor's edge
     if (!base && p.tint > 1000) { const a = (Math.floor(p.tint / 1000) * Math.PI) / 180, s = (p.tint % 1000) / 100; shearKit(K, Math.cos(a) * s, Math.sin(a) * s); }
   },
   pisaBelfry(K, p, th, rng, H) {
-    const r = p.r, t = p.thick;
+    const r = p.r, t = p.thick, lit = night(th);
     F(K, H.cyl(r, r, t, H.seg(24, 14), { y: -t / 2, color: COL.marble }));
-    ringArches(K, H, r + 0.03, 6, -t + 0.5, 3.2, 1.8, 0x2e2c34); // the bell openings
+    if (lit) ringLight(K, H, r + 0.05, 6, -t + 0.5, 3.2, 1.8, PJ.violet, PJ.gold); // the bell openings, lit gold
+    else ringArches(K, H, r + 0.03, 6, -t + 0.5, 3.2, 1.8, 0x2e2c34); // the bell openings
     for (let k = 0; k < 6; k++) { const a = ((k + 0.5) / 6) * Math.PI * 2; G(K, H.part(new THREE.ConeGeometry(0.6, 0.9, 6), { x: Math.cos(a) * (r - 0.6), y: -t + 2.2, z: Math.sin(a) * (r - 0.6), color: 0xd8a040 })); }
     F(K, H.cyl(r + 0.25, r + 0.25, 0.45, H.seg(24, 14), { y: -0.25, color: COL.marbleSh }));
     cap(K, p, H, COL.marble);
     N(K, H.part(new THREE.TorusGeometry(r + 0.28, 0.07, 3, H.seg(24, 14)), { rx: Math.PI / 2, y: -0.5, color: COL.magenta }));
+    if (lit) { N(K, H.part(new THREE.TorusGeometry(r + 0.27, 0.06, 3, H.seg(24, 14)), { rx: Math.PI / 2, y: -0.04, color: PJ.white })); mast(K, H, r * 0.6, -r * 0.6, 0, 7); }
     if (p.tint > 1000) { const a = (Math.floor(p.tint / 1000) * Math.PI) / 180, s = (p.tint % 1000) / 100; shearKit(K, Math.cos(a) * s, Math.sin(a) * s); }
   },
   pisaLedge(K, p, th, rng, H) { // a marble balcony on a bracket, its rail on the outer edge
@@ -272,41 +410,65 @@ export const STYLES = {
     cap(K, p, H, COL.marble);
     F(K, H.box(p.w * 0.6, 1.2, 0.5, { y: -p.thick - 0.5, z: p.d / 2 - 0.4, rx: -0.6, color: COL.marbleDk })); // the bracket
     for (let k = -2; k <= 2; k++) F(K, H.box(0.12, 0.7, 0.12, { x: k * (p.w / 5), y: 0.35, z: -p.d / 2 + 0.1, color: COL.marble }));
-    F(K, H.box(p.w, 0.1, 0.18, { y: 0.72, z: -p.d / 2 + 0.1, color: COL.marble }));
+    K.add(night(th) ? 'glow' : 'flat', H.box(p.w, 0.1, 0.18, { y: 0.72, z: -p.d / 2 + 0.1, color: night(th) ? PJ.white : COL.marble }));
     N(K, H.box(p.w, 0.06, 0.06, { y: -p.thick + 0.05, z: -p.d / 2 - 0.02, color: COL.cyan }));
+    if (night(th)) outline(K, p, H, -0.06, PJ.cyan, { grow: 0.04, t: 0.07 });
   },
   kiosk(K, p, th, rng, H) {
-    const c = [0xd8302a, 0x2a6ab8, 0x3a9a4a][(p.tint >= 0 ? p.tint : 0) % 3];
+    const c = [0xd8302a, 0x2a6ab8, 0x3a9a4a][(p.tint >= 0 ? p.tint : 0) % 3], lit = night(th);
     F(K, H.box(p.w - 0.4, p.thick, p.d - 0.4, { y: -p.thick / 2, color: 0xf0ece0 }));
     for (let k = 0; k < 6; k++) F(K, H.box(p.w / 6, 0.12, p.d, { x: -p.w / 2 + (k + 0.5) * (p.w / 6), y: -0.06, color: k % 2 ? 0xffffff : c })); // the striped awning roof
     G(K, H.box(p.w - 1, 0.5, 0.06, { y: -1.0, z: p.d / 2 - 0.15, color: 0xffd23a }));
     for (let k = 0; k < 5; k++) F(K, H.cyl(0.12, 0.12, 0.6, 5, { x: -1.5 + k * 0.75, y: -1.9, z: p.d / 2 - 0.1, rz: 0.15, color: COL.marble })); // little leaning towers for sale
+    if (lit) { // a lit awning hem and a holo sign over the counter
+      outline(K, p, H, -0.14, [PJ.magenta, PJ.cyan, PJ.gold][(p.tint >= 0 ? p.tint : 0) % 3], { t: 0.08 });
+      holo(K, H, 0, 1.6, -p.d / 2 + 0.3, 2.6, 1.0, 0, [PJ.pink, PJ.cyan, PJ.gold][(p.tint >= 0 ? p.tint : 0) % 3], PJ.white);
+      F(K, H.cyl(0.04, 0.04, 1.1, 4, { y: 0.55, z: -p.d / 2 + 0.3, color: 0x2a2a32 }));
+    }
   },
   fountain(K, p, th, rng, H) {
     F(K, H.cyl(p.r, p.r + 0.2, p.thick, 16, { y: -p.thick / 2, color: COL.marble }));
     G(K, H.cyl(p.r - 0.4, p.r - 0.4, 0.06, 16, { y: -0.02, color: 0x6ad8ff }));
     F(K, H.part(new THREE.TorusGeometry(p.r - 0.2, 0.2, 4, 16), { rx: Math.PI / 2, y: 0, color: COL.marbleSh }));
+    if (night(th)) { N(K, H.part(new THREE.TorusGeometry(p.r + 0.08, 0.06, 3, 16), { rx: Math.PI / 2, y: -0.3, color: PJ.cyan })); G(K, grad(H.cyl(0.12, 0.3, 2.4, 6, { y: 1.2 }), 0, 2.4, 0x6ad8ff, 0xffffff)); } // a lit jet
   },
 
-  // ---- AMALFI
+  // ---- AMALFI: blue hour, the town lit up the ravine. Every window warm, holo signs on the hotels,
+  // the lemons glowing like neon, string lights over the marina, LED edges on the roof terraces.
   molo(K, p, th, rng, H) {
-    const g = H.meterBox(p.w, p.thick, p.d, 6, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: 0xd8ccb4 }); g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
+    const lit = night(th);
+    const g = H.meterBox(p.w, p.thick, p.d, 6, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: lit ? 0xb0a8b8 : 0xd8ccb4 }); g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
     for (const sx of [-1, 1]) for (let z = -p.d / 2 + 3; z < p.d / 2; z += 6) {
       F(K, H.cyl(0.22, 0.26, 0.5, 6, { x: sx * (p.w / 2 - 0.4), y: 0.25, z, color: 0x3a3a40 })); // bollards
       F(K, H.part(new THREE.TorusGeometry(0.45, 0.18, 4, 8), { x: sx * (p.w / 2 + 0.1), y: -1.2, z: z + 3, ry: Math.PI / 2, color: 0x1a1a1e })); // tyres
     }
     for (let z = -p.d / 2 + 6; z < p.d / 2; z += 12) { F(K, H.cyl(0.08, 0.08, 3.6, 5, { x: p.w / 2 - 0.4, y: 1.8, z, color: 0x2a3a4a })); G(K, H.box(0.4, 0.3, 0.4, { x: p.w / 2 - 0.4, y: 3.7, z, color: COL.warm })); }
+    if (lit) { // the pier's edges in light, a lit beacon at its head, the lamps on the water
+      outline(K, p, H, -0.12, PJ.cyan, { t: 0.09, grow: 0.04 });
+      mast(K, H, 0, p.d / 2 - 1, 0, 4, 0x2bff7a);
+      reflect(K, H, p.w + 0.2, p.d, -p.h + 0.4, 0xb08a58, 0x0e2656, rng, [2], 5, 3);
+    }
   },
   marina(K, p, th, rng, H) {
-    const g = H.meterBox(p.w, p.thick, p.d, 4, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: 0xe0cfa8 }); g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
+    const lit = night(th);
+    const g = H.meterBox(p.w, p.thick, p.d, 4, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: lit ? 0xc0b4b0 : 0xe0cfa8 }); g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
     F(K, H.box(p.w, 0.5, 0.5, { y: 0.25, z: p.d / 2 - 0.25, color: COL.lime })); // the sea wall's parapet
     for (let x = -p.w / 2 + 8; x < p.w / 2; x += 14) { // palms and lamps along the front
       F(K, H.cyl(0.18, 0.26, 6, 5, { x, y: 3, z: p.d / 2 - 1.4, rz: 0.08, color: 0x7a5a3a }));
       for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; F(K, H.box(2.4, 0.08, 0.5, { x: x + Math.cos(a) * 1.1 + 0.4, y: 5.9, z: p.d / 2 - 1.4 + Math.sin(a) * 1.1, ry: -a, rz: -0.35, color: 0x3a8a3a })); }
       G(K, H.box(0.35, 0.35, 0.35, { x: x + 7, y: 3.4, z: p.d / 2 - 0.6, color: COL.warm }));
       F(K, H.cyl(0.07, 0.07, 3.3, 5, { x: x + 7, y: 1.65, z: p.d / 2 - 0.6, color: 0x2a3a4a }));
+      if (lit) {
+        G(K, grad(H.cyl(0.2, 0.28, 6, 5, { x, y: 3, z: p.d / 2 - 1.4, rz: 0.08 }), 0, 6, 0x2be8ff, 0x3a2a4a)); // the palm, uplit cyan
+        for (let k = 0; k <= 10; k++) { const t = k / 10; G(K, H.box(0.16, 0.16, 0.16, { x: x + 0.4 + t * 6.6, y: 5.2 - Math.sin(t * Math.PI) * 1.1, z: p.d / 2 - 1.0, color: [0xffd890, 0xff6ab8, 0x2be8ff][k % 3] })); } // string lights to the lamp
+      }
     }
     for (let x = -p.w / 2 + 3; x < p.w / 2; x += 9) F(K, H.box(4, 0.04, 2, { x, y: 0.02, z: -p.d / 2 + 2, color: 0xd8b878 })); // café terraces' rugs
+    if (lit) {
+      N(K, H.box(p.w, 0.08, 0.08, { y: 0.55, z: p.d / 2 - 0.02, color: PJ.cyan }), H.box(p.w, 0.1, 0.1, { y: -0.12, z: p.d / 2 + 0.06, color: PJ.magenta })); // the sea wall drawn in light
+      for (let x = -p.w / 2 + 12; x < p.w / 2 - 6; x += 27) holo(K, H, x, 2.6, -p.d / 2 + 0.6, 3.2, 1.4, 0, [PJ.pink, PJ.cyan, PJ.gold][((x / 27) | 0) & 1 ? 1 : 0], PJ.white); // café holo signs
+      reflect(K, H, p.w, p.d + 0.2, -p.h + 0.4, 0xffd890, 0x0e2656, rng, [1], 9, 2.5);
+    }
   },
   boat(K, p, th, rng, H) { // a gozzo: a wooden fishing boat, pointed at both ends
     const c = [0x2a6ab8, 0xd8302a, 0x2a9a6a, 0xf0c830, 0x2ab8d8, 0xe86a2a, 0x9a3ab8, 0xf0f0f0][(p.tint >= 0 ? p.tint : 0) % 8];
@@ -316,6 +478,10 @@ export const STYLES = {
     F(K, H.box(p.w + 0.06, 0.22, p.d - 2, { y: -0.2, color: c }));
     F(K, H.box(p.w - 0.3, 0.06, p.d - 2.2, { y: -0.03, color: 0xb88a5a })); // the deck
     for (const s of [-1, 1]) F(K, H.box(0.14, 0.7, 0.14, { y: 0.2, z: s * (hd - 0.4), color: c }));
+    if (night(th)) { // running lights and a neon gunwale
+      N(K, H.box(p.w + 0.08, 0.06, p.d - 2, { y: -0.08, color: [PJ.cyan, PJ.magenta, PJ.gold][(p.tint >= 0 ? p.tint : 0) % 3] }));
+      G(K, H.box(0.18, 0.18, 0.18, { x: -hw, y: 0.1, z: -hd + 1.2, color: 0xff2a2a }), H.box(0.18, 0.18, 0.18, { x: hw, y: 0.1, z: -hd + 1.2, color: 0x2bff7a }), H.box(0.2, 0.2, 0.2, { y: 0.65, z: hd - 0.4, color: 0xfff4d0 }));
+    }
   },
   waterTaxi(K, p, th, rng, H) {
     const hd = p.d / 2, t = p.thick;
@@ -327,90 +493,115 @@ export const STYLES = {
     F(K, H.box(p.w - 0.4, 0.5, 0.2, { y: 0.25, z: hd - 0.6, color: 0x2a2a30 }));
     G(K, H.box(0.3, 0.3, 0.3, { y: 1.0, z: hd - 0.4, color: 0xffd23a }));
     F(K, H.cyl(0.05, 0.05, 1.4, 4, { y: 0.4, z: hd - 0.4, color: 0xc8c8c8 }));
+    if (night(th)) { outline(K, p, H, -0.06, PJ.white, { t: 0.07, grow: 0.03 }); G(K, H.box(0.3, 0.2, 0.2, { y: 0.1, z: -hd + 0.9, color: 0xfff8e0 })); }
   },
   scalinata(K, p, th, rng, H) {
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.marbleSh }));
     F(K, H.box(p.w, 0.08, p.d, { y: -0.04, color: COL.lime }));
     F(K, H.box(p.w + 0.1, 0.08, 0.08, { y: -0.36, z: p.d / 2, color: COL.marbleDk }));
     for (const s of [-1, 1]) F(K, H.box(0.5, 0.9, p.d + 0.02, { x: s * (p.w / 2 + 0.25), y: 0.1, color: COL.lime })); // the side walls
+    if (night(th)) { // each step's nose lit (the stair reads from the sea), lit caps on the side walls
+      G(K, H.box(p.w, 0.05, 0.08, { y: -0.05, z: p.d / 2 + 0.01, color: 0xffd890 }));
+      for (const s of [-1, 1]) G(K, H.box(0.52, 0.04, p.d + 0.02, { x: s * (p.w / 2 + 0.25), y: 0.57, color: s > 0 ? 0xff6ab8 : 0x2be8ff }));
+    }
   },
   atrium(K, p, th, rng, H) {
     body(K, p, H, COL.lime);
     F(K, H.box(p.w, 0.06, p.d, { y: -0.03, color: 0xd8d0bc }));
     for (let x = -p.w / 2 + 1; x < p.w / 2; x += 2) F(K, H.box(0.9, 0.02, p.d - 0.4, { x, y: 0.01, color: 0xc8bea8 }));
+    if (night(th)) { arcadeLight(K, p, H, [1], -p.thick + 0.4, 5, 4, 0xffa040, 0x3a2a40); outline(K, p, H, -0.1, PJ.gold, { t: 0.08, grow: 0.04 }); }
     arcade(K, p, H, [1], -p.thick + 0.4, 5, 4, 0xa89c88);
   },
   amalfiDuomo(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.lime);
     const fs = H.faces(p.w, p.d), south = fs[1];
-    for (let y = -p.thick + 9; y < -0.5; y += 1.2) F(K, H.box(p.w + 0.06, 0.6, 0.1, { y, z: p.d / 2 + 0.03, color: 0x4a5a4a })); // the striped facade
-    for (let k = 0; k < 6; k++) arch(K, H, south, (k - 2.5) * 3.8, -p.thick + 8.1, 2.6, 6.2, 0x3a3238, 0.4); // the portico's pointed arches
+    for (let y = -p.thick + 9; y < -0.5; y += 1.2) K.add(lit ? 'glow' : 'flat', H.box(p.w + 0.06, 0.6, 0.1, { y, z: p.d / 2 + 0.03, color: lit ? ((y + p.thick) / 1.2 | 0) % 2 ? 0x2a8a6a : 0x1a4a5a : 0x4a5a4a })); // the striped facade (lit green at night)
+    for (let k = 0; k < 6; k++) arch(K, H, south, (k - 2.5) * 3.8, -p.thick + 8.1, 2.6, 6.2, lit ? 0xffa040 : 0x3a3238, 0.4, lit ? 'glow' : 'flat'); // the portico's pointed arches (warm inside)
     F(K, H.box(p.w, 0.5, 1.2, { y: -p.thick + 14.6, z: p.d / 2 + 0.5, color: COL.lime }));
     G(K, H.box(4, 2.2, 0.1, { y: -p.thick + 11.6, z: p.d / 2 + 0.45, color: 0xffc040 }));
-    arcade(K, p, H, [2, 3], -p.thick + 9, 5, 4, 0x5a5048);
+    if (lit) arcadeLight(K, p, H, [2, 3], -p.thick + 9, 5, 4, PJ.deep, PJ.gold); else arcade(K, p, H, [2, 3], -p.thick + 9, 5, 4, 0x5a5048);
     cap(K, p, H, COL.roof, 0xe8e0d0, 0.3);
+    if (lit) outline(K, p, H, -0.3, PJ.gold, { t: 0.12, grow: 0.18 });
   },
   amalfiFacade(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.lime);
-    for (let y = -0.8; y > -p.thick; y -= 1.0) F(K, H.box(p.w + 0.06, 0.45, 0.1, { y, z: p.d / 2 + 0.03, color: 0x3a5a4a }));
+    for (let y = -0.8; y > -p.thick; y -= 1.0) K.add(lit ? 'glow' : 'flat', H.box(p.w + 0.06, 0.45, 0.1, { y, z: p.d / 2 + 0.03, color: lit ? 0x1a6a5a : 0x3a5a4a }));
     G(K, H.box(10, 3.2, 0.12, { y: -2.4, z: p.d / 2 + 0.1, color: 0xe8b830 })); // the gold mosaic
     G(K, H.box(4, 1.8, 0.14, { y: -2.4, z: p.d / 2 + 0.12, color: 0x2a6ae8 }));
     for (const s of [-1, 1]) F(K, H.part(new THREE.ConeGeometry(0.4, 1.4, 4), { x: s * (p.w / 2 - 0.4), y: 0.7, z: p.d / 2 - 0.4, color: COL.lime }));
     cap(K, p, H, 0xe0d8c8);
+    if (lit) { outline(K, p, H, -0.06, PJ.gold, { t: 0.1 }); N(K, H.box(10.4, 0.1, 0.1, { y: -0.75, z: p.d / 2 + 0.16, color: PJ.cyan }), H.box(10.4, 0.1, 0.1, { y: -4.05, z: p.d / 2 + 0.16, color: PJ.cyan })); }
   },
   chiostro(K, p, th, rng, H) {
     body(K, p, H, COL.lime);
+    if (night(th)) { arcadeLight(K, p, H, [0, 1, 2, 3], -p.thick + 0.5, 4.6, 1.6, 0xffa040, 0x4a2a3a, { w: 1.0 }); outline(K, p, H, -0.32, PJ.cyan, { t: 0.08, grow: 0.16 }); }
     arcade(K, p, H, [0, 1, 2, 3], -p.thick + 0.5, 4.6, 1.6, 0x8a8478, { w: 1.0, pilaster: COL.lime });
     cap(K, p, H, COL.roof, COL.lime, 0.3);
   },
   amalfiCampanile(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, 0xd8c8a8);
     bands(K, p, H, -6, -p.thick, 6, 0xb8a888, 0.3);
     const fs = H.faces(p.w, p.d);
     for (const f of fs) {
-      for (const y of [-9, -15, -21]) { arch(K, H, f, -0.8, y, 0.9, 2.4, 0x2a2630); arch(K, H, f, 0.8, y, 0.9, 2.4, 0x2a2630); }
-      for (let k = -2; k <= 2; k++) arch(K, H, f, k * 1.25, -3.6, 1.0, 2.6, k % 2 ? 0xe8c030 : 0x2a8a5a, 0.06); // the coloured interlaced arches
+      for (const y of [-9, -15, -21]) { arch(K, H, f, -0.8, y, 0.9, 2.4, lit ? 0xffb050 : 0x2a2630, 0.04, lit ? 'glow' : 'flat'); arch(K, H, f, 0.8, y, 0.9, 2.4, lit ? 0xffb050 : 0x2a2630, 0.04, lit ? 'glow' : 'flat'); }
+      for (let k = -2; k <= 2; k++) arch(K, H, f, k * 1.25, -3.6, 1.0, 2.6, k % 2 ? (lit ? 0xffe040 : 0xe8c030) : (lit ? 0x2bff9a : 0x2a8a5a), 0.06, lit ? 'glow' : 'flat'); // the coloured interlaced arches (in light at night)
     }
     for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) { // corner turrets
       F(K, H.cyl(0.55, 0.55, 1.2, 6, { x: sx * (p.w / 2 - 0.55), y: 0.6, z: sz * (p.d / 2 - 0.55), color: 0xe8dcc0 }));
-      F(K, H.part(new THREE.ConeGeometry(0.6, 0.9, 6), { x: sx * (p.w / 2 - 0.55), y: 1.65, z: sz * (p.d / 2 - 0.55), color: 0x2a8a5a }));
+      K.add(lit ? 'glow' : 'flat', H.part(new THREE.ConeGeometry(0.6, 0.9, 6), { x: sx * (p.w / 2 - 0.55), y: 1.65, z: sz * (p.d / 2 - 0.55), color: lit ? 0x2bff9a : 0x2a8a5a }));
     }
     cap(K, p, H, 0xc8b898);
+    if (lit) { outline(K, p, H, -0.08, PJ.gold, { t: 0.1 }); for (const f of fs) G(K, grad(H.part(new THREE.PlaneGeometry(f.width - 0.4, p.thick - 24), { x: f.nx * (f.half + 0.02), y: -24 - (p.thick - 24) / 2, z: f.nz * (f.half + 0.02), ry: f.ry }), -p.thick, -24, 0xffc070, 0x3a2a40)); } // floodlit foot
   },
   majolica(K, p, th, rng, H) {
-    const n = 16;
-    for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2; F(K, H.box(p.r * 0.42, p.thick, 0.3, { x: Math.cos(a) * (p.r - 0.12), y: -p.thick / 2, z: Math.sin(a) * (p.r - 0.12), ry: -a + Math.PI / 2, color: k % 2 ? 0xe8c030 : 0x2a8a5a })); }
+    const n = 16, lit = night(th);
+    for (let k = 0; k < n; k++) { const a = (k / n) * Math.PI * 2; K.add(lit && k % 2 ? 'glow' : 'flat', H.box(p.r * 0.42, p.thick, 0.3, { x: Math.cos(a) * (p.r - 0.12), y: -p.thick / 2, z: Math.sin(a) * (p.r - 0.12), ry: -a + Math.PI / 2, color: k % 2 ? (lit ? 0xffd23a : 0xe8c030) : 0x2a8a5a })); }
     F(K, H.cyl(p.r - 0.2, p.r - 0.2, p.thick, 16, { y: -p.thick / 2, color: 0x2a8a5a }));
     cap(K, p, H, 0xe8c030);
+    if (lit) outline(K, p, H, -0.04, 0x2bff9a, { grow: 0.12 });
   },
   majolicaLantern(K, p, th, rng, H) {
     F(K, H.cyl(p.r, p.r, p.thick, 8, { y: -p.thick / 2, color: 0xe8dcc0 }));
-    ringArches(K, H, p.r + 0.02, 4, -p.thick + 0.3, 1.3, 0.5, 0x2a2630);
+    ringArches(K, H, p.r + 0.02, 4, -p.thick + 0.3, 1.3, 0.5, night(th) ? 0xffd890 : 0x2a2630, night(th) ? 'glow' : 'flat');
     cap(K, p, H, 0x2a8a5a);
-    F(K, H.part(new THREE.TorusGeometry(p.r, 0.1, 4, 10), { rx: Math.PI / 2, y: 0, color: COL.gold }));
+    K.add(night(th) ? 'neon' : 'flat', H.part(new THREE.TorusGeometry(p.r, 0.1, 4, 10), { rx: Math.PI / 2, y: 0, color: COL.gold }));
   },
   casa(K, p, th, rng, H) { // a pastel house: shuttered windows on the sea side, a flat roof terrace
-    const c = PASTEL[(p.tint >= 0 ? p.tint : 0) % PASTEL.length], t = p.thick;
+    const c = PASTEL[(p.tint >= 0 ? p.tint : 0) % PASTEL.length], t = p.thick, lit = night(th);
     body(K, p, H, c);
     const fs = H.faces(p.w, p.d), south = fs[1];
     const nx = Math.max(1, Math.floor((p.w - 1) / 2.6));
     for (let y = -2.4; y > Math.max(-t + 1, -10); y -= 3) for (let k = 0; k < nx; k++) { // the upper floors show over the row below
-      const off = (k - (nx - 1) / 2) * 2.6, z = p.d / 2 + 0.05;
-      F(K, H.box(0.8, 1.3, 0.08, { x: off, y, z, color: COL.win }));
+      const off = (k - (nx - 1) / 2) * 2.6, z = p.d / 2 + 0.05, on = lit && rng() < 0.7;
+      K.add(on ? 'glow' : 'flat', H.box(0.8, 1.3, 0.08, { x: off, y, z, color: on ? (rng() < 0.82 ? 0xffd890 : 0x9ad8ff) : COL.win }));
       F(K, H.box(0.4, 1.4, 0.06, { x: off - 0.62, y, z: z + 0.03, color: 0x2a7a4a }), H.box(0.4, 1.4, 0.06, { x: off + 0.62, y, z: z + 0.03, color: 0x2a7a4a }));
-      if (rng() < 0.3) F(K, H.box(1.6, 0.12, 0.6, { x: off, y: y - 0.75, z: z + 0.3, color: 0xe8e0d0 })); // a balcony
+      if (rng() < 0.3) {
+        F(K, H.box(1.6, 0.12, 0.6, { x: off, y: y - 0.75, z: z + 0.3, color: 0xe8e0d0 })); // a balcony
+        if (lit) N(K, H.box(1.6, 0.05, 0.05, { x: off, y: y - 0.7, z: z + 0.62, color: [PJ.pink, PJ.cyan, PJ.gold][k % 3] }));
+      }
     }
-    for (const f of [fs[2], fs[3]]) if (f.width > 4) F(K, H.box(0.08, 1.3, 0.8, { x: f.nx * (f.half + 0.05), y: -2.4, color: COL.win }));
+    for (const f of [fs[2], fs[3]]) if (f.width > 4) K.add(lit ? 'glow' : 'flat', H.box(0.08, 1.3, 0.8, { x: f.nx * (f.half + 0.05), y: -2.4, color: lit ? 0xffc870 : COL.win }));
     cap(K, p, H, rng() < 0.5 ? 0xd88a6a : 0xf0ece4, 0xffffff, 0.22);
     if (rng() < 0.4) { const sx = rng() < 0.5 ? -1 : 1; F(K, H.box(0.6, 1.0, 0.6, { x: sx * (p.w / 2 - 0.5), y: 0.5, z: -p.d / 2 + 0.5, color: 0xe8e0d0 })); } // a chimney at the back
     if (rng() < 0.35) { G(K, H.box(0.9, 1.1, 0.06, { x: (rng() - 0.5) * (p.w - 2), y: -2.4, z: p.d / 2 + 0.1, color: COL.warm })); }
+    if (lit) { // the roof terrace's edge in soft light; now and then a hotel's holo sign or a rooftop dish
+      outline(K, p, H, -0.2, [0xffe0b0, PJ.pink, PJ.cyan, 0xffe0b0][(p.tint >= 0 ? p.tint : 0) % 4], { t: 0.07, grow: 0.14 });
+      const r = rng();
+      if (r < 0.3 && t > 5) holo(K, H, (rng() - 0.5) * (p.w - 3), -4.4, p.d / 2 + 0.45, 2.4, 1.1, 0, [PJ.magenta, PJ.cyan, PJ.violet, PJ.gold][Math.floor(rng() * 4)], PJ.white);
+      else if (r < 0.42) { const sx = rng() < 0.5 ? -1 : 1; F(K, H.part(new THREE.SphereGeometry(0.5, 6, 3, 0, Math.PI * 2, 0, Math.PI / 2), { x: sx * (p.w / 2 - 0.7), y: 0.5, z: -p.d / 2 + 0.7, rx: -0.9, color: 0xe0e0e8 })); G(K, H.box(0.12, 0.12, 0.12, { x: sx * (p.w / 2 - 0.7), y: 1.0, z: -p.d / 2 + 0.7, color: 0xff2a2a })); }
+    }
   },
   lane(K, p, th, rng, H) { // the hillside under a row of houses: stone-paved lanes and steps
     body(K, p, H, 0xb8a888);
-    F(K, H.box(p.w, 0.06, p.d, { y: -0.03, color: 0xc8bca0 }));
+    F(K, H.box(p.w, 0.06, p.d, { y: -0.03, color: night(th) ? 0xa8a0a8 : 0xc8bca0 }));
     for (let x = -p.w / 2 + 1; x < p.w / 2; x += 2.2) F(K, H.box(0.12, 0.02, p.d - 0.4, { x, y: 0.01, color: 0xa89878 }));
+    if (night(th)) for (let x = -p.w / 2 + 4; x < p.w / 2; x += 9) { F(K, H.cyl(0.06, 0.08, 2.4, 4, { x, y: 1.2, z: p.d / 2 - 0.4, color: 0x2a2a32 })); G(K, H.box(0.3, 0.3, 0.3, { x, y: 2.5, z: p.d / 2 - 0.4, color: 0xffd890 })); } // lane lamps
   },
-  lemons(K, p, th, rng, H) { // a terrace: a drystone retaining wall, soil, lemon trees along the back
+  lemons(K, p, th, rng, H) { // a terrace: a drystone retaining wall, soil, lemon trees along the back (neon lemons at night)
+    const lit = night(th);
     body(K, p, H, 0x9a8a72);
     for (let y = -0.6; y > -p.thick; y -= 0.9) F(K, H.box(p.w + 0.06, 0.12, 0.1, { y, z: p.d / 2 + 0.03, color: 0x7a6a56 }));
     F(K, H.box(p.w, 0.06, p.d, { y: -0.03, color: 0x7a5a3a }));
@@ -418,66 +609,88 @@ export const STYLES = {
     for (let x = -p.w / 2 + 2; x < p.w / 2 - 1; x += 3.2) {
       const z = -p.d / 2 + 1.1, hgt = 1.6 + rng() * 0.6;
       F(K, H.cyl(0.1, 0.14, hgt, 4, { x, y: hgt / 2, z, color: 0x6a4a2a }));
-      F(K, H.part(new THREE.IcosahedronGeometry(1.1, 0), { x, y: hgt + 0.5, z, sy: 0.8, color: 0x2a7a2a }));
-      for (let k = 0; k < 4; k++) F(K, H.box(0.24, 0.24, 0.24, { x: x + (rng() - 0.5) * 1.6, y: hgt + 0.2 + rng() * 0.8, z: z + 0.8 + rng() * 0.3, color: 0xf8e040 }));
+      F(K, H.part(new THREE.IcosahedronGeometry(1.1, 0), { x, y: hgt + 0.5, z, sy: 0.8, color: lit ? 0x1e5a2a : 0x2a7a2a }));
+      for (let k = 0; k < 4; k++) K.add(lit ? 'glow' : 'flat', H.box(0.24, 0.24, 0.24, { x: x + (rng() - 0.5) * 1.6, y: hgt + 0.2 + rng() * 0.8, z: z + 0.8 + rng() * 0.3, color: lit ? (k % 3 ? 0xfff23a : 0xd8ff3a) : 0xf8e040 }));
+      if (lit) G(K, H.cyl(0.5, 0.6, 0.06, 6, { x, y: 0.04, z, color: 0x9aff4a })); // a green uplight under each tree
     }
     for (let x = -p.w / 2 + 1; x < p.w / 2; x += 6) F(K, H.cyl(0.07, 0.07, 2.6, 4, { x, y: 1.3, z: p.d / 2 - 0.3, color: 0x8a6a4a })); // pergola poles
     N(K, H.box(p.w, 0.06, 0.06, { y: -0.2, z: p.d / 2 + 0.06, color: 0xffe52b }));
+    if (lit) { // festoon lights from pole to pole along the front
+      for (let x = -p.w / 2 + 1; x < p.w / 2 - 6; x += 6) for (let k = 1; k < 8; k++) { const tt = k / 8; G(K, H.box(0.14, 0.14, 0.14, { x: x + tt * 6, y: 2.55 - Math.sin(tt * Math.PI) * 0.45, z: p.d / 2 - 0.3, color: k % 2 ? 0xfff23a : 0x9aff4a })); }
+      N(K, H.box(p.w, 0.06, 0.06, { y: 0.03, z: p.d / 2 - 0.02, color: 0xd8ff3a }));
+    }
   },
   cliff(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, COL.rock);
     for (let y = -3; y > -p.thick; y -= 4 + rng() * 3) F(K, H.box(p.w + 0.1, 0.8 + rng(), p.d + 0.1, { y, color: rng() < 0.5 ? COL.rockDk : 0xc0b090 }));
     const fs = H.faces(p.w, p.d);
     for (const f of fs) for (let k = 0; k < Math.floor(f.width / 9); k++) { // crags and scrub on the faces
       const off = (rng() - 0.5) * (f.width - 4), y = -2 - rng() * (p.thick * 0.6);
       F(K, H.part(new THREE.DodecahedronGeometry(1.5 + rng() * 2, 0), { x: f.nx * (f.half + 0.4) + f.tx * off, y, z: f.nz * (f.half + 0.4) + f.tz * off, sx: 1.4, color: rng() < 0.6 ? COL.rockDk : COL.scrub }));
+      if (lit && rng() < 0.35) G(K, H.box(f.tx ? 1.2 : 0.2, 0.9, f.tz ? 1.2 : 0.2, { x: f.nx * (f.half + 0.12) + f.tx * (off + 2.5), y: y + 1, z: f.nz * (f.half + 0.12) + f.tz * (off + 2.5), color: 0xffd890 })); // a window cut in the rock
     }
     F(K, H.box(p.w, 0.06, p.d, { y: -0.03, color: 0x8a9a5a }));
     for (const f of fs) F(K, H.box(f.tx ? f.width : 1.2, 0.1, f.tz ? f.width : 1.2, { x: f.nx * (f.half - 0.6), y: 0.0, z: f.nz * (f.half - 0.6), color: 0xb8a888 }));
+    if (lit) { outline(K, p, H, 0.07, 0xffd890, { t: 0.08, grow: -0.05, key: 'glow' }); if (p.w * p.d > 3000) for (let k = 0; k < 3; k++) mast(K, H, (k - 1) * p.w * 0.3, -p.d / 2 + 6, 0, 10 + k * 3); }
   },
   infinity(K, p, th, rng, H) { // the Terrace of Infinity: a balustrade of marble busts over the sea
+    const lit = night(th);
     body(K, p, H, 0xd8ccb0);
-    arcade(K, p, H, [1], -p.thick + 0.5, 5.5, 3.2, 0x6a6058);
+    if (lit) arcadeLight(K, p, H, [1], -p.thick + 0.5, 5.5, 3.2, 0xffa040, 0x3a2a40); else arcade(K, p, H, [1], -p.thick + 0.5, 5.5, 3.2, 0x6a6058);
     for (let x = -p.w / 2 + 1; x < p.w / 2; x += 2) for (let z = -p.d / 2 + 1; z < p.d / 2; z += 2) F(K, H.box(1.9, 0.04, 1.9, { x, y: 0.0, z, color: ((x + z) / 2) % 2 === 0 ? 0xe8e4dc : 0xb8b0a0 }));
     F(K, H.box(p.w, 0.9, 0.35, { y: 0.45, z: p.d / 2 - 0.2, color: COL.lime }));
     for (let x = -p.w / 2 + 1.5; x < p.w / 2; x += 3.2) {
       F(K, H.box(0.5, 0.6, 0.5, { x, y: 1.2, z: p.d / 2 - 0.2, color: 0xe8e4dc }));
-      F(K, H.part(new THREE.IcosahedronGeometry(0.34, 0), { x, y: 1.75, z: p.d / 2 - 0.2, sy: 1.25, color: 0xf4f2ec }));
+      if (lit) G(K, grad(H.part(new THREE.IcosahedronGeometry(0.34, 0), { x, y: 1.75, z: p.d / 2 - 0.2, sy: 1.25 }), 1.35, 2.2, 0xffffff, PJ.cyan)); // the busts, uplit
+      else F(K, H.part(new THREE.IcosahedronGeometry(0.34, 0), { x, y: 1.75, z: p.d / 2 - 0.2, sy: 1.25, color: 0xf4f2ec }));
     }
     N(K, H.box(p.w, 0.08, 0.08, { y: -0.4, z: p.d / 2 + 0.06, color: COL.magenta }));
+    if (lit) { G(K, H.box(p.w, 0.05, 0.37, { y: 0.92, z: p.d / 2 - 0.2, color: 0xffd890 })); outline(K, p, H, -0.08, PJ.cyan, { t: 0.08 }); }
   },
-  gardenStair(K, p, th, rng, H) { F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: 0xa89c88 })); F(K, H.box(p.w, 0.06, p.d, { y: -0.03, color: 0xd8d0c0 })); for (const s of [-1, 1]) F(K, H.box(0.4, 0.8, p.d + 0.02, { x: s * (p.w / 2 + 0.2), y: 0.1, color: 0xc8bca8 })); },
+  gardenStair(K, p, th, rng, H) {
+    F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: 0xa89c88 })); F(K, H.box(p.w, 0.06, p.d, { y: -0.03, color: 0xd8d0c0 }));
+    for (const s of [-1, 1]) F(K, H.box(0.4, 0.8, p.d + 0.02, { x: s * (p.w / 2 + 0.2), y: 0.1, color: 0xc8bca8 }));
+    if (night(th)) { G(K, H.box(p.w, 0.05, 0.08, { y: -0.05, z: -p.d / 2 - 0.01, color: 0xffd890 })); for (const s of [-1, 1]) G(K, H.box(0.42, 0.04, p.d + 0.02, { x: s * (p.w / 2 + 0.2), y: 0.52, color: 0x9aff4a })); }
+  },
   cliffPath(K, p, th, rng, H) {
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.rockDk }));
     cap(K, p, H, 0xb8a888);
     for (let x = -p.w / 2; x <= p.w / 2; x += 1.5) F(K, H.box(0.08, 0.9, 0.08, { x, y: 0.45, z: p.d / 2 - 0.1, color: 0x6a4a2a }));
-    F(K, H.box(p.w, 0.08, 0.08, { y: 0.9, z: p.d / 2 - 0.1, color: 0x6a4a2a }));
+    K.add(night(th) ? 'glow' : 'flat', H.box(p.w, 0.08, 0.08, { y: 0.9, z: p.d / 2 - 0.1, color: night(th) ? 0xffd890 : 0x6a4a2a }));
     G(K, H.box(0.3, 0.3, 0.3, { x: p.w / 2 - 0.3, y: 1.1, z: p.d / 2 - 0.1, color: COL.warm }));
+    if (night(th)) outline(K, p, H, -0.1, PJ.cyan, { t: 0.07 });
   },
   villa(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, 0xf0c8b8);
-    arcade(K, p, H, [0, 1, 2, 3], -p.thick + 1, 3.2, 3, 0x3a3238);
-    arcade(K, p, H, [0, 1], -5, 2.2, 3, 0x3a3238, { w: 1 });
+    arcade(K, p, H, [0, 1, 2, 3], -p.thick + 1, 3.2, 3, lit ? 0xffb860 : 0x3a3238, { key: lit ? 'glow' : 'flat' });
+    arcade(K, p, H, [0, 1], -5, 2.2, 3, lit ? 0xffd890 : 0x3a3238, { w: 1, key: lit ? 'glow' : 'flat' });
     cap(K, p, H, COL.roof, 0xf8f0e8, 0.3);
     F(K, H.box(5, 5, 5, { x: p.w / 2 - 3, y: 2.5, z: 0, color: 0xf0c8b8 }), H.part(new THREE.ConeGeometry(3.6, 2, 4), { x: p.w / 2 - 3, y: 6, ry: Math.PI / 4, color: COL.roof }));
     for (let k = -2; k <= 2; k++) F(K, H.part(new THREE.ConeGeometry(0.7, 6, 5), { x: k * 5, y: -p.thick + 3, z: p.d / 2 + 2.5, color: 0x2a4a2a }));
+    if (lit) { outline(K, p, H, -0.3, PJ.gold, { t: 0.1, grow: 0.16 }); G(K, H.box(0.8, 1.6, 5.02, { x: p.w / 2 - 3, y: 2.6, color: 0xffd890 })); mast(K, H, p.w / 2 - 3, 0, 7, 6); }
   },
   rock(K, p, th, rng, H) {
     F(K, H.cyl(p.r, p.r * 1.25, p.thick, 7, { y: -p.thick / 2, color: COL.rockDk }));
     for (let k = 0; k < 4; k++) { const a = rng() * Math.PI * 2; F(K, H.part(new THREE.DodecahedronGeometry(p.r * 0.5, 0), { x: Math.cos(a) * p.r, y: -p.thick * (0.3 + rng() * 0.5), z: Math.sin(a) * p.r, color: COL.rock })); }
     F(K, H.cyl(p.r + 0.02, p.r + 0.02, 0.06, 7, { y: -0.03, color: 0xb8a888 }));
+    if (night(th)) N(K, H.part(new THREE.TorusGeometry(p.r * 0.75, 0.06, 3, 10), { rx: Math.PI / 2, y: 0.03, color: PJ.cyan })); // a landing ring
   },
   seaStack(K, p, th, rng, H) { // the Faraglione: a tall rock with a sea arch through its foot
     F(K, H.cyl(p.r, p.r * 1.35, p.thick, 9, { y: -p.thick / 2, color: COL.rock }));
     for (let y = -2; y > -p.thick; y -= 3) F(K, H.cyl(p.r * (1 + (-y / p.thick) * 0.35) + 0.05, p.r * (1 + (-y / p.thick) * 0.35) + 0.05, 0.6, 9, { y, color: COL.rockDk }));
-    F(K, H.box(p.r * 3, 4, 3, { y: -p.thick + 3.5, color: 0x1a2a3a })); // the arch (dark through the rock)
+    K.add(night(th) ? 'glow' : 'flat', H.box(p.r * 3, 4, 3, { y: -p.thick + 3.5, color: night(th) ? 0x2a6aff : 0x1a2a3a })); // the arch (dark through the rock; a blue grotto glow at night)
     for (let k = 0; k < 5; k++) { const a = rng() * Math.PI * 2; F(K, H.part(new THREE.IcosahedronGeometry(0.9, 0), { x: Math.cos(a) * (p.r - 0.6), y: 0.3, z: Math.sin(a) * (p.r - 0.6), sy: 0.5, color: COL.scrub })); }
     F(K, H.cyl(p.r + 0.02, p.r + 0.02, 0.06, 9, { y: -0.03, color: 0xa8b078 }));
+    if (night(th)) { outline(K, p, H, 0.0, PJ.magenta, { grow: 0.04 }); mast(K, H, p.r * 0.5, -p.r * 0.5, 0, 6); }
   },
 
-  // ---- VENICE
+  // ---- VENICE: the Grand Canal at one in the morning. Lit palazzi trembling on the water, neon-trimmed
+  // gondolas and a lit vaporetto, roof edges drawn in light, St Mark's floodlit and outlined.
   fondamenta(K, p, th, rng, H) {
-    const g = H.meterBox(p.w, p.thick, p.d, 3, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: 0x9a948a }); g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
+    const lit = night(th);
+    const g = H.meterBox(p.w, p.thick, p.d, 3, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: lit ? 0xa8a2a8 : 0x9a948a }); g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
     for (const f of H.faces(p.w, p.d)) F(K, H.box(f.tx ? f.width : 0.5, 0.12, f.tz ? f.width : 0.5, { x: f.nx * (f.half - 0.25), y: 0.0, z: f.nz * (f.half - 0.25), color: COL.istrian }));
     const along = p.d > p.w, len = Math.max(p.w, p.d), side = along ? Math.sign(-p.x || 1) : 0;
     for (let o = -len / 2 + 5; o < len / 2; o += 10) { // lamps on the canal side
@@ -489,20 +702,33 @@ export const STYLES = {
       const x = side * (p.w / 2 + 1.6), col = (Math.floor(z) + dz) % 2 ? 0x2a4ab8 : 0xd83a2a;
       F(K, H.cyl(0.16, 0.16, 4.2, 5, { x, y: -p.thick + 2, z: z + dz, color: 0xf0f0f0 }));
       for (let y = -p.thick + 0.8; y < 0.8; y += 0.8) F(K, H.cyl(0.17, 0.17, 0.35, 5, { x, y, z: z + dz, color: col }));
+      if (lit) G(K, H.cyl(0.18, 0.18, 0.12, 5, { x, y: 1.0, z: z + dz, color: (Math.floor(z) + dz) % 2 ? 0x2be8ff : 0xff2bd6 })); // lit pole caps
+    }
+    if (lit) { // the quay's edge in light, lamp light trembling on the canal
+      const fs = H.faces(p.w, p.d), canal = along ? (side > 0 ? fs[2] : fs[3]) : fs[1];
+      N(K, H.box(canal.tx ? canal.width : 0.1, 0.1, canal.tz ? canal.width : 0.1, { x: canal.nx * (canal.half + 0.06), y: -0.1, z: canal.nz * (canal.half + 0.06), color: PJ.cyan }));
+      reflect(K, H, p.w, p.d, -p.h + 0.4, 0xffd890, 0x131a40, rng, [fs.indexOf(canal)], 6, 2.5);
     }
   },
   pontile(K, p, th, rng, H) { // the vaporetto stop: a floating wooden deck, the yellow-and-white shelter at the back
+    const lit = night(th);
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: 0x5a4a3a }));
-    for (let x = -p.w / 2 + 0.5; x < p.w / 2; x += 1) F(K, H.box(0.9, 0.06, p.d - 0.2, { x, y: -0.03, color: 0x8a6a4a }));
+    for (let x = -p.w / 2 + 0.5; x < p.w / 2; x += 1) F(K, H.box(0.9, 0.06, p.d - 0.2, { x, y: -0.03, color: lit ? 0x9a7a5a : 0x8a6a4a }));
     for (const f of H.faces(p.w, p.d)) F(K, H.box(f.tx ? f.width : 0.3, 0.6, f.tz ? f.width : 0.3, { x: f.nx * (f.half - 0.15), y: -0.3, z: f.nz * (f.half - 0.15), color: 0x1a1a22 }));
     const z = p.d / 2 - 2;
     for (const sx of [-1, 1]) F(K, H.box(0.2, 3, 0.2, { x: sx * 6, y: 1.5, z, color: 0xf0f0f0 }));
     F(K, H.box(13, 0.4, 3.4, { y: 3.1, z, color: 0xffd23a }), H.box(13.2, 0.12, 3.6, { y: 3.35, z, color: 0xf0f0f0 }));
     G(K, H.box(4, 0.7, 0.1, { y: 2.5, z: z - 1.75, color: 0xffd23a }));
     N(K, H.box(p.w, 0.08, 0.08, { y: -p.thick + 0.1, z: -p.d / 2, color: COL.cyan }));
+    if (lit) {
+      outline(K, p, H, -0.08, PJ.gold, { t: 0.08, grow: 0.04 });
+      G(K, H.box(12.4, 0.1, 3.0, { y: 2.88, z, color: 0xfff4d0 })); // the shelter's light
+      holo(K, H, -4.5, 4.6, z, 2.4, 1.2, 0, PJ.cyan, PJ.white); holo(K, H, 4.5, 4.6, z, 2.4, 1.2, 0, PJ.magenta, PJ.white); // route boards
+      reflect(K, H, p.w, p.d, -p.h + 0.4, 0xffd890, 0x131a40, rng, [0, 2, 3], 5, 3);
+    }
   },
-  palazzo(K, p, th, rng, H) { // Venetian gothic: tinted plaster, Istrian stone trims, pointed windows lit at dusk
-    const c = PALAZZO[(p.tint >= 0 ? p.tint : 0) % PALAZZO.length], t = p.thick;
+  palazzo(K, p, th, rng, H) { // Venetian gothic: tinted plaster, Istrian stone trims, pointed windows lit at night
+    const c = PALAZZO[(p.tint >= 0 ? p.tint : 0) % PALAZZO.length], t = p.thick, lit = night(th);
     body(K, p, H, c);
     const fs = H.faces(p.w, p.d), canal = p.x < 0 ? fs[2] : fs[3]; // the face toward the Grand Canal
     for (let y = -3.2; y > -t + 2.5; y -= 3.4) F(K, H.box(p.w + 0.12, 0.2, p.d + 0.12, { y: y + 1.6, color: COL.istrian }));
@@ -513,64 +739,86 @@ export const STYLES = {
         const y = -2.8 - fl * 3.4 - 1.1, noble = isCanal && fl === Math.floor(floors / 2) - 1;
         for (let k = 0; k < n; k++) {
           if (isCanal && !noble && (k === 0 || k === n - 1) && fl % 2) continue;
-          const lit = rng() < (th.night > 0.2 ? 0.45 : 0.1);
-          arch(K, H, f, (k - (n - 1) / 2) * (isCanal ? 2.0 : 3.2), y, noble ? 1.2 : 0.9, noble ? 2.4 : 1.9, lit ? 0xffc870 : 0x2a2632, 0.06, lit ? 'glow' : 'flat');
+          const on = rng() < (th.night > 0.2 ? (noble ? 0.85 : 0.6) : 0.1);
+          arch(K, H, f, (k - (n - 1) / 2) * (isCanal ? 2.0 : 3.2), y, noble ? 1.2 : 0.9, noble ? 2.4 : 1.9, on ? (noble ? 0xffe0a0 : rng() < 0.85 ? 0xffc870 : 0xa8d8ff) : 0x2a2632, 0.06, on ? 'glow' : 'flat');
         }
-        if (noble) F(K, H.box(f.tx ? n * 2.0 : 0.6, 0.15, f.tz ? n * 2.0 : 0.6, { x: f.nx * (f.half + 0.3), y: y - 0.15, z: f.nz * (f.half + 0.3), color: COL.istrian })); // the balcony
+        if (noble) K.add(lit ? 'glow' : 'flat', H.box(f.tx ? n * 2.0 : 0.6, 0.15, f.tz ? n * 2.0 : 0.6, { x: f.nx * (f.half + 0.3), y: y - 0.15, z: f.nz * (f.half + 0.3), color: lit ? 0xffd890 : COL.istrian })); // the balcony (its rail lit at night)
       }
     }
-    arch(K, H, canal, 0, -t + 0.4, 2.6, 3.6, 0x1a1a22, 0.06); // the water door
+    arch(K, H, canal, 0, -t + 0.4, 2.6, 3.6, lit ? 0xff9a40 : 0x1a1a22, 0.06, lit ? 'glow' : 'flat'); // the water door (lit inside at night)
     cap(K, p, H, COL.roof, COL.istrian, 0.3);
     for (let k = -3; k <= 3; k++) F(K, H.part(new THREE.ConeGeometry(0.25, 0.7, 4), { x: canal.nx * (canal.half - 0.2) + canal.tx * k * (canal.width / 7), y: 0.35, z: canal.nz * (canal.half - 0.2) + canal.tz * k * (canal.width / 7), color: COL.istrian }));
     const back = p.x < 0 ? -p.w / 2 + 0.8 : p.w / 2 - 0.8;
     for (let k = 0; k < 2; k++) { const z = (rng() - 0.5) * (p.d - 3); F(K, H.cyl(0.25, 0.25, 1.4, 5, { x: back, y: 0.7, z, color: c }), H.part(new THREE.ConeGeometry(0.6, 0.8, 5), { x: back, y: 1.8, z, rx: Math.PI, color: 0x9a4a3a })); } // funnel chimneys
-    N(K, H.box(canal.tx ? canal.width : 0.08, 0.08, canal.tz ? canal.width : 0.08, { x: canal.nx * (canal.half + 0.08), y: -t + 3.4, z: canal.nz * (canal.half + 0.08), color: rng() < 0.5 ? COL.magenta : COL.cyan }));
+    const trim = rng() < 0.5 ? COL.magenta : COL.cyan;
+    N(K, H.box(canal.tx ? canal.width : 0.08, 0.08, canal.tz ? canal.width : 0.08, { x: canal.nx * (canal.half + 0.08), y: -t + 3.4, z: canal.nz * (canal.half + 0.08), color: trim }));
+    if (lit) { // the roof's edge in light (footing), a neon line under the eaves, the windows on the canal
+      outline(K, p, H, -0.2, 0xffe0b0, { t: 0.08, grow: 0.16 });
+      N(K, H.box(canal.tx ? canal.width : 0.08, 0.08, canal.tz ? canal.width : 0.08, { x: canal.nx * (canal.half + 0.1), y: -1.2, z: canal.nz * (canal.half + 0.1), color: trim === COL.magenta ? COL.cyan : COL.magenta }));
+      reflect(K, H, p.w, p.d, -p.h + 0.4, 0xffc870, 0x131a40, rng, [fs.indexOf(canal)], 9, 2);
+      if (rng() < 0.3) mast(K, H, back, (rng() - 0.5) * (p.d - 4), 0, 4 + rng() * 3);
+    }
   },
   palazzoBack(K, p, th, rng, H) {
-    const c = PALAZZO[(p.tint >= 0 ? p.tint : 0) % PALAZZO.length];
+    const c = PALAZZO[(p.tint >= 0 ? p.tint : 0) % PALAZZO.length], lit = night(th);
     body(K, p, H, c);
-    for (const f of H.faces(p.w, p.d)) { const n = Math.floor(f.width / 3); for (let fl = 0; fl < 3; fl++) for (let k = 0; k < n; k++) { const lit = rng() < (th.night > 0.2 ? 0.4 : 0.08); arch(K, H, f, (k - (n - 1) / 2) * 3, -3 - fl * 3.2, 0.8, 1.7, lit ? 0xffc870 : 0x2a2632, 0.05, lit ? 'glow' : 'flat'); } }
+    for (const f of H.faces(p.w, p.d)) { const n = Math.floor(f.width / 3); for (let fl = 0; fl < 3; fl++) for (let k = 0; k < n; k++) { const on = rng() < (th.night > 0.2 ? 0.55 : 0.08); arch(K, H, f, (k - (n - 1) / 2) * 3, -3 - fl * 3.2, 0.8, 1.7, on ? 0xffc870 : 0x2a2632, 0.05, on ? 'glow' : 'flat'); } }
     cap(K, p, H, COL.roof, COL.istrian, 0.25);
+    if (lit) outline(K, p, H, -0.18, 0xffe0b0, { t: 0.07, grow: 0.14 });
   },
   altana(K, p, th, rng, H) {
     F(K, H.box(p.w, 0.3, p.d, { y: -0.15, color: 0x8a6a4a }));
     for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) F(K, H.box(0.25, p.thick, 0.25, { x: sx * (p.w / 2 - 0.2), y: -p.thick / 2, z: sz * (p.d / 2 - 0.2), color: 0x6a4a2a }));
     for (const f of H.faces(p.w, p.d)) F(K, H.box(f.tx ? f.width : 0.08, 0.08, f.tz ? f.width : 0.08, { x: f.nx * (f.half - 0.05), y: 0.9, z: f.nz * (f.half - 0.05), color: 0x6a4a2a }));
     G(K, H.box(p.w - 1, 0.05, 0.05, { y: 1.6, color: 0xffd890 }));
+    if (night(th)) for (const f of H.faces(p.w, p.d)) for (let k = 0; k <= 6; k++) { const tt = k / 6, o = -f.width / 2 + tt * f.width; G(K, H.box(0.14, 0.14, 0.14, { x: f.nx * (f.half - 0.05) + f.tx * o, y: 0.85 - Math.sin(tt * Math.PI) * 0.25, z: f.nz * (f.half - 0.05) + f.tz * o, color: k % 2 ? 0xff6ab8 : 0xffd890 })); } // string lights on the rail
   },
   rialto(K, p, th, rng, H) { // one step of the bridge: Istrian stone, a balustrade on each edge
+    const lit = night(th);
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: 0xe8e2d2 }));
     F(K, H.box(p.w, 0.06, p.d - 0.4, { y: -0.03, color: COL.istrian }));
     F(K, H.box(p.w + 0.02, p.thick * 0.5, 0.1, { y: -p.thick * 0.75, z: p.d / 2 + 0.03, color: 0xc8c0ae }), H.box(p.w + 0.02, p.thick * 0.5, 0.1, { y: -p.thick * 0.75, z: -p.d / 2 - 0.03, color: 0xc8c0ae }));
     for (const s of [-1, 1]) {
-      F(K, H.box(p.w + 0.02, 0.14, 0.3, { y: 1.0, z: s * (p.d / 2 - 0.15), color: COL.istrian }));
+      K.add(lit ? 'glow' : 'flat', H.box(p.w + 0.02, 0.14, 0.3, { y: 1.0, z: s * (p.d / 2 - 0.15), color: lit ? 0xffe0a0 : COL.istrian })); // the rail (lit warm at night)
       F(K, H.cyl(0.1, 0.12, 0.85, 5, { y: 0.45, z: s * (p.d / 2 - 0.15), color: 0xe8e2d2 }));
+      if (lit) N(K, H.box(p.w + 0.03, 0.12, 0.08, { y: -p.thick + 0.08, z: s * (p.d / 2 + 0.08), color: s > 0 ? COL.magenta : COL.cyan })); // the soffit's arch, traced in neon step by step
     }
     F(K, H.box(p.w + 0.02, 0.12, p.d + 0.1, { y: -p.thick + 0.06, color: 0xb8b09e }));
   },
   rialtoPortico(K, p, th, rng, H) {
+    const lit = night(th);
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: COL.istrian }));
     F(K, H.box(p.w + 0.4, 0.4, p.d + 0.4, { y: -0.2, color: 0xe0dace }));
     cap(K, p, H, COL.lead);
-    for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) F(K, H.box(0.7, 4.6, 0.7, { x: sx * (p.w / 2 - 0.35), y: -p.thick - 2.2, z: sz * (p.d / 2 - 0.45), color: COL.istrian }));
+    for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      if (lit) G(K, grad(H.box(0.7, 4.6, 0.7, { x: sx * (p.w / 2 - 0.35), y: -p.thick - 2.2, z: sz * (p.d / 2 - 0.45) }), -p.thick - 4.5, -p.thick + 0.1, 0xfff0c8, 0xc89a60));
+      else F(K, H.box(0.7, 4.6, 0.7, { x: sx * (p.w / 2 - 0.35), y: -p.thick - 2.2, z: sz * (p.d / 2 - 0.45), color: COL.istrian }));
+    }
     for (const s of [-1, 1]) { // the pediment outline on each canal face
-      F(K, H.box(p.w * 0.62, 0.18, 0.12, { x: -p.w * 0.17, y: -0.9, z: s * (p.d / 2 + 0.06), rz: 0.32, color: 0xc8c0ae }), H.box(p.w * 0.62, 0.18, 0.12, { x: p.w * 0.17, y: -0.9, z: s * (p.d / 2 + 0.06), rz: -0.32, color: 0xc8c0ae }));
+      K.add(lit ? 'neon' : 'flat', H.box(p.w * 0.62, 0.18, 0.12, { x: -p.w * 0.17, y: -0.9, z: s * (p.d / 2 + 0.06), rz: 0.32, color: lit ? PJ.gold : 0xc8c0ae }), H.box(p.w * 0.62, 0.18, 0.12, { x: p.w * 0.17, y: -0.9, z: s * (p.d / 2 + 0.06), rz: -0.32, color: lit ? PJ.gold : 0xc8c0ae }));
       G(K, H.box(1.4, 0.8, 0.1, { y: -1.6, z: s * (p.d / 2 + 0.08), color: 0xffd890 }));
     }
     N(K, H.box(p.w + 0.5, 0.08, 0.08, { y: -p.thick, z: p.d / 2, color: COL.magenta }), H.box(p.w + 0.5, 0.08, 0.08, { y: -p.thick, z: -p.d / 2, color: COL.magenta }));
+    if (lit) outline(K, p, H, -0.06, PJ.white, { t: 0.08, grow: 0.22 });
   },
-  gondola(K, p, th, rng, H) { // black lacquer, a silver ferro at the bow, a red-and-gold seat
-    const hd = p.d / 2, t = p.thick;
+  gondola(K, p, th, rng, H) { // black lacquer, a silver ferro at the bow, a red-and-gold seat (neon-trimmed at night)
+    const hd = p.d / 2, t = p.thick, lit = night(th), trim = [COL.magenta, COL.cyan, PJ.gold, PJ.violet, COL.magenta][(p.tint >= 0 ? p.tint : 0) % 5];
     F(K, H.box(p.w, t, p.d - 1.6, { y: -t / 2, color: 0x141418 }));
     for (const s of [-1, 1]) F(K, H.box(p.w * 0.5, 0.4, 1.8, { y: 0.0 + 0.15, z: s * (hd - 0.6), rx: s * 0.45, color: 0x141418 }));
-    F(K, H.box(0.12, 1.1, 0.5, { y: 0.6, z: -hd + 0.1, color: 0xd8dce4 })); // the ferro
+    K.add(lit ? 'glow' : 'flat', H.box(0.12, 1.1, 0.5, { y: 0.6, z: -hd + 0.1, color: lit ? 0xe8f6ff : 0xd8dce4 })); // the ferro
     for (let k = 0; k < 3; k++) F(K, H.box(0.5, 0.08, 0.1, { x: 0.25, y: 0.3 + k * 0.25, z: -hd + 0.1, color: 0xd8dce4 }));
     F(K, H.box(p.w - 0.4, 0.06, p.d - 2.4, { y: -0.03, color: 0x6a1a22 }));
     F(K, H.box(p.w - 0.4, 0.06, 0.8, { y: -0.02, color: COL.gold }));
     N(K, H.box(p.w + 0.04, 0.05, p.d - 1.6, { y: -t + 0.1, color: COL.magenta }));
+    if (lit) { // the gunwales and the curled ends drawn in neon, a lantern at the stern
+      for (const s of [-1, 1]) N(K, H.box(0.06, 0.06, p.d - 1.6, { x: s * (p.w / 2 + 0.03), y: -0.04, color: trim }));
+      for (const s of [-1, 1]) N(K, H.box(p.w * 0.5 + 0.06, 0.06, 1.8, { y: 0.36, z: s * (hd - 0.6), rx: s * 0.45, color: trim }));
+      F(K, H.box(0.04, 0.8, 0.04, { x: 0.5, y: 0.4, z: hd - 1.4, color: 0x1a1a22 }));
+      G(K, H.box(0.24, 0.3, 0.24, { x: 0.5, y: 0.9, z: hd - 1.4, color: 0xffd890 }));
+    }
   },
   vaporetto(K, p, th, rng, H) { // a water-bus: white hull, a yellow band, a lit cabin; its roof is the deck you ride
-    const t = p.thick, hd = p.d / 2;
+    const t = p.thick, hd = p.d / 2, lit = night(th);
     F(K, H.box(p.w + 0.4, 1.0, p.d + 1, { y: -t + 0.5, color: 0xf0f0ec }));
     F(K, H.box(p.w + 0.44, 0.3, p.d + 1.04, { y: -t + 1.1, color: 0xffd23a }));
     F(K, H.box(p.w, t - 1.2, p.d, { y: -(t - 1.2) / 2, color: 0xe8e8e4 }));
@@ -580,59 +828,90 @@ export const STYLES = {
     G(K, H.box(1.6, 0.5, 0.08, { y: -2.0, z: -hd - 0.5, color: 0xffd23a }));
     F(K, H.box(1.4, 0.8, 1.2, { y: 0.4, z: hd - 0.8, color: 0xf0f0ec })); // the wheelhouse at the stern
     N(K, H.box(p.w + 0.46, 0.08, p.d + 1.06, { y: -t + 0.15, color: COL.cyan }));
+    if (lit) { // the roof deck edged in light (you ride it), running lights, a lit route number
+      outline(K, p, H, -0.06, PJ.gold, { t: 0.08, grow: 0.03 });
+      G(K, H.box(0.2, 0.2, 0.2, { x: -p.w / 2 - 0.25, y: -t + 1.5, z: -hd + 0.6, color: 0xff2a2a }), H.box(0.2, 0.2, 0.2, { x: p.w / 2 + 0.25, y: -t + 1.5, z: -hd + 0.6, color: 0x2bff7a }));
+      G(K, H.box(0.9, 0.6, 0.08, { y: 0.45, z: hd - 1.42, color: PJ.cyan }));
+    }
   },
   mask(K, p, th, rng, H) { // a floating carnival mask, face up: you land on its brow
     const m = (p.tint >= 0 ? p.tint : 0) % 6, r = p.r;
     const face = [0xf8f4ea, 0xd8302a, 0x1a1a22, 0x3a6ae8, 0xf0f0f0, 0x2a9a5a][m], trim = [COL.gold, COL.gold, COL.gold, 0xd8dce4, COL.red, COL.gold][m];
     F(K, H.cyl(r, r * 0.9, p.thick, H.seg(16, 10), { y: -p.thick / 2, color: face }));
-    F(K, H.part(new THREE.TorusGeometry(r - 0.05, 0.1, 3, H.seg(16, 10)), { rx: Math.PI / 2, y: 0.0, color: trim }));
-    for (const s of [-1, 1]) F(K, H.box(0.7, 0.04, 0.32, { x: s * 0.55, y: 0.01, z: -0.25, ry: s * 0.25, color: 0x0a0a10 })); // the eye holes
+    K.add(night(th) ? 'neon' : 'flat', H.part(new THREE.TorusGeometry(r - 0.05, 0.1, 3, H.seg(16, 10)), { rx: Math.PI / 2, y: 0.0, color: night(th) ? [PJ.gold, PJ.pink, PJ.cyan, PJ.white, PJ.magenta, PJ.gold][m] : trim })); // the rim (in light at night: the landing reads)
+    for (const s of [-1, 1]) K.add(night(th) ? 'glow' : 'flat', H.box(0.7, 0.04, 0.32, { x: s * 0.55, y: 0.01, z: -0.25, ry: s * 0.25, color: night(th) ? 0x2be8ff : 0x0a0a10 })); // the eye holes (glowing at night)
     F(K, H.box(0.2, 0.05, 0.6, { y: 0.02, z: 0.35, color: trim }));
     if (m === 4) for (let k = 0; k < 4; k++) F(K, H.box(0.5, 0.03, 0.5, { x: (k - 1.5) * 0.45, y: 0.02, z: 0.75, ry: Math.PI / 4, color: k % 2 ? COL.red : 0x1a1a22 }));
-    for (let k = 0; k < 3; k++) F(K, H.box(0.18, 1.6 - k * 0.3, 0.06, { x: r * 0.7 + k * 0.15, y: 0.6, z: -r * 0.55, rz: -0.4 - k * 0.15, color: [COL.magenta, 0xffd23a, COL.cyan][k] })); // plumes
+    for (let k = 0; k < 3; k++) K.add(night(th) ? 'glow' : 'flat', H.box(0.18, 1.6 - k * 0.3, 0.06, { x: r * 0.7 + k * 0.15, y: 0.6, z: -r * 0.55, rz: -0.4 - k * 0.15, color: [COL.magenta, 0xffd23a, COL.cyan][k] })); // plumes
     G(K, H.part(new THREE.TorusGeometry(r * 0.6, 0.08, 3, 12), { rx: Math.PI / 2, y: -p.thick - 0.02, color: COL.magenta }));
   },
   piazza(K, p, th, rng, H) {
-    const g = H.meterBox(p.w, p.thick, p.d, 2, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: 0x8a867e }); g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
-    for (let x = -p.w / 2 + 4; x < p.w / 2; x += 8) F(K, H.box(0.4, 0.03, p.d - 1, { x, y: 0.01, color: COL.istrian }));
-    for (let z = -p.d / 2 + 6; z < p.d / 2; z += 12) F(K, H.box(p.w - 1, 0.03, 0.4, { y: 0.01, z, color: COL.istrian }));
+    const lit = night(th);
+    const g = H.meterBox(p.w, p.thick, p.d, 2, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: lit ? 0x9a96a0 : 0x8a867e }); g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
+    for (let x = -p.w / 2 + 4; x < p.w / 2; x += 8) K.add(lit ? 'glow' : 'flat', H.box(0.4, 0.03, p.d - 1, { x, y: 0.01, color: lit ? 0x6a7ab8 : COL.istrian })); // the Istrian lines (glowing faintly at night)
+    for (let z = -p.d / 2 + 6; z < p.d / 2; z += 12) K.add(lit ? 'glow' : 'flat', H.box(p.w - 1, 0.03, 0.4, { y: 0.01, z, color: lit ? 0x8a6ab8 : COL.istrian }));
+    if (lit) { // café tables' lamps and two holo boards by the basilica
+      for (let x = -p.w / 2 + 12; x < p.w / 2 - 8; x += 9) for (const z of [-p.d / 2 + 14, p.d / 2 - 10]) { F(K, H.cyl(0.4, 0.4, 0.06, 6, { x, y: 0.75, z, color: 0xe8e4dc }), H.cyl(0.05, 0.05, 0.75, 4, { x, y: 0.37, z, color: 0x2a2a32 })); G(K, H.box(0.14, 0.2, 0.14, { x, y: 0.88, z, color: 0xffd890 })); }
+      outline(K, p, H, -0.1, PJ.cyan, { t: 0.08 });
+    }
   },
   procuratie(K, p, th, rng, H) {
+    const lit = th.night > 0.2;
     body(K, p, H, COL.istrian);
-    arcade(K, p, H, [0, 1, 2, 3], -p.thick + 0.2, 4.4, 3.2, 0x3a3640, { pilaster: 0xe0dace });
-    for (const y of [-6.6, -3]) arcade(K, p, H, [0, 1, 2, 3], y, 2.2, 3.2, th.night > 0.2 ? 0xffc870 : 0x3a3640, { w: 1.1, key: th.night > 0.2 ? 'glow' : 'flat' });
+    arcade(K, p, H, [0, 1, 2, 3], -p.thick + 0.2, 4.4, 3.2, lit ? 0xffa850 : 0x3a3640, { pilaster: 0xe0dace, key: lit ? 'glow' : 'flat' });
+    for (const y of [-6.6, -3]) arcade(K, p, H, [0, 1, 2, 3], y, 2.2, 3.2, lit ? 0xffc870 : 0x3a3640, { w: 1.1, key: lit ? 'glow' : 'flat' });
     bands(K, p, H, -0.4, -p.thick, 3.6, 0xe0dace, 0.3, 0.12);
     cap(K, p, H, 0xb8b0a0);
+    if (night(th)) outline(K, p, H, -0.1, 0xffe0b0, { t: 0.08, grow: 0.16 });
   },
   dogePalace(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, 0xf0c8c0);
+    if (lit) for (const f of H.faces(p.w, p.d)) G(K, grad(H.part(new THREE.PlaneGeometry(f.width, p.thick * 0.5 - 1), { x: f.nx * (f.half + 0.015), y: -p.thick * 0.25 - 0.6, z: f.nz * (f.half + 0.015), ry: f.ry }), -p.thick * 0.5, -1, 0xff9ab8, 0x5a2a4a)); // the pink upper wall, floodlit
     for (let y = -1.2; y > -p.thick * 0.5; y -= 1.4) for (const f of H.faces(p.w, p.d)) for (let o = -f.width / 2 + 0.7; o < f.width / 2; o += 1.4) F(K, H.box(f.tx ? 0.55 : 0.06, 0.55, f.tz ? 0.55 : 0.06, { x: f.nx * (f.half + 0.03) + f.tx * o, y: y - ((Math.round(o / 1.4) % 2) * 0.7), z: f.nz * (f.half + 0.03) + f.tz * o, rx: f.tx ? 0 : Math.PI / 4, rz: f.tz ? 0 : Math.PI / 4, color: 0xf8f0ea })); // the diamond pattern
-    arcade(K, p, H, [0, 1, 2, 3], -p.thick + 0.2, 4.6, 2.4, 0x3a3238, { pilaster: COL.istrian });
-    arcade(K, p, H, [0, 1, 2, 3], -p.thick + 5.2, 3.4, 1.2, 0x3a3238, { w: 0.7 });
+    arcade(K, p, H, [0, 1, 2, 3], -p.thick + 0.2, 4.6, 2.4, lit ? 0xffb050 : 0x3a3238, { pilaster: COL.istrian, key: lit ? 'glow' : 'flat' });
+    arcade(K, p, H, [0, 1, 2, 3], -p.thick + 5.2, 3.4, 1.2, lit ? 0xffd890 : 0x3a3238, { w: 0.7, key: lit ? 'glow' : 'flat' });
     F(K, H.box(p.w + 0.3, 0.6, p.d + 0.3, { y: -p.thick + 8.6, color: COL.istrian }));
     merlons(K, p, H, COL.istrian, [0, 1, 2, 3], 0.4, 1.8, 0.8);
     cap(K, p, H, 0xb8a898);
+    if (lit) { outline(K, p, H, -0.1, PJ.magenta, { t: 0.1, grow: 0.08 }); outline(K, p, H, -p.thick + 8.25, PJ.cyan, { t: 0.08, grow: 0.2 }); }
   },
   stMarkCampanile(K, p, th, rng, H) { // red brick, white pilasters, the open belfry at the top
+    const lit = night(th);
     body(K, p, H, COL.brick);
-    for (const f of H.faces(p.w, p.d)) for (let k = -2; k <= 2; k++) F(K, H.box(f.tx ? 0.5 : 0.12, p.thick - 7, f.tz ? 0.5 : 0.12, { x: f.nx * (f.half + 0.05) + f.tx * k * (f.width / 5), y: -6.5 - (p.thick - 7) / 2, z: f.nz * (f.half + 0.05) + f.tz * k * (f.width / 5), color: COL.brickDk }));
+    for (const f of H.faces(p.w, p.d)) for (let k = -2; k <= 2; k++) {
+      const at = { x: f.nx * (f.half + 0.05) + f.tx * k * (f.width / 5), y: -6.5 - (p.thick - 7) / 2, z: f.nz * (f.half + 0.05) + f.tz * k * (f.width / 5) };
+      if (lit) G(K, grad(H.box(f.tx ? 0.5 : 0.12, p.thick - 7, f.tz ? 0.5 : 0.12, at), -p.thick, -6.5, 0xffb070, 0x5a1a20)); // the pilasters, floodlit from the piazza
+      else F(K, H.box(f.tx ? 0.5 : 0.12, p.thick - 7, f.tz ? 0.5 : 0.12, { ...at, color: COL.brickDk }));
+    }
     F(K, H.box(p.w + 0.6, 0.8, p.d + 0.6, { y: -6.4, color: COL.istrian }));
     const fs = H.faces(p.w, p.d);
-    for (const f of fs) for (let k = 0; k < 4; k++) arch(K, H, f, (k - 1.5) * 2.0, -5.6, 1.3, 4.4, 0x1a1620);
+    for (const f of fs) for (let k = 0; k < 4; k++) arch(K, H, f, (k - 1.5) * 2.0, -5.6, 1.3, 4.4, lit ? 0x3a1a4a : 0x1a1620);
     for (const f of fs) for (let k = 0; k < 4; k++) G(K, H.part(new THREE.ConeGeometry(0.5, 0.7, 6), { x: f.nx * (f.half - 1.2) + f.tx * (k - 1.5) * 2.0, y: -3.4, z: f.nz * (f.half - 1.2) + f.tz * (k - 1.5) * 2.0, color: 0xd8a040 }));
     F(K, H.box(p.w + 0.5, 0.5, p.d + 0.5, { y: -0.25, color: COL.istrian }));
     cap(K, p, H, COL.istrian);
     N(K, H.box(p.w + 0.7, 0.08, p.d + 0.7, { y: -6.9, color: COL.magenta }));
+    if (lit) { // the corners drawn in light all the way up, the belfry lit, the roof's edge
+      for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) N(K, H.box(0.12, p.thick - 7, 0.12, { x: sx * (p.w / 2 + 0.07), y: -6.5 - (p.thick - 7) / 2, z: sz * (p.d / 2 + 0.07), color: COL.cyan }));
+      G(K, H.cyl(p.w * 0.3, p.w * 0.3, 3.6, 8, { y: -3.8, color: 0xffd890 }));
+      outline(K, p, H, -0.04, PJ.white, { t: 0.08, grow: 0.27 });
+    }
   },
   stMarkAttic(K, p, th, rng, H) {
     body(K, p, H, 0xe8dcc8);
     for (const f of H.faces(p.w, p.d)) G(K, H.box(f.tx ? 2.4 : 0.1, 1.8, f.tz ? 2.4 : 0.1, { x: f.nx * (f.half + 0.06), y: -2.5, z: f.nz * (f.half + 0.06), color: COL.gold })); // the lion of St Mark
     cap(K, p, H, COL.istrian, 0xd8ccb8, 0.3);
+    if (night(th)) outline(K, p, H, -0.06, PJ.gold, { t: 0.08, grow: 0.14 });
   },
   stMarkSpire(K, p, th, rng, H) {
     F(K, H.cyl(p.r, p.r + 0.6, p.thick, 4, { y: -p.thick / 2, ry: Math.PI / 4, color: COL.copper }));
     cap(K, p, H, 0x6aaa8a);
     if (p.tint === 1) { F(K, H.cyl(0.06, 0.06, 2.2, 4, { x: 0.9, y: 1.1, color: COL.gold })); G(K, H.box(0.5, 0.9, 0.12, { x: 0.9, y: 2.4, color: COL.gold }), H.box(1.2, 0.2, 0.08, { x: 0.9, y: 2.6, color: COL.gold })); } // the golden angel
+    if (night(th)) { // the pyramid's ridges in green light
+      const R = p.r, R1 = p.r + 0.6;
+      for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) N(K, H.box(0.1, p.thick * 1.02, 0.1, { x: sx * (p.r + 0.3) * 0.72, y: -p.thick / 2, z: sz * (p.r + 0.3) * 0.72, rx: -sz * Math.atan2(0.6, p.thick) * 0.7, rz: sx * Math.atan2(0.6, p.thick) * 0.7, color: 0x2bff9a }));
+      N(K, H.cyl(R + 0.03, R + 0.03, 0.08, 4, { y: -0.05, ry: Math.PI / 4, color: 0x2bff9a }), H.cyl(R1 + 0.03, R1 + 0.03, 0.08, 4, { y: -p.thick + 0.05, ry: Math.PI / 4, color: PJ.gold }));
+    }
   },
   gondolaLift(K, p, th, rng, H) {
     F(K, H.box(p.w, p.thick, p.d, { y: -p.thick / 2, color: 0x141418 }));
@@ -640,42 +919,53 @@ export const STYLES = {
     for (const sz of [-1, 1]) F(K, H.box(0.12, 2.2, 0.12, { x: p.w / 2 - 0.1, y: 1.1, z: sz * (p.d / 2 - 0.1), color: COL.gold }));
     F(K, H.box(0.12, 0.12, p.d, { x: p.w / 2 - 0.1, y: 2.2, color: COL.gold }));
     jets(K, H, [[0, -2], [0, 0], [0, 2]], -p.thick - 0.03, 0.45, COL.magenta);
+    if (night(th)) outline(K, p, H, -0.06, PJ.magenta, { t: 0.08, grow: 0.03 });
   },
   basilica(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, 0xe8dcc8);
     const south = H.faces(p.w, p.d)[1];
+    if (lit) G(K, grad(H.part(new THREE.PlaneGeometry(p.w, p.thick), { y: -p.thick / 2, z: p.d / 2 + 0.02 }), -p.thick, 0, 0xffe0b0, 0x6a4a5a)); // the facade floodlit from the piazza
     for (let k = 0; k < 5; k++) { // upper facade: gold mosaic lunettes under ogee arches, above the loggia
       const off = (k - 2) * 9.5;
       arch(K, H, south, off, -6.4, 5.6, 6, k === 2 ? 0xffd040 : 0xe8b830, 0.08, 'glow');
       F(K, H.part(new THREE.ConeGeometry(0.5, 2.4, 4), { x: off + 4.7, y: 0.6, z: p.d / 2 - 0.3, color: COL.istrian }));
+      if (lit) N(K, H.part(new THREE.TorusGeometry(2.95, 0.07, 3, 12, Math.PI), { x: off, y: -3.2, z: p.d / 2 + 0.12, color: k % 2 ? PJ.cyan : PJ.magenta }));
     }
-    arcade(K, p, H, [0, 2, 3], -p.thick + 0.5, 6, 4.4, 0x5a4a40);
+    if (lit) arcadeLight(K, p, H, [0, 2, 3], -p.thick + 0.5, 6, 4.4, PJ.deep, PJ.gold); else arcade(K, p, H, [0, 2, 3], -p.thick + 0.5, 6, 4.4, 0x5a4a40);
     cap(K, p, H, COL.lead, COL.istrian, 0.3);
+    if (lit) outline(K, p, H, -0.32, PJ.gold, { t: 0.1, grow: 0.16 });
   },
   basilicaLoggia(K, p, th, rng, H) {
+    const lit = night(th);
     body(K, p, H, 0xe8dcc8);
     const south = H.faces(p.w, p.d)[1];
     for (let k = 0; k < 5; k++) arch(K, H, south, (k - 2) * 9.5, -p.thick + 0.3, k === 2 ? 5.6 : 4.4, 8, 0xe8b830, 0.08, 'glow'); // the five portals' gold mosaics
     for (let k = 0; k < 12; k++) F(K, H.cyl(0.25, 0.25, 7.4, 6, { x: (k - 5.5) * 4.2, y: -p.thick / 2 - 0.3, z: p.d / 2 + 0.4, color: 0xa86a5a }));
     cap(K, p, H, 0xd8ccb8);
     F(K, H.box(p.w, 0.8, 0.3, { y: 0.4, z: p.d / 2 - 0.15, color: COL.istrian }));
+    if (lit) { G(K, H.box(p.w, 0.05, 0.32, { y: 0.82, z: p.d / 2 - 0.15, color: 0xffe0a0 })); outline(K, p, H, -0.06, PJ.cyan, { t: 0.08 }); }
     for (const x of [-10.5, -7, 7, 10.5]) { // the four bronze horses
       F(K, H.box(0.7, 0.8, 2.0, { x, y: 1.2, z: 0.6, color: COL.bronze }), H.box(0.5, 0.9, 0.6, { x, y: 1.75, z: -0.4, rx: -0.5, color: COL.bronze }));
       for (const [dx, dz] of [[-0.25, -0.7], [0.25, -0.7], [-0.25, 0.7], [0.25, 0.7]]) F(K, H.box(0.16, 0.9, 0.16, { x: x + dx, y: 0.45, z: 0.6 + dz, color: COL.bronze }));
+      if (lit) G(K, H.box(1.2, 0.08, 2.4, { x, y: 0.05, z: 0.6, color: 0xffc070 })); // a spot under each horse
     }
   },
   stMarkDome(K, p, th, rng, H) {
-    const drum = p.tint === 0;
+    const drum = p.tint === 0, lit = night(th);
     body(K, p, H, drum ? 0xe8dcc8 : COL.lead, { seg: H.seg(20, 12) });
-    if (drum) ringArches(K, H, p.r + 0.03, 12, -p.thick + 0.6, 2.2, 0.8, 0x2a2632);
-    else { F(K, H.part(new THREE.TorusGeometry(p.r - 0.1, 0.2, 4, H.seg(20, 12)), { rx: Math.PI / 2, y: -0.1, color: COL.lead })); for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2; F(K, H.box(0.18, p.thick, 0.18, { x: Math.cos(a) * (p.r + 0.03), y: -p.thick / 2, z: Math.sin(a) * (p.r + 0.03), color: COL.leadDk })); } }
+    if (drum) ringArches(K, H, p.r + 0.03, 12, -p.thick + 0.6, 2.2, 0.8, lit ? 0xffc870 : 0x2a2632, lit ? 'glow' : 'flat');
+    else { F(K, H.part(new THREE.TorusGeometry(p.r - 0.1, 0.2, 4, H.seg(20, 12)), { rx: Math.PI / 2, y: -0.1, color: COL.lead })); for (let k = 0; k < 10; k++) { const a = (k / 10) * Math.PI * 2; K.add(lit ? 'glow' : 'flat', H.box(0.18, p.thick, 0.18, { x: Math.cos(a) * (p.r + 0.03), y: -p.thick / 2, z: Math.sin(a) * (p.r + 0.03), color: lit ? 0xffe0a0 : COL.leadDk })); } }
     cap(K, p, H, drum ? COL.lead : 0x9aa4ac);
+    if (lit) outline(K, p, H, -0.04, drum ? PJ.gold : PJ.cyan, { grow: 0.1 });
   },
   onion(K, p, th, rng, H) {
-    F(K, H.part(new THREE.SphereGeometry(p.r, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2), { y: -p.thick, sy: p.thick / p.r, color: COL.gold }));
+    const lit = night(th);
+    K.add(lit ? 'glow' : 'flat', H.part(new THREE.SphereGeometry(p.r, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2), { y: -p.thick, sy: p.thick / p.r, color: lit ? 0xffc840 : COL.gold }));
     F(K, H.cyl(p.r * 0.8, p.r, p.thick * 0.4, 8, { y: -p.thick * 0.8, color: COL.gold }));
     cap(K, p, H, 0xf0c840);
     F(K, H.box(0.08, 1.2, 0.08, { y: 0.6, color: COL.gold }), H.box(0.5, 0.08, 0.08, { y: 0.85, color: COL.gold }));
+    if (lit) G(K, H.box(0.2, 0.2, 0.2, { y: 1.3, color: 0xff2a2a }));
   },
 
   // ---- ROME: the Colosseum

@@ -91,7 +91,7 @@ const lasers = [
 
 const W2 = PAL.W2, W4 = PAL.W4, E5 = PAL.E5;
 export default {
-  id: 'euro-venice', name: 'VENEZIA', sub: 'CANAL GRANDE · 19:30 · DUSK', theme: 'euroDusk', song: 'neonHard',
+  id: 'euro-venice', name: 'VENEZIA', sub: 'CANAL GRANDE · 01:20 · LAGOON MIST', theme: 'euroVenice', song: 'neonHard',
   seed: 6003, par: 320, killY: -0.6, water: 0,
   start: { x: 0, y: Q, z: 72, yaw: 0 },
   plats, lasers,
@@ -102,7 +102,7 @@ export default {
   ],
   exit: { x: 0, y: 9.5, z: -165, yaw: 0 },
   portal: { x: 30, y: ALTANA + 1.4, z: 2 },
-  bonusStyle: { theme: 'euroBonusDusk', weapon: 'rocket', tag: 'LAGUNA' },
+  bonusStyle: { theme: 'euroBonusVenice', weapon: 'rocket', tag: 'LAGUNA' },
   enemies: [
     { type: 'guard', x: -14, y: Q, z: 10 },
     { type: 'guard', x: 14, y: Q, z: -50 },
@@ -135,5 +135,7 @@ export default {
     { kind: 'sanGiorgio', x: 120, y: 0, z: -330, yaw: 0.3, s: 1.1 },
     { kind: 'mountain', x: -120, y: -6, z: -900, r: 420, h: 260, snow: 0.42, color: '#6a6488' }, // the Dolomites at dusk
     { kind: 'mountain', x: 420, y: -6, z: -860, r: 300, h: 220, snow: 0.45, color: '#6a6488' },
+    { kind: 'shoreLights', x: -260, y: 0, z: -560, len: 600, n: 9, rise: 30, seed: 651 }, // Mestre and the mainland, lit across the lagoon
+    { kind: 'shoreLights', x: 40, y: 0, z: 420, yaw: Math.PI, len: 700, n: 7, rise: 12, seed: 652 }, // the Lido
   ],
 };

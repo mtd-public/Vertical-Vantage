@@ -79,7 +79,7 @@ const lasers = [
 
 const mid3 = ROW3[Math.floor(ROW3.length / 2)];
 export default {
-  id: 'euro-amalfi', name: 'AMALFI', sub: 'COSTIERA · 16:40 · GOLDEN', theme: 'euroGolden', song: 'grandTour',
+  id: 'euro-amalfi', name: 'AMALFI', sub: 'COSTIERA · 20:50 · BLUE HOUR', theme: 'euroAmalfi', song: 'grandTour',
   seed: 6002, par: 300, killY: -0.6, water: 0,
   start: { x: 0, y: DOCK, z: 40, yaw: 0 },
   plats, lasers,
@@ -90,7 +90,7 @@ export default {
   ],
   exit: { x: 0, y: 40, z: -74.5, yaw: 0 },
   portal: { x: -52, y: 15 + 1.4, z: 62 },
-  bonusStyle: { theme: 'euroBonusGold', weapon: 'rapid', tag: 'LIMONE' },
+  bonusStyle: { theme: 'euroBonusAmalfi', weapon: 'rapid', tag: 'LIMONE' },
   enemies: [
     { type: 'guard', x: -22, y: ATRIUM, z: -28.5 },
     { type: 'guard', x: 12, y: 40, z: -76 },
@@ -121,5 +121,6 @@ export default {
     { kind: 'amalfiCoast', x: -430, y: 0, z: -60, yaw: Math.PI / 2 },
     { kind: 'amalfiCoast', x: 470, y: 0, z: -20, yaw: -Math.PI / 2 },
     { kind: 'hills', x: 0, y: 0, z: -470, len: 1000, h: 230, n: 6, color: '#56664a', houses: 2 }, // the Lattari mountains
+    { kind: 'shoreLights', x: -330, y: 0, z: 430, yaw: Math.PI, s: 1.6, len: 500, n: 8, rise: 40 }, // the towns of the bay, lit across the water
   ],
 };

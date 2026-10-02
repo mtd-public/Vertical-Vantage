@@ -84,7 +84,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'shanghai-bund', name: 'THE BUND', sub: 'HUANGPU RIVERFRONT · 18:40 · GOLDEN DUSK', theme: 'shanghaiDusk', song: 'bundBreak',
+  id: 'shanghai-bund', name: 'THE BUND', sub: 'HUANGPU RIVERFRONT · 21:40 · LIGHT SHOW', theme: 'shanghaiBund', song: 'bundBreak',
   seed: 5001, par: 270, killY: -0.6, water: 0,
   start: { x: 0, y: PROM, z: 24, yaw: 0 },
   plats, lasers,
@@ -95,7 +95,7 @@ export default {
   ],
   exit: { x: -22, y: 44, z: -84, yaw: 0 },
   portal: { x: 104, y: 3.6, z: -53 },
-  bonusStyle: { theme: 'bonusDusk', music: 'bundBreak', weapon: 'spread', tag: 'HUANGPU' },
+  bonusStyle: { theme: 'shanghaiBonusGold', music: 'bundBreak', weapon: 'spread', tag: 'HUANGPU' },
   enemies: [
     { type: 'guard', x: 1, y: PROM, z: -30 },
     { type: 'guard', x: -2, y: PROM, z: -64 },
@@ -129,8 +129,10 @@ export default {
     { kind: 'twistTower', x: 520, z: -185, s: 1 },
     { kind: 'bottleOpener', x: 560, z: -95, s: 1 },
     { kind: 'pudongBank', x: 300, z: -60, len: 900 },
-    { kind: 'skyline', x: 440, z: 90, w: 220, d: 90, n: 18, hMin: 40, hMax: 150, color: '#6a5a8a' },
-    { kind: 'skyline', x: 620, z: -40, w: 160, d: 160, n: 16, hMin: 60, hMax: 200, color: '#6a5a8a' },
-    { kind: 'skyline', x: 430, z: -300, w: 200, d: 100, n: 14, hMin: 40, hMax: 130, color: '#6a5a8a' },
+    { kind: 'ledTowers', x: 440, z: 90, w: 220, d: 90, n: 18, hMin: 40, hMax: 150 },
+    { kind: 'ledTowers', x: 620, z: -40, w: 160, d: 160, n: 16, hMin: 60, hMax: 200 },
+    { kind: 'ledTowers', x: 430, z: -300, w: 200, d: 100, n: 14, hMin: 40, hMax: 130 },
+    { kind: 'riverBoats', x: 205, z: -60, len: 380, d: 100, n: 7 }, // tour boats on the Huangpu
+    { kind: 'ledTowers', x: -330, z: -60, w: 120, d: 420, n: 18, hMin: 30, hMax: 90, pal: ['#ffd890', '#ff5a2b', '#ff2bd6', '#ffd23a'] }, // Puxi behind the Bund
   ],
 };

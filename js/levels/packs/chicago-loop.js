@@ -98,7 +98,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'chicago-loop', name: 'THE LOOP', sub: 'NEO CHICAGO · 07:40 · OVERCAST', theme: 'chiLoop', song: 'chiJuke',
+  id: 'chicago-loop', name: 'THE LOOP', sub: 'NEO CHICAGO · 21:40 · RAIN', theme: 'chiLoop', song: 'chiJuke',
   seed: 2001, par: 300, killY: -0.6, water: 0,
   start: { x: 4, y: EL, z: 39.5, yaw: -0.12 },
   plats, lasers,

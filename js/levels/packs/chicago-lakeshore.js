@@ -78,7 +78,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'chicago-lakeshore', name: 'LAKESHORE', sub: 'NEO CHICAGO · 13:15 · SUMMER', theme: 'chiLake', song: 'chiJuke',
+  id: 'chicago-lakeshore', name: 'LAKESHORE', sub: 'NEO CHICAGO · 22:50 · CLEAR NIGHT', theme: 'chiLake', song: 'chiJuke',
   seed: 2002, par: 320, killY: -0.6, water: 0,
   start: { x: -8, y: SAND, z: 54, yaw: -0.3 },
   plats, lasers,

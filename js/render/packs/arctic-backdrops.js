@@ -216,18 +216,28 @@ export const BACKDROPS = {
   // Street lights (fogged, near): o.lines = [[x0, z0, x1, z1, y, step], …]: a pole, an LED head (warm or ice
   // blue, alternately), and its pool of light on the snow.
   'arc-streetlights'(o, th, B, M) {
-    const K = new Kit();
+    const K = new Kit(), halos = { warm: [], ice: [] };
     let n = 0;
     for (const [x0, z0, x1, z1, y, step] of o.lines || []) {
       const L = Math.sqrt((x1 - x0) * (x1 - x0) + (z1 - z0) * (z1 - z0)), m = Math.max(1, Math.round(L / step));
       for (let k = 0; k <= m; k++, n++) {
         const x = x0 + (x1 - x0) * k / m, z = z0 + (z1 - z0) * k / m, warm = n % 3 !== 1;
         K.add('p', box(0.14, 5, 0.14, { x, y: y + 2.5, z, color: 0x30343c }), box(1.0, 0.12, 0.3, { x: x + 0.4, y: y + 5, z, color: 0x30343c }));
-        K.add('g', box(0.7, 0.16, 0.36, { x: x + 0.65, y: y + 4.9, z, color: warm ? 0xffd08a : 0x9ae8ff }), cyl(2.6, 2.6, 0.03, 10, { x: x + 0.6, y: y + 0.03, z, color: warm ? 0xc8aca8 : 0x8ac8e8 }));
-        K.add('g', box(0.16, 0.16, 0.16, { x, y: y + 0.4, z, color: n % 2 ? 0xff5ad8 : 0x5fe8ff })); // an LED band low on the pole
+        K.add('g', box(0.9, 0.3, 0.5, { x: x + 0.65, y: y + 4.86, z, color: warm ? 0xffd08a : 0x9ae8ff }), cyl(2.6, 2.6, 0.03, 10, { x: x + 0.6, y: y + 0.03, z, color: warm ? 0xc8aca8 : 0x8ac8e8 }));
+        K.add('g', box(0.17, 3.2, 0.17, { x, y: y + 2.0, z, color: n % 2 ? 0xff5ad8 : 0x5fe8ff })); // an LED strip up the pole
+        (warm ? halos.warm : halos.ice).push([x + 0.65, y + 4.8, z]);
       }
     }
-    return meshes(K, { glow: M.glow, paintFlat: M.paintFlat });
+    const g = meshes(K, { glow: M.glow, paintFlat: M.paintFlat });
+    for (const [key, col] of [['warm', 0xffb860], ['ice', 0x5ac8ff]]) { // a soft glow round every lamp (additive)
+      if (!halos[key].length) continue;
+      const pos = [];
+      for (const [x, y, z] of halos[key]) { const q = new THREE.IcosahedronGeometry(1.1, 0).toNonIndexed(); q.translate(x, y, z); pos.push(...q.attributes.position.array); q.dispose(); }
+      const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      const h = new THREE.Mesh(geo, own(new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })));
+      h.renderOrder = 5; g.add(h);
+    }
+    return g;
   },
   // The satellite station's far field of radomes on the next ridge.
   'arc-radomes'(o, th, B) {

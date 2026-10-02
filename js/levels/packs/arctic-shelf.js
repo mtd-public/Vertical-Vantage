@@ -147,7 +147,7 @@ export default {
     { kind: 'arc-beaconlight', x: 26, y: 59.4, z: -222 }, // the camp's strobe: the one thing the whiteout can't hide
     { kind: 'arc-icefield', x: 0, y: 30, z: -560, len: 1400, h: 60, seed: 921 },
     { kind: 'arc-bergs', x: 0, y: 0, z: 0, r0: 220, r1: 420, n: 26, seed: 922 },
-    { kind: 'arc-lightcones', x: 0, y: 0, z: 0, k: 0.14, cones: [ // floodlights cutting the blizzard: the icebreaker, its A-frame, the drill rig
+    { kind: 'arc-lightcones', x: 0, y: 0, z: 0, k: 0.18, cones: [ // floodlights cutting the blizzard: the icebreaker, its A-frame, the drill rig
       [41.5, 11.1, 31.7, 0, -1, -0.7, 12, 4.5], [50.5, 11.1, 31.7, 0, -1, -0.7, 12, 4.5], [41.5, 11.1, 52.3, 0, -1, 0.7, 12, 4.5], [50.5, 11.1, 52.3, 0, -1, 0.7, 12, 4.5],
       [40.1, 10.7, 86.6, 0, -1, -0.45, 9, 3.6], [51.9, 10.7, 86.6, 0, -1, -0.45, 9, 3.6],
       [-42.4, 47.8, -161.5, 0.7, -1, 0, 12, 4.2], [-49.6, 47.8, -161.5, -0.7, -1, 0, 12, 4.2],

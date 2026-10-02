@@ -4,50 +4,51 @@ import { STYLES } from './euro-styles.js';
 import { BACKDROPS } from './euro-backdrops.js';
 import { centurionModel, centurionUpdate } from './euro-boss.js';
 
-// Sun-drenched Mediterranean: noon white, golden afternoon, lagoon dusk, and Rome by moonlight.
+// Techy Italy, 2099, after dark: Pisa's marble projection-mapped under the moon, Amalfi at blue hour,
+// the Grand Canal at one in the morning, and Rome's Colosseum in neon by moonlight.
 const themes = {
-  euroNoon: { // Pisa: a high white sun, a deep blue sky, a far terracotta town
-    skyTop: '#2a7ee8', skyBot: '#d8ecff', sun: '#fff6d0', sunDir: [0.25, 0.8, 0.55], night: 0,
-    fog: [130, 460], hemi: ['#fff8ec', '#7a8a62', 1.75], key: ['#fff2d6', 2.4],
-    cloud: '#ffffff', cloudShade: '#e2ecf8', city: 0.25, arc: [0, 4], cityCol: '#c8a88a', cityH: 0.3, pyramids: 0,
-    windows: 0, neon: 0.5, water: null, rain: 0, stars: 0, beams: 0, haze: 0.5,
+  euroPisa: { // the Field of Miracles at night: white marble, neon projections, a high moon
+    skyTop: '#03061c', skyBot: '#1c2a5e', sun: '#f2f4ff', sunDir: [0.3, 0.62, 0.5], night: 1,
+    fog: [110, 430], hemi: ['#8a9ae4', '#1c2028', 1.55], key: ['#c4d2ff', 1.05],
+    cloud: '#28305e', cloudShade: '#141a3a', city: 0.35, arc: [0, 4], cityCol: '#0c1024', cityH: 0.35, pyramids: 0,
+    windows: 1, neon: 1.35, water: null, rain: 0, stars: 0.8, beams: 0.8, haze: 0.38,
   },
-  euroGolden: { // Amalfi: a low sun over the sea to the south-west, warm light on pastel walls
-    skyTop: '#3a78d0', skyBot: '#ffd8a0', sun: '#ffe0a0', sunDir: [-0.6, 0.3, 0.65], night: 0,
-    fog: [120, 460], hemi: ['#fff0d8', '#7a6050', 1.6], key: ['#ffd49a', 2.4],
-    cloud: '#fff4e0', cloudShade: '#f0c8a0', city: 0, arc: [0, 4], cityCol: '#c8a07a', cityH: 0.3, pyramids: 0,
-    windows: 0, neon: 0.5, water: '#1a7aa8', rain: 0, stars: 0, beams: 0, haze: 0.42,
+  euroAmalfi: { // the coast at blue hour: the last violet light over the sea, the town lit up the ravine
+    skyTop: '#081448', skyBot: '#6a4888', sun: '#ffb89a', sunDir: [-0.62, 0.1, 0.7], night: 0.85,
+    fog: [110, 450], hemi: ['#9096e0', '#2a2034', 1.6], key: ['#ff9c84', 0.85],
+    cloud: '#4a3a7a', cloudShade: '#241c4a', city: 0, arc: [0, 4], cityCol: '#1a1430', cityH: 0.3, pyramids: 0,
+    windows: 1, neon: 1.3, water: '#0e2656', rain: 0, stars: 0.4, beams: 0.35, haze: 0.36,
   },
-  euroDusk: { // Venice: the sun just down behind St Mark's, a violet sky, lit windows on the water
-    skyTop: '#26246e', skyBot: '#ff9a70', sun: '#ffb070', sunDir: [-0.35, 0.1, -0.93], night: 0.45,
-    fog: [80, 340], hemi: ['#ffd4c4', '#3a2a5a', 1.4], key: ['#ffb07a', 1.6],
-    cloud: '#ffc0a0', cloudShade: '#a06088', city: 0.25, arc: [0, 4], cityCol: '#3a2a4a', cityH: 0.3, pyramids: 0,
-    windows: 0.8, neon: 1.0, water: '#2a3a6a', rain: 0, stars: 0.15, beams: 0, haze: 0.4,
+  euroVenice: { // the Grand Canal at one in the morning: lit palazzi, neon on the water, a lagoon mist
+    skyTop: '#050822', skyBot: '#2c2456', sun: '#eef0ff', sunDir: [0.4, 0.55, -0.7], night: 1,
+    fog: [60, 300], hemi: ['#7c82cc', '#22182c', 1.5], key: ['#b2c2ff', 0.9],
+    cloud: '#2a2a4c', cloudShade: '#161832', city: 0.3, arc: [0, 4], cityCol: '#0e0c1e', cityH: 0.3, pyramids: 0,
+    windows: 1, neon: 1.4, water: '#131a40', rain: 0, stars: 0.5, beams: 0.6, cover: 0.2, haze: 0.34,
   },
-  euroRome: { // the Colosseum at night: a full moon, floodlights, searchlights sweeping the clouds
-    skyTop: '#05071a', skyBot: '#3a1830', sun: '#f4f2ff', sunDir: [0.3, 0.45, -0.85], night: 1,
-    fog: [60, 280], hemi: ['#a098d8', '#3a2a28', 1.45], key: ['#d0d8ff', 1.0],
-    cloud: '#3a3050', cloudShade: '#1a1428', city: 0.5, arc: [0, 4], cityCol: '#1a1020', cityH: 0.35, pyramids: 0,
-    windows: 1, neon: 1.2, water: null, rain: 0, stars: 0.7, beams: 1, haze: 0.35,
+  euroRome: { // the Colosseum at night: a full moon, neon projections, searchlights sweeping the clouds
+    skyTop: '#04061c', skyBot: '#34183e', sun: '#f4f2ff', sunDir: [0.3, 0.45, -0.85], night: 1,
+    fog: [60, 290], hemi: ['#a098e0', '#34202e', 1.5], key: ['#d0d8ff', 1.05],
+    cloud: '#3a3052', cloudShade: '#1a1428', city: 0.5, arc: [0, 4], cityCol: '#160e20', cityH: 0.35, pyramids: 0,
+    windows: 1, neon: 1.35, water: null, rain: 0, stars: 0.7, beams: 1, haze: 0.33,
   },
-  // the SERVER CORE bonus arenas, Mediterranean-tinted
-  euroBonusNoon: {
-    skyTop: '#1a6cff', skyBot: '#ffe8b0', sun: '#fff3c4', sunDir: [-0.4, 0.6, -0.6], night: 0, power: 1,
-    fog: [80, 300], hemi: ['#ffffff', '#7a8a6a', 1.8], key: ['#fff6e0', 2.2],
-    cloud: '#ffffff', cloudShade: '#ffe8d0', city: 0, arc: [0, 4], cityCol: '#c8a88a', windows: 0, neon: 0.8,
-    water: null, rain: 0, stars: 0, beams: 0,
+  // the SERVER CORE bonus arenas: night power skies in marble blue, lemon and lagoon magenta
+  euroBonusPisa: {
+    skyTop: '#040a2a', skyBot: '#20306e', sun: '#e8f0ff', sunDir: [-0.4, 0.6, -0.6], night: 1, power: 1,
+    fog: [60, 270], hemi: ['#8aa0e8', '#141a2c', 1.5], key: ['#c0d4ff', 1.05],
+    cloud: '#2a3466', cloudShade: '#141c3a', city: 0, arc: [0, 4], cityCol: '#0e1226', windows: 1, neon: 1.35,
+    water: null, rain: 0, stars: 0.6, beams: 0,
   },
-  euroBonusGold: {
-    skyTop: '#2a58d8', skyBot: '#ffc070', sun: '#ffe0a0', sunDir: [0.6, 0.3, -0.6], night: 0.1, power: 1,
-    fog: [70, 280], hemi: ['#fff0d0', '#6a4a3a', 1.7], key: ['#ffd8a0', 2.0],
-    cloud: '#fff0d8', cloudShade: '#f0b890', city: 0, arc: [0, 4], cityCol: '#c8a07a', windows: 0.2, neon: 0.9,
-    water: null, rain: 0, stars: 0, beams: 0,
+  euroBonusAmalfi: {
+    skyTop: '#0a0c30', skyBot: '#4a3a6a', sun: '#fff0b0', sunDir: [0.6, 0.3, -0.6], night: 1, power: 1,
+    fog: [60, 270], hemi: ['#a8a0d8', '#2a2420', 1.5], key: ['#ffe090', 1.0],
+    cloud: '#4a3a6a', cloudShade: '#241c3a', city: 0, arc: [0, 4], cityCol: '#1a1426', windows: 1, neon: 1.35,
+    water: null, rain: 0, stars: 0.6, beams: 0,
   },
-  euroBonusDusk: {
-    skyTop: '#2a1a6a', skyBot: '#ff8a7a', sun: '#ffc090', sunDir: [0.6, 0.2, -0.6], night: 0.5, power: 1,
-    fog: [60, 260], hemi: ['#ffd8e8', '#3a2a5a', 1.5], key: ['#ffb8a0', 1.7],
-    cloud: '#ffd0e0', cloudShade: '#c07090', city: 0, arc: [0, 4], cityCol: '#3a2a4a', windows: 0.6, neon: 1.1,
-    water: null, rain: 0, stars: 0.3, beams: 0,
+  euroBonusVenice: {
+    skyTop: '#0e0428', skyBot: '#5a1e64', sun: '#ffd0f0', sunDir: [0.6, 0.2, -0.6], night: 1, power: 1,
+    fog: [60, 260], hemi: ['#c08ad8', '#24102e', 1.5], key: ['#ffb8e0', 1.0],
+    cloud: '#5a2a6a', cloudShade: '#2a123a', city: 0, arc: [0, 4], cityCol: '#1c0e26', windows: 1, neon: 1.35,
+    water: null, rain: 0, stars: 0.6, beams: 0,
   },
 };
 

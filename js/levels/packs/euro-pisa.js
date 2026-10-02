@@ -112,7 +112,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'euro-pisa', name: 'PISA', sub: 'CAMPO DEI MIRACOLI · 12:00 · CLEAR', theme: 'euroNoon', song: 'grandTour',
+  id: 'euro-pisa', name: 'PISA', sub: 'CAMPO DEI MIRACOLI · 22:10 · PROJECTION SHOW', theme: 'euroPisa', song: 'grandTour',
   seed: 6001, par: 300, killY: -12,
   start: { x: 0, y: 0, z: 46, yaw: 0 },
   plats, lasers,
@@ -123,7 +123,7 @@ export default {
   ],
   exit: { x: -24, y: 17, z: -16, yaw: Math.PI / 2 },
   portal: { x: -98, y: 18 + 1.4, z: -80 },
-  bonusStyle: { theme: 'euroBonusNoon', weapon: 'spread', tag: 'TORRE' },
+  bonusStyle: { theme: 'euroBonusPisa', weapon: 'spread', tag: 'TORRE' },
   enemies: [
     { type: 'guard', x: -14, y: 0, z: 14 },
     { type: 'guard', x: 1, y: 15, z: 4 },

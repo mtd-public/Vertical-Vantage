@@ -91,7 +91,7 @@ const lasers = [
 
 const W2 = PAL.W2, W4 = PAL.W4, E5 = PAL.E5;
 export default {
-  id: 'euro-venice', name: 'VENEZIA', sub: 'CANAL GRANDE · 19:30 · DUSK', theme: 'euroDusk', song: 'neonHard',
+  id: 'euro-venice', name: 'VENEZIA', sub: 'CANAL GRANDE · 01:20 · LAGOON MIST', theme: 'euroVenice', song: 'neonHard',
   seed: 6003, par: 320, killY: -0.6, water: 0,
   start: { x: 0, y: Q, z: 72, yaw: 0 },
   plats, lasers,
@@ -102,7 +102,7 @@ export default {
   ],
   exit: { x: 0, y: 9.5, z: -165, yaw: 0 },
   portal: { x: 30, y: ALTANA + 1.4, z: 2 },
-  bonusStyle: { theme: 'euroBonusDusk', weapon: 'rocket', tag: 'LAGUNA' },
+  bonusStyle: { theme: 'euroBonusVenice', weapon: 'rocket', tag: 'LAGUNA' },
   enemies: [
     { type: 'guard', x: -14, y: Q, z: 10 },
     { type: 'guard', x: 14, y: Q, z: -50 },

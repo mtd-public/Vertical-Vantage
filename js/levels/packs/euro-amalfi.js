@@ -79,7 +79,7 @@ const lasers = [
 
 const mid3 = ROW3[Math.floor(ROW3.length / 2)];
 export default {
-  id: 'euro-amalfi', name: 'AMALFI', sub: 'COSTIERA · 16:40 · GOLDEN', theme: 'euroGolden', song: 'grandTour',
+  id: 'euro-amalfi', name: 'AMALFI', sub: 'COSTIERA · 20:50 · BLUE HOUR', theme: 'euroAmalfi', song: 'grandTour',
   seed: 6002, par: 300, killY: -0.6, water: 0,
   start: { x: 0, y: DOCK, z: 40, yaw: 0 },
   plats, lasers,
@@ -90,7 +90,7 @@ export default {
   ],
   exit: { x: 0, y: 40, z: -74.5, yaw: 0 },
   portal: { x: -52, y: 15 + 1.4, z: 62 },
-  bonusStyle: { theme: 'euroBonusGold', weapon: 'rapid', tag: 'LIMONE' },
+  bonusStyle: { theme: 'euroBonusAmalfi', weapon: 'rapid', tag: 'LIMONE' },
   enemies: [
     { type: 'guard', x: -22, y: ATRIUM, z: -28.5 },
     { type: 'guard', x: 12, y: 40, z: -76 },

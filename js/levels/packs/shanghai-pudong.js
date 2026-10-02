@@ -77,7 +77,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'shanghai-pudong', name: 'PUDONG HEIGHTS', sub: 'LUJIAZUI · 12:10 · SMOG', theme: 'shanghaiSmog', song: 'skyway2000',
+  id: 'shanghai-pudong', name: 'PUDONG HEIGHTS', sub: 'LUJIAZUI · 02:10 · NEON RAIN', theme: 'shanghaiNeon', song: 'skyway2000',
   seed: 5002, par: 330, killY: -24,
   start: { x: 0, y: 22.3, z: 22, yaw: 0 },
   plats, lasers,
@@ -88,7 +88,7 @@ export default {
   ],
   exit: { x: 0, y: 96, z: -134, yaw: 0 },
   portal: { x: 36, y: 11.4, z: 34 },
-  bonusStyle: { theme: 'bonusDay', music: 'skyway2000', weapon: 'rapid', tag: 'LUJIAZUI' },
+  bonusStyle: { theme: 'shanghaiBonusCyan', music: 'skyway2000', weapon: 'rapid', tag: 'LUJIAZUI' },
   enemies: [
     { type: 'walker', x: 28, y: 30, z: -16 },
     { type: 'guard', x: -30, y: 28, z: -18 },

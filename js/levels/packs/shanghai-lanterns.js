@@ -126,7 +126,7 @@ export default {
   ],
   exit: { x: 0, y: 29.6, z: -145.4, yaw: 0 },
   portal: { x: 47, y: 3, z: -23 },
-  bonusStyle: { theme: 'bonusNight', music: 'neonHard', weapon: 'rocket', tag: 'LANTERN' },
+  bonusStyle: { theme: 'shanghaiBonusRed', music: 'neonHard', weapon: 'rocket', tag: 'LANTERN' },
   enemies: [
     { type: 'guard', x: -5, y: 1.6, z: -31 },
     { type: 'drone', x: 2, y: 10, z: -36 },

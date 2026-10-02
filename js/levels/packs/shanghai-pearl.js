@@ -33,7 +33,7 @@ const perches = [60, 180, 300].map((a) => { const [x, z] = at(20, a); const p = 
 const on = (p, up = 1) => ({ x: p.x, y: p.h + up, z: p.z });
 
 export default {
-  id: 'shanghai-boss', name: 'PEARL TOWER', sub: 'ORIENTAL PEARL · 21:30 · SMOG SEA · BOSS', theme: 'shanghaiPearl', song: 'jadeDragon',
+  id: 'shanghai-boss', name: 'PEARL TOWER', sub: 'ORIENTAL PEARL · 00:30 · NEON SMOG · BOSS', theme: 'shanghaiPearl', song: 'jadeDragon',
   seed: 5004, par: 230, killY: -26, cloudY: -32, objective: 'boss', bossName: 'JADE DRAGON',
   arena: A,
   start: { x: 0, y: A.floor, z: 12.5, yaw: 0 },

@@ -84,7 +84,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'shanghai-bund', name: 'THE BUND', sub: 'HUANGPU RIVERFRONT · 18:40 · GOLDEN DUSK', theme: 'shanghaiDusk', song: 'bundBreak',
+  id: 'shanghai-bund', name: 'THE BUND', sub: 'HUANGPU RIVERFRONT · 21:40 · LIGHT SHOW', theme: 'shanghaiBund', song: 'bundBreak',
   seed: 5001, par: 270, killY: -0.6, water: 0,
   start: { x: 0, y: PROM, z: 24, yaw: 0 },
   plats, lasers,
@@ -95,7 +95,7 @@ export default {
   ],
   exit: { x: -22, y: 44, z: -84, yaw: 0 },
   portal: { x: 104, y: 3.6, z: -53 },
-  bonusStyle: { theme: 'bonusDusk', music: 'bundBreak', weapon: 'spread', tag: 'HUANGPU' },
+  bonusStyle: { theme: 'shanghaiBonusGold', music: 'bundBreak', weapon: 'spread', tag: 'HUANGPU' },
   enemies: [
     { type: 'guard', x: 1, y: PROM, z: -30 },
     { type: 'guard', x: -2, y: PROM, z: -64 },

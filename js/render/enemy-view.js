@@ -18,6 +18,10 @@ import { ENEMIES } from '../sim/tuning.js';
 const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _d = new THREE.Vector3(), _col = new THREE.Color();
 const NIGHT_RIM = new THREE.Color(0x9a7aff);
 const AMBER = new THREE.Color(0xffa21a), RED = new THREE.Color(0xff1f3a), WHITE = new THREE.Color(0xffffff), PINK = new THREE.Color(0xff2a7a);
+// Eye palettes [unaware, alert]: shooters go amber → red; walkers stay warm (safe to stomp: never
+// red); spikers are red whatever they do.
+const EYES = { walker: [AMBER, new THREE.Color(0xffe060)], spiker: [new THREE.Color(0xff3a2a), new THREE.Color(0xff1030)] };
+const EYES_DEFAULT = [AMBER, RED];
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const wrap = (a) => { while (a > Math.PI) a -= Math.PI * 2; while (a < -Math.PI) a += Math.PI * 2; return a; };
 
@@ -29,22 +33,22 @@ export function makeEnemyModel(R, e) {
     g.userData.a = { init: false, px: 0, py: 0, pz: 0, pyaw: 0, vx: 0, vy: 0, vz: 0, yawRate: 0, lastFlash: 0, kick: 0, kx: 0, kz: 1, alert: 0, fire: 0, lastState: '', lastBurst: 0,
       bank: 0, pitch: 0, eyeYaw: 0, eyePitch: 0, phase: e.id * 1.3, aim: 0, recoil: 0, cx: 0, cvx: 0, cz: 0, cvz: 0, headYaw: e.yaw, gunPitch: 0, rec: [0, 0], nb: 0, baseYaw: e.yaw, seed: (e.id * 0.618) % 1 * 6.283 };
   }
-  if (R.theme) setEnemyTheme(R.theme, R.fx.enemy);
+  if (R.theme) setEnemyTheme(R.theme);
   return g;
 }
 
 // Per stage: the rim light that lifts silhouettes out of the dark (strong at night, a faint sky
-// sheen by day), and the sprite fog range.
-export function setEnemyTheme(th, efx) {
+// sheen by day).
+export function setEnemyTheme(th) {
   const n = th.night || 0;
   ENEMY_SHARED.uRim.value.set(th.skyBot || '#808080').lerp(NIGHT_RIM, 0.6 * n).multiplyScalar(0.16 + 0.8 * n);
   ENEMY_SHARED.uFar.value = 0.55 * n;
-  if (efx) efx.setTheme(th);
 }
 
 // The alert colour: amber → red as it notices you; a strobe toward white while it telegraphs.
-function eyeColor(out, a, tele, t, R) {
-  out.copy(AMBER).lerp(RED, a.alert);
+function eyeColor(out, a, tele, t, R, type) {
+  const P = EYES[type] || EYES_DEFAULT;
+  out.copy(P[0]).lerp(P[1], a.alert);
   if (tele > 0) {
     const s = R.flashK < 1 ? 0.55 : 0.5 + 0.5 * Math.sin(t * (28 + 40 * tele));
     out.lerp(WHITE, tele * (0.35 + 0.6 * s));
@@ -64,8 +68,8 @@ export function poseEnemy(R, e, g, dt, t, w) {
   // motion estimates (drift, deck rides, turning) for banking and the coat
   const idt = dt > 1e-4 ? 1 / dt : 0, ease = Math.min(1, dt * 8);
   if (!a.init) { a.init = true; a.px = e.x; a.py = e.y; a.pz = e.z; a.pyaw = e.yaw; }
-  a.vx += ((e.x - a.px) * idt - a.vx) * ease; a.vy += ((e.y - a.py) * idt - a.vy) * ease; a.vz += ((e.z - a.pz) * idt - a.vz) * ease;
-  a.yawRate += (wrap(e.yaw - a.pyaw) * idt - a.yawRate) * ease;
+  a.vx += (clamp((e.x - a.px) * idt, -12, 12) - a.vx) * ease; a.vy += (clamp((e.y - a.py) * idt, -12, 12) - a.vy) * ease; a.vz += (clamp((e.z - a.pz) * idt, -12, 12) - a.vz) * ease;
+  a.yawRate += (clamp(wrap(e.yaw - a.pyaw) * idt, -8, 8) - a.yawRate) * ease;
   a.px = e.x; a.py = e.y; a.pz = e.z; a.pyaw = e.yaw;
   // hit: a shove away from you
   if (e.flash > a.lastFlash + 0.01) {
@@ -120,7 +124,7 @@ function poseDrone(R, e, g, a, u, dt, t, P, efx, kick, fwd, side) {
   a.eyeYaw += (ty - a.eyeYaw) * ee; a.eyePitch += (tp - a.eyePitch) * ee;
   eye.rotation.set(a.eyePitch, a.eyeYaw, 0, 'YXZ');
   eye.updateMatrixWorld();
-  const col = eyeColor(u.uEye.value, a, tele, t, R);
+  const col = eyeColor(u.uEye.value, a, tele, t, R, e.type);
   // sprites: the lens glow, the charge (an orb gathering in front of the lens, a ring closing on it),
   // and the thrusters
   eye.localToWorld(_v.set(0, 0, -0.1));
@@ -157,11 +161,11 @@ function poseCrawler(R, e, g, a, u, dt, t, efx, kick) {
   }
   if (crown) crown.rotation.y += dt * (run ? 10 : 2.4);
   g.updateMatrixWorld(true);
-  const col = eyeColor(u.uEye.value, a, 0, t, R);
+  const col = eyeColor(u.uEye.value, a, 0, t, R, e.type);
   body.localToWorld(_v.set(0, 0.67, -0.64));
-  efx.halo(_v.x, _v.y, _v.z, 0.8, col, 0.45 + 0.4 * a.alert, 0.2);
+  efx.halo(_v.x, _v.y, _v.z, 0.6, col, 0.4 + 0.35 * a.alert, 0.2);
   if (crown) { crown.localToWorld(_v.set(0, 0.55, 0)); efx.halo(_v.x, _v.y, _v.z, 0.7, EC.red, 0.35 + 0.25 * Math.sin(t * 6 + a.seed), 0.1); }
-  else { body.localToWorld(_v.set(0, 1.06, 0)); efx.halo(_v.x, _v.y, _v.z, 0.9, EC.amber, 0.22 * (0.4 + 0.6 * R.fx.enemy.night), 0.05, 0.012); }
+  else { body.localToWorld(_v.set(0, 1.06, 0)); efx.halo(_v.x, _v.y, _v.z, 0.9, EC.amber, 0.22 * (0.4 + 0.6 * ((R.theme && R.theme.night) || 0)), 0.05, 0.012); }
 }
 
 // ------------------------------------------------------------------ guard
@@ -189,7 +193,7 @@ function poseGuard(R, e, g, a, u, dt, t, efx, kick, fwd, side) {
   a.cvz += ((tz - a.cz) * 70 - a.cvz * 6) * dt; a.cz += a.cvz * dt;
   coat.rotation.set(a.cx + Math.sin(t * 2.3 + a.seed) * 0.025 + a.recoil * 0.03, 0, a.cz + Math.sin(t * 1.9 + a.seed * 1.7) * 0.018);
   g.updateMatrixWorld(true);
-  const col = eyeColor(u.uEye.value, a, tele, t, R);
+  const col = eyeColor(u.uEye.value, a, tele, t, R, e.type);
   // visor glow, the sight (aim: brighter and hotter as the shot nears), muzzle flashes
   body.localToWorld(_v.set(0, 1.765, -0.2));
   efx.halo(_v.x, _v.y, _v.z, 0.6 + tele * 0.4, col, 0.45 + 0.45 * a.alert + tele * 0.6, 0.15);
@@ -223,7 +227,7 @@ function poseTurret(R, e, g, a, u, dt, t, efx, kick) {
   a.lastBurst = e.burst;
   for (let i = 0; i < 2; i++) { a.rec[i] = Math.max(0, a.rec[i] - dt * 7); barrels[i].position.z = a.rec[i] * a.rec[i] * 0.24; }
   g.updateMatrixWorld(true);
-  const col = eyeColor(u.uEye.value, a, tele, t, R);
+  const col = eyeColor(u.uEye.value, a, tele, t, R, e.type);
   head.localToWorld(_v.set(0, 0.44, -0.42));
   efx.halo(_v.x, _v.y, _v.z, 0.75 + tele * 0.5, col, 0.45 + 0.45 * a.alert + tele * 0.6, 0.15);
   if (aiming) {

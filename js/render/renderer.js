@@ -501,7 +501,7 @@ export class GameRenderer {
         case 'exitOpen': if (w?.exit) fx.burst(w.exit.x, w.exit.y + 4, w.exit.z, 40, 0x2bffd8, 14, 0.25, 1.4, 4); break;
         case 'zap': fx.burst(e.x, e.y, e.z, 10, 0xff2a3a, 7, 0.1, 0.4); break;
         case 'portal': fx.burst(e.x, e.y, e.z, 30, 0xff2bd6, 10, 0.18, 0.8, 0); break;
-        case 'enemyFire': fx.burst(e.x, e.y, e.z, 3, 0xff3a8a, 2, 0.12, 0.2, 0); if (e.from === 'drone' || e.from === 'boss') fx.enemy.muzzle(e.x, e.y, e.z); break;
+        case 'enemyFire': fx.burst(e.x, e.y, e.z, 3, 0xff3a8a, 2, 0.12, 0.2, 0); if (e.from === 'drone') fx.enemy.muzzle(e.x, e.y, e.z); break;
         case 'bossSlam': fx.shockwave(e.x, e.y + 0.05, e.z, e.r); fx.burst(e.x, e.y + 0.3, e.z, 26, 0xc8c4bc, 9, 0.3, 0.9, 10); fx.shake = Math.max(fx.shake, 0.6); break;
         case 'bossLeap': fx.burst(e.x, e.y - 1.6, e.z, 18, 0xc8c4bc, 6, 0.25, 0.6, 8); fx.shake = Math.max(fx.shake, 0.25); break;
         case 'bossDying': fx.shake = Math.max(fx.shake, 0.5); break;

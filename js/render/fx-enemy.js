@@ -35,6 +35,18 @@ function ringTex() {
   }, false);
 }
 const ADD = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false };
+const _m = new THREE.Matrix4();
+// Camera-facing in the vertex shader (instance matrix = position + uniform scale): right for any
+// camera that draws it, the title screen's orbit included.
+function billboard(mat) {
+  mat.onBeforeCompile = (sh) => {
+    sh.vertexShader = sh.vertexShader.replace('#include <project_vertex>', `
+      vec4 mvPosition = modelViewMatrix * instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0);
+      mvPosition.xy += transformed.xy * length(instanceMatrix[0].xyz);
+      gl_Position = projectionMatrix * mvPosition;`);
+  };
+  return mat;
+}
 function inst(geo, mat, n) {
   const m = new THREE.InstancedMesh(geo, mat, n);
   m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(n * 3), 3);
@@ -44,10 +56,10 @@ function inst(geo, mat, n) {
 
 export class EnemyFX {
   constructor(scene, fx) {
-    this.fx = fx; this.cam = null; this.flashK = 1; this.night = 0; this.fogFar = 300; this.fogNear = 60;
+    this.fx = fx; this.scene = scene; this.cam = null; this.flashK = 1;
     // sprites
-    this.halos = inst(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: flareTex(), ...ADD }), 220);
-    this.rings = inst(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: ringTex(), ...ADD }), 40);
+    this.halos = inst(new THREE.PlaneGeometry(1, 1), billboard(new THREE.MeshBasicMaterial({ map: flareTex(), ...ADD })), 220);
+    this.rings = inst(new THREE.PlaneGeometry(1, 1), billboard(new THREE.MeshBasicMaterial({ map: ringTex(), ...ADD })), 40);
     this.halos.renderOrder = this.rings.renderOrder = 6;
     this.nh = 0; this.nr = 0;
     // thruster cones: base at the origin, pointing +Y, length 1, bright at the nozzle → dark at the tip
@@ -56,8 +68,10 @@ export class EnemyFX {
     this.jets = inst(jg, new THREE.MeshBasicMaterial({ vertexColors: true, ...ADD, side: THREE.DoubleSide }), 48);
     this.nj = 0;
     // laser sights: unit boxes along +Z (lookAt'd and stretched)
-    const sg = new THREE.BoxGeometry(1, 1, 1).translate(0, 0, 0.5);
-    const hg = sg.clone(); // the sheath fades out along its length (additive: dark = gone)
+    // the beam tapers toward you and its glow fades out along it (additive: dark = gone)
+    const taper = (g, k) => { const p = g.attributes.position; for (let i = 0; i < p.count; i++) { const f = 1 - k * p.getZ(i); p.setXYZ(i, p.getX(i) * f, p.getY(i) * f, p.getZ(i)); } return g; };
+    const sg = taper(new THREE.BoxGeometry(1, 1, 1).translate(0, 0, 0.5), 0.45);
+    const hg = taper(new THREE.BoxGeometry(1, 1, 1).translate(0, 0, 0.5), 0.75);
     { const p = hg.attributes.position, col = new Float32Array(p.count * 3); for (let i = 0; i < p.count; i++) { const k = 1 - 0.8 * p.getZ(i); col.set([k, k, k], i * 3); } hg.setAttribute('color', new THREE.BufferAttribute(col, 3)); }
     this.sights = inst(sg, new THREE.MeshBasicMaterial({ fog: false }), 24);
     this.sheaths = inst(hg, new THREE.MeshBasicMaterial({ vertexColors: true, ...ADD }), 24);
@@ -97,13 +111,12 @@ export class EnemyFX {
     scene.add(this.halos, this.rings, this.jets, this.sights, this.sheaths, this.boltCore, this.boltShell, this.boltTrail);
   }
 
-  setTheme(th) {
-    this.night = th.night || 0;
-    this.fogNear = th.fog ? th.fog[0] : 60; this.fogFar = th.fog ? th.fog[1] : 300;
-  }
-
   // Called by the renderer before the enemy views run (they request sprites as they pose).
-  begin(cam, R) { this.cam = cam; this.flashK = R ? R.flashK : 1; }
+  begin(cam, R) {
+    this.cam = cam; this.flashK = R ? R.flashK : 1;
+    const f = this.scene.fog;
+    this.fogNear = f ? f.near : 60; this.fogFar = f ? f.far : 300;
+  }
 
   // ---- per-frame requests
   // A glow sprite at (x, y, z), size metres, colour × k. Pulled toward the camera so the model's own
@@ -116,21 +129,16 @@ export class EnemyFX {
     const dist = _d.length() || 1;
     const fade = Math.min(1, Math.max(0, (this.fogFar - dist) / Math.max(1, this.fogFar - this.fogNear)));
     if (fade <= 0) return;
-    _o.position.set(x, y, z).addScaledVector(_d, Math.min(pull, dist * 0.5) / dist);
-    _o.quaternion.copy(this.cam.quaternion);
-    _o.scale.setScalar(Math.max(size, dist * minPx));
-    _o.updateMatrix();
-    this.halos.setMatrixAt(this.nh, _o.matrix);
+    const sc = Math.max(size, dist * minPx), pk = Math.min(pull, dist * 0.5) / dist;
+    _m.makeScale(sc, sc, sc).setPosition(x + _d.x * pk, y + _d.y * pk, z + _d.z * pk);
+    this.halos.setMatrixAt(this.nh, _m);
     this.halos.setColorAt(this.nh, _c.set(color).multiplyScalar(k * fade));
     this.nh++;
   }
   ring(x, y, z, size, color, k = 1) {
-    if (this.nr >= 40 || !this.cam || k <= 0.01) return;
-    _o.position.set(x, y, z);
-    _o.quaternion.copy(this.cam.quaternion);
-    _o.scale.setScalar(size);
-    _o.updateMatrix();
-    this.rings.setMatrixAt(this.nr, _o.matrix);
+    if (this.nr >= 40 || k <= 0.01) return;
+    _m.makeScale(size, size, size).setPosition(x, y, z);
+    this.rings.setMatrixAt(this.nr, _m);
     this.rings.setColorAt(this.nr, _c.set(color).multiplyScalar(k));
     this.nr++;
   }
@@ -151,7 +159,7 @@ export class EnemyFX {
     _o.position.set(ax, ay, az);
     _o.lookAt(bx, by, bz);
     // it stops short of you (a line that ends in your face is just a smear)
-    const len = Math.max(0.5, Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay) + (bz - az) * (bz - az)) - 1.1);
+    const full = Math.sqrt((bx - ax) * (bx - ax) + (by - ay) * (by - ay) + (bz - az) * (bz - az)), len = Math.max(0.5, full - Math.min(2.5, full * 0.35));
     const th = 0.022 + 0.018 * k;
     _o.scale.set(th, th, len); _o.updateMatrix();
     this.sights.setMatrixAt(this.ns, _o.matrix);
@@ -260,8 +268,7 @@ export class EnemyFX {
       this.halo(b.x, b.y, b.z, 0.55, HOT, 0.7, 0.4, 0.012);
       n++;
     }
-    for (const m of [this.boltCore, this.boltShell]) { m.count = n; m.visible = n > 0; m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; }
-    tr.count = n; tr.visible = n > 0; tr.instanceMatrix.needsUpdate = true;
+    flush(this.boltCore, n); flush(this.boltShell, n); flush(tr, n);
     // debris
     for (const m of this.chunks) {
       if (!m.visible) continue;
@@ -290,12 +297,17 @@ export class EnemyFX {
       if (f.kind === 0) this.halo(f.x, f.y, f.z, s, _c, 1, 0.2, 0); else this.ring(f.x, f.y, f.z, s, _c, 1);
     }
     // flush the sprite batches (the enemy views filled them earlier this frame)
-    for (const [m, c] of [[this.halos, this.nh], [this.rings, this.nr], [this.jets, this.nj], [this.sights, this.ns], [this.sheaths, this.ns]]) {
-      m.count = c; m.visible = c > 0;
-      if (c) { m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; }
-    }
+    flush(this.halos, this.nh); flush(this.rings, this.nr); flush(this.jets, this.nj); flush(this.sights, this.ns); flush(this.sheaths, this.ns);
     this.nh = this.nr = this.nj = this.ns = 0;
   }
+}
+
+// An instanced batch is drawn only when it has something in it.
+function flush(m, n) {
+  m.count = n; m.visible = n > 0;
+  if (!n) return;
+  m.instanceMatrix.needsUpdate = true;
+  if (m.instanceColor) m.instanceColor.needsUpdate = true;
 }
 
 // Merge plain (non-indexed, position + normal + uv) geometries without the vendored utils' checks.

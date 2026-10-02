@@ -388,7 +388,7 @@ function sfYacht(K, p, th, rng, H) {
 
 // ------------------------------------------------------------------ stage 2: the steep streets
 const WALLS = [0xd8d0c0, 0xc8c0b4, 0xe0d4bc, 0xcfc6ba, 0xd4ccc4, 0xc4bcb0, 0xb8b4ac, 0xdcd2c2];
-const TERRACE = 0x3a8ac8, SHOP = [N_PINK, N_CYAN, 0xb45bff, N_AMBER], WARMWIN = [0xffd890, 0xffc070, 0xffe6b8, 0xffb0a0];
+const TERRACE = 0x3a8ac8, SHOP = [N_PINK, N_CYAN, 0xb45bff, N_AMBER], WARMWIN = [0xf0c070, 0xe8a860, 0xffd890, 0xd89060, 0xffc8a0];
 // the Painted Ladies' neon: each house outlined in its own colour
 const LADY_NEON = [0xff2bd6, 0x2be8ff, 0xffd23a, 0x7bff4a, 0xb45bff, 0xff7a2a, 0x4a8bff, 0xff3b8c];
 function tree(K, H, x, z, s = 1, kind = 0) {
@@ -464,7 +464,11 @@ function victorian(K, p, th, rng, H) {
   K.add('flat', H.box(w * 0.5, bayH, 0.8, { x: bx, y: -T + 3.1 + bayH / 2, z: fz - 0.4, color: col }), H.box(w * 0.5 + 0.2, 0.25, 1.0, { x: bx, y: -T + 3.1 + bayH + 0.1, z: fz - 0.45, color: trim }));
   // windows: most of them lit warm (it's 21:30), the odd one dark or blue with a screen
   const win = (o) => { const r = rng(); return r < 0.62 ? ['glow', { ...o, color: WARMWIN[Math.floor(rng() * WARMWIN.length)] }] : r < 0.72 ? ['glow', { ...o, color: 0x8ac8ff }] : ['glass', o]; };
-  const addWin = (gw, gh, o) => { const [k, oo] = win(o); K.add(k, H.box(gw, gh, 0.06, oo)); };
+  const addWin = (gw, gh, o) => {
+    const [k, oo] = win(o);
+    K.add(k, H.box(gw, gh, 0.06, oo));
+    if (k === 'glow') K.add('flat', H.box(0.08, gh, 0.08, { x: o.x, y: o.y, z: o.z - 0.04, color: 0xf8f4ec }), H.box(gw, 0.08, 0.08, { x: o.x, y: o.y + gh * 0.15, z: o.z - 0.04, color: 0xf8f4ec })); // sash bars
+  };
   for (let s = 1; s < storeys; s++) {
     const y = -T + 3.1 * s + 1.5;
     addWin(w * 0.42, 1.6, { x: bx, y, z: fz - 0.82 });

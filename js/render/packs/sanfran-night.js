@@ -56,6 +56,15 @@ export function pool(K, H, x, z, r, color, y = 0.025, rim = 0x1c1a2c) {
   const c0 = new THREE.Color(color), c1 = new THREE.Color(rim);
   K.add('glow', paint(g, (px, py, pz) => { const k = Math.min(1, Math.sqrt((px - x) * (px - x) + (pz - z) * (pz - z)) / r); return _d.copy(c0).lerp(c1, k).getHex(); }));
 }
+// A puddle holding the neon: a soft unlit ellipse (rx × rz, turned ry), `color` at its heart fading to
+// the wet ground's dark at its edge.
+export function puddle(K, H, x, z, rx, rz, ry, color, y = 0.022, rim = 0x16202a) {
+  const g = H.part(new THREE.CircleGeometry(1, H.seg(14, 9)), { rx: -Math.PI / 2 });
+  const c0 = new THREE.Color(color), c1 = new THREE.Color(rim);
+  paint(g, (px, py, pz) => _d.copy(c0).lerp(c1, Math.min(1, Math.sqrt(px * px + pz * pz))).getHex());
+  g.scale(rx, 1, rz); g.rotateY(ry); g.translate(x, y, z);
+  K.add('glow', g);
+}
 // Hue ramp for iridescent neon: t in 0..1 round magenta → violet → cyan → green → gold → magenta.
 const IRI = [0xff3ad8, 0x9a5bff, 0x2be8ff, 0x3aff9a, 0xffd23a, 0xff3ad8];
 export function iri(t) {

@@ -5,12 +5,12 @@
 // on every walkable top, the Needle ringed in light and MoPOP's skins glowing iridescent.
 import * as THREE from 'three';
 import { strut, struts, lathe, text } from './seattle-kit.js';
-import { edgeRect, edgeDisc, pool, paint, iri, quad, dots } from './sanfran-night.js';
+import { edgeRect, edgeDisc, pool, paint, iri, quad, dots, puddle } from './sanfran-night.js';
 
 const TAU = Math.PI * 2, D2R = Math.PI / 180;
 export const EMERALD = 0x3ad88a, TEAL = 0x2be8e0, N_AMBER = 0xffb040, N_PINK = 0xff3ad8, N_RED = 0xff2a1a, WARM = 0xffd890;
 // wet ground holding the neon: dim unlit puddles in the city's colours
-export const PUDDLE = [0x1a4a40, 0x163e56, 0x46183e, 0x3a2a14];
+export const PUDDLE = [0x2a7a62, 0x22608a, 0x7a2468, 0x6a4a1c];
 export const CONCRETE = 0xb4b8ae, DARK = 0x2c3236, STEEL = 0x5a6064, WHITE = 0xe2e4de;
 export const ring = (H, r0, r1, y, color, n = 32) => H.part(new THREE.RingGeometry(r0, r1, H.seg(n, Math.max(12, n >> 1))), { rx: -Math.PI / 2, y, color });
 export const circle = (H, r, y, color, n = 32) => H.part(new THREE.CircleGeometry(r, H.seg(n, Math.max(12, n >> 1))), { rx: -Math.PI / 2, y, color });
@@ -54,7 +54,7 @@ export function seaPlaza(K, p, th, rng, H) {
   slab(K, H, p);
   for (let x = -w / 2 + 4; x < w / 2 - 1; x += 4) K.add('flat', H.box(0.08, 0.02, d - 0.6, { x, y: 0.012, color: 0x7a8078 }));
   for (let z = -d / 2 + 4; z < d / 2 - 1; z += 4) K.add('flat', H.box(w - 0.6, 0.02, 0.08, { y: 0.012, z, color: 0x7a8078 }));
-  for (let i = 0; i < 7; i++) K.add('glow', H.box(1.5 + rng() * 3, 0.02, 1 + rng() * 2.5, { x: (rng() - 0.5) * (w - 6), y: 0.02, z: (rng() - 0.5) * (d - 6), ry: rng(), color: PUDDLE[i % 4] })); // puddles holding the neon
+  for (let i = 0; i < 7; i++) puddle(K, H, (rng() - 0.5) * (w - 6), (rng() - 0.5) * (d - 6), 1 + rng() * 1.6, 0.7 + rng() * 1.2, rng() * 3, PUDDLE[i % 4]); // puddles holding the neon
   for (const f of H.faces(w, d)) K.add('neon', H.box(f.tx ? f.width : 0.12, 0.12, f.tz ? f.width : 0.12, { x: f.nx * (f.half + 0.04), y: -0.45, z: f.nz * (f.half + 0.04), color: EMERALD }));
   edgeRect(K, H, w, d, TEAL, { y: -0.08, t: 0.08 });
   K.add('flat', H.box(w + 0.08, 0.7, d + 0.08, { y: -p.h + 0.25, color: 0x3c4c40 })); // moss at the waterline

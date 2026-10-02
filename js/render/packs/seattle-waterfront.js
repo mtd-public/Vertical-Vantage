@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import { strut, text } from './seattle-kit.js';
 import { EMERALD, TEAL, N_AMBER, N_PINK, N_RED, WARM, PUDDLE, CONCRETE, DARK, STEEL, ring, circle, torus, tree, lamp, railing, slab } from './seattle-styles.js';
-import { edgeRect, edgeDisc, pool, paint, dots, quad, windowGrid } from './sanfran-night.js';
+import { edgeRect, edgeDisc, pool, paint, dots, quad, windowGrid, puddle } from './sanfran-night.js';
 
 const TAU = Math.PI * 2;
 const WOOD = 0x7a6a58, PILE = 0x3e342a;
@@ -20,7 +20,7 @@ export function seaPromenade(K, p, th, rng, H) {
   K.add('flat', H.box(w + 0.1, 0.8, d + 0.1, { y: -p.h + 0.3, color: 0x34443a }));
   // night: the rail's lit top, puddles full of neon, the seawall's emerald light line
   K.add('neon', H.box(0.06, 0.06, d, { x: -w / 2 + 0.05, y: 1.1, color: TEAL }));
-  for (let i = 0; i < Math.round(d / 9); i++) K.add('glow', H.box(1.5 + rng() * 2.5, 0.02, 1 + rng() * 2, { x: (rng() - 0.5) * (w - 4), y: 0.022, z: (rng() - 0.5) * (d - 4), ry: rng(), color: PUDDLE[i % 4] }));
+  for (let i = 0; i < Math.round(d / 9); i++) puddle(K, H, (rng() - 0.5) * (w - 4), (rng() - 0.5) * (d - 4), 0.9 + rng() * 1.4, 0.6 + rng() * 1, rng() * 3, PUDDLE[i % 4]);
   edgeRect(K, H, w, d, EMERALD, { y: -0.3, faces: [2, 3] });
 }
 

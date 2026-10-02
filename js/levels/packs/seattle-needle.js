@@ -75,7 +75,7 @@ const ringPt = (a, r = 4.4, up = 0) => ({ x: N.x + Math.cos(a * D) * r, y: 22 + 
 const radial = (a, period, phase) => { const p = ringPt(a); return laser(p.x, 22, p.z, 3.6, 2.4, -a * D, period, 0.5, phase); };
 
 export default {
-  id: 'seattle-needle', name: 'NEEDLE', sub: 'SEATTLE CENTER · 08:40 · OVERCAST', theme: 'seaMorning', song: 'emeraldDrizzle',
+  id: 'seattle-needle', name: 'NEEDLE', sub: 'SEATTLE CENTER · 22:10 · RAIN', theme: 'seaNeedle', song: 'emeraldDrizzle',
   seed: 4001, par: 270, killY: -0.6, water: 0,
   start: { x: 0, y: W, z: 32, yaw: 0 },
   plats,
@@ -120,9 +120,10 @@ export default {
     { type: 'slowmo', x: 24, y: 9, z: -72 },
   ],
   backdrops: [
-    { kind: 'rainier', x: 430, y: -30, z: 560, r: 380, h: 270, snow: 0.5, color: '#56626a' }, // Rainier, south-east, through the haze
-    { kind: 'skyline', x: 60, y: -2, z: 430, w: 320, d: 90, n: 22, hMin: 30, hMax: 120, color: '#8a9496', haze: 0.62 }, // downtown, south
-    { kind: 'hills', x: -260, y: -6, z: -360, len: 520, h: 60, n: 6, color: '#4e6450', houses: 4 }, // Queen Anne
+    { kind: 'rainier', x: 430, y: -30, z: 560, r: 380, h: 270, snow: 0.5, color: '#141c28', glow: 1, snowColor: '#3a4a66', rim: '#9aaccc', haze: 0.3 }, // Rainier, south-east: a dark moonlit silhouette
+    { kind: 'seaSkyline', x: 60, y: -2, z: 430, w: 320, d: 90, n: 22, hMin: 30, hMax: 120 }, // downtown, south, lit
+    { kind: 'seaHills', x: -260, y: -6, z: -360, len: 520, h: 60, n: 6, lights: 50, color: '#18222a' }, // Queen Anne
+    { kind: 'seaBeams', x: 60, y: 0, z: 430, pts: [[-80, 0, 0], [30, 0, -20], [120, 0, 10]], len: 300, r: 15, color: '#b8fff0', opacity: 0.18 },
     { kind: 'mountain', x: -720, y: -20, z: -120, r: 170, h: 110, snow: 0.5, color: '#5e6a72' }, // the Olympics, west over the Sound
     { kind: 'mountain', x: -700, y: -20, z: 120, r: 150, h: 90, snow: 0.5, color: '#5e6a72' },
     { kind: 'mountain', x: -760, y: -20, z: -330, r: 140, h: 95, snow: 0.45, color: '#5e6a72' },

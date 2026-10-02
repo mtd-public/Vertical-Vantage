@@ -79,6 +79,14 @@ export function model(M) {
   const V = new Kit();
   for (const z of [0.4, 1.3]) for (const sx of [-1, 1]) V.add('v', box(0.06, 0.12, 0.6, { x: sx * 1.66, y: 0.3, z, color: 0xff7a1a }));
   for (const [x, y] of [[-0.3, 1.45], [0.3, 1.45], [-0.3, 1.1], [0.3, 1.1]]) V.add('v', cyl(0.1, 0.1, 0.05, 6, { x, y: y + 0.15, z: -0.22, rx: Math.PI / 2 - 0.35, color: 0xffb02b }));
+  // night accents (so it reads on the dark lawn): amber light lines in the armour seams, cyan strips
+  // down the tread housings, hot exhaust tips, a red tail light
+  for (const [z, w, l] of [[-0.7, 3.1, 1.7], [0.9, 3.3, 1.7], [2.4, 2.8, 1.5]]) V.add('v', box(w + 0.1, 0.05, 0.05, { y: 0.63, z: z + l / 2 + 0.05, color: 0xffa020 }));
+  for (const sx of [-1, 1]) {
+    V.add('v', box(0.05, 0.08, 4.0, { x: sx * 2.27, y: -0.78, z: 0.8, color: 0x2be8ff }));
+    V.add('v', cyl(0.17, 0.17, 0.05, 6, { x: sx * 0.9, y: 1.92, z: 2.22, rx: -0.3, color: 0xff6a1a }));
+  }
+  V.add('v', box(0.3, 0.16, 0.08, { y: 1.15, z: 3.72, color: 0xff2a1a }));
   body.add(new THREE.Mesh(V.build().v, M.glow));
   // the dust mound (stays level while the body pitches; placed on the lawn each frame)
   const mound = new THREE.Group(); mound.name = 'mound'; g.add(mound);

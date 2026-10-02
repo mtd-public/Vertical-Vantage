@@ -80,7 +80,7 @@ const lasers = [
 const beam2 = { x: (legs[0][0] + legs[1][0]) / 2, z: (legs[0][1] + legs[1][1]) / 2 };
 
 export default {
-  id: 'sanfran-peaks', name: 'TWIN PEAKS', sub: 'NEW SAN FRANCISCO · 19:50 · FOG ROLLING IN', theme: 'sfDusk', song: 'ghostline',
+  id: 'sanfran-peaks', name: 'TWIN PEAKS', sub: 'NEW SAN FRANCISCO · 01:10 · FOG SEA', theme: 'sfPeaks', song: 'ghostline',
   seed: 3003, par: 320, killY: FOG - 1, cloudY: FOG,
   start: { x: 4, y: 41, z: 2, yaw: 0.3 }, // on the north twin's summit, looking out over the fog to Sutro Tower
   plats, lasers,
@@ -121,8 +121,10 @@ export default {
     { kind: 'goldenGate', x: -200, y: -10, z: -640, yaw: 0.25, s: 0.32, orange: -0.2 },
     { kind: 'alcatraz', x: 260, y: -6, z: -620, yaw: -0.3, s: 0.6 },
     { kind: 'sfSkyline', x: 330, y: -10, z: -280, w: 180, d: 120, n: 18, hMin: 40, hMax: 120 },
-    { kind: 'hills', x: -420, y: -20, z: 160, len: 600, h: 60, n: 5, houses: 8, color: '#6a6a58' },
-    { kind: 'hills', x: 120, y: -20, z: -900, len: 1100, h: 110, n: 6, color: '#7a6a5a' },
+    { kind: 'sfHills', x: -420, y: -20, z: 160, len: 600, h: 60, n: 5, lights: 50, color: '#2a2834' },
+    { kind: 'sfHills', x: 120, y: -20, z: -900, len: 1100, h: 110, n: 6, lights: 14, color: '#1e1c28' },
+    { kind: 'sfBeams', x: 330, y: -10, z: -280, pts: [[-40, 0, 0], [50, 0, -30], [20, 0, 50]], len: 320, r: 15, color: '#c8c0ff' },
+    { kind: 'sfBeacons', pts: [[-104, 130.6, -147], [-115.26, 130.6, -166.5], [-92.74, 130.6, -166.5]], size: 0.9, rate: 0.55 },
     { kind: 'fogBank', x: -420, y: 4, z: -260, yaw: 1.2, s: 1.4 },
     { kind: 'fogBank', x: 120, y: 2, z: -480, yaw: 0.1, s: 1.6 },
     { kind: 'fogBank', x: 360, y: 2, z: 120, yaw: -1.1, s: 1.2 },

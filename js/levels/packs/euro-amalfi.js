@@ -121,5 +121,6 @@ export default {
     { kind: 'amalfiCoast', x: -430, y: 0, z: -60, yaw: Math.PI / 2 },
     { kind: 'amalfiCoast', x: 470, y: 0, z: -20, yaw: -Math.PI / 2 },
     { kind: 'hills', x: 0, y: 0, z: -470, len: 1000, h: 230, n: 6, color: '#56664a', houses: 2 }, // the Lattari mountains
+    { kind: 'shoreLights', x: -330, y: 0, z: 430, yaw: Math.PI, s: 1.6, len: 500, n: 8, rise: 40 }, // the towns of the bay, lit across the water
   ],
 };

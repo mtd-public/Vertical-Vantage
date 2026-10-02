@@ -101,6 +101,23 @@ export const BACKDROPS = {
     }
     return B.mesh(K);
   },
+  // Towns strung along a far shore (along x, o.len long): clusters of lit windows climbing the hill behind
+  // the water, the odd neon tower and red-lit mast. Only drawn after dark (the Bay of Naples, the lagoon).
+  shoreLights(o, th, B) {
+    const K = new B.Kit(), rng = mulberry32(o.seed ?? 641), len = o.len ?? 900, n = o.n ?? 9;
+    if (!lit(B)) return B.mesh(K);
+    for (let t = 0; t < n; t++) {
+      const cx = (t / Math.max(1, n - 1) - 0.5) * len + (rng() - 0.5) * 40, spread = 30 + rng() * 50, rise = 10 + rng() * (o.rise ?? 40);
+      for (let k = 0; k < 26; k++) {
+        const u = rng(), x = cx + (rng() - 0.5) * spread * (1.2 - u * 0.6), y = 2 + u * rise, z = (rng() - 0.5) * 20 - u * 30;
+        K.add('glow', B.box(2.6, 1.8, 1, { x, y, z, color: rng() < 0.8 ? '#ffd890' : rng() < 0.5 ? '#bfe8ff' : '#ff8a4a' }));
+      }
+      K.add('glow', B.box(spread * 0.9, 0.8, 1, { x: cx, y: 1.2, z: 12, color: '#ffc070' })); // the waterfront
+      if (rng() < 0.5) { const h = 30 + rng() * 40; K.add('solid', B.box(6, h, 6, { x: cx + 10, y: h / 2, z: -20, color: B.c('#1a1830') })); K.add('glow', B.box(6.4, 1.2, 6.4, { x: cx + 10, y: h * 0.8, z: -20, color: NEON[t % NEON.length] }), B.box(6.4, 1.2, 6.4, { x: cx + 10, y: h * 0.5, z: -20, color: NEON[(t + 2) % NEON.length] })); }
+      if (rng() < 0.6) mast(K, B, cx - 15, -30, rise, 20 + rng() * 20);
+    }
+    return B.mesh(K);
+  },
   // Venice across the water: a long low band of houses, campanili and the odd dome (along x), lit at night.
   lagoonTown(o, th, B) {
     const K = new B.Kit(), rng = mulberry32(o.seed ?? 631), len = o.len ?? 420;

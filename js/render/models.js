@@ -66,61 +66,8 @@ export function carGeometry(kind) {
 }
 
 // ------------------------------------------------------------------ enemies
-// Each returns a THREE.Group; animated parts are named children.
-export function droneModel(M) {
-  const g = new THREE.Group();
-  const K = new Kit();
-  K.add('paint', ball(0.42, { color: 0xe8ecf4 }, 1));
-  K.add('paint', part(new THREE.TorusGeometry(0.44, 0.07, 4, seg(16, 10)), { color: 0x2a2c38 }));
-  K.add('paint', box(1.5, 0.08, 0.16, { color: 0x3a3e4a }));
-  for (const sx of [-1, 1]) K.add('paint', cyl(0.06, 0.06, 0.12, 6, { x: sx * 0.75, y: 0.08, color: 0x3a3e4a }));
-  K.add('paint', cyl(0.02, 0.02, 0.35, 4, { y: 0.55, color: 0x3a3e4a }));
-  const k = K.build();
-  g.add(new THREE.Mesh(k.paint, M.paintFlat));
-  const rotors = new THREE.Mesh(merge2([cyl(0.28, 0.28, 0.02, 8, { x: -0.75, y: 0.16 }), cyl(0.28, 0.28, 0.02, 8, { x: 0.75, y: 0.16 })]), M.ghost);
-  rotors.name = 'rotors'; g.add(rotors);
-  const eye = new THREE.Mesh(prep(new THREE.SphereGeometry(0.15, 8, 6), 0xff2a4a), M.glow);
-  eye.position.set(0, 0, -0.36); eye.name = 'eye'; g.add(eye);
-  return g;
-}
-
-export function walkerModel(M) {
-  const g = new THREE.Group();
-  const K = new Kit();
-  K.add('paint', part(new THREE.SphereGeometry(0.55, seg(12, 8), seg(6, 4), 0, Math.PI * 2, 0, Math.PI / 2), { y: 0.5, sy: 0.8, color: 0xff8a1a }));
-  K.add('paint', cyl(0.56, 0.48, 0.22, seg(12, 8), { y: 0.42, color: 0x2a2c38 }));
-  K.add('paint', box(0.5, 0.08, 0.12, { y: 0.98, color: 0x2a2c38 }));
-  const k = K.build();
-  g.add(new THREE.Mesh(k.paint, M.paintFlat));
-  const eye = new THREE.Mesh(box(0.56, 0.1, 0.06, { color: 0x2be8ff }), M.glow);
-  eye.position.set(0, 0.62, -0.42); eye.rotation.x = -0.35; eye.name = 'eye'; g.add(eye);
-  const legGeo = merge2([box(0.1, 0.1, 0.55, { z: -0.27, color: 0x3a3e4a }), box(0.09, 0.5, 0.09, { y: -0.25, z: -0.55, color: 0x3a3e4a }), box(0.16, 0.06, 0.16, { y: -0.5, z: -0.55, color: 0xff8a1a })]);
-  for (let i = 0; i < 4; i++) {
-    const a = Math.PI / 4 + (i * Math.PI) / 2;
-    const leg = new THREE.Mesh(legGeo, M.paintFlat);
-    leg.position.set(Math.sin(a) * 0.35, 0.5, Math.cos(a) * 0.35);
-    leg.rotation.y = a + Math.PI; leg.name = 'leg' + i;
-    g.add(leg);
-  }
-  return g;
-}
-
-const COATS = [0x5a4a32, 0x1c1c24, 0x3a4a3a, 0x6a2a2a];
-// The spiked crawler: a walker whose back is all spikes (red dome: don't land on it).
-export function spikerModel(M) {
-  const g = walkerModel(M);
-  const body = g.children[0];
-  const K = new Kit();
-  K.add('s', part(new THREE.SphereGeometry(0.55, seg(12, 8), seg(6, 4), 0, Math.PI * 2, 0, Math.PI / 2), { y: 0.5, sy: 0.8, color: 0xc81e3a }));
-  for (let k = 0; k < 9; k++) {
-    const a = (k / 9) * Math.PI * 2, r = k === 8 ? 0 : 0.34, rx = k === 8 ? 0 : Math.sin(a) * 0.6, rz = k === 8 ? 0 : -Math.cos(a) * 0.6;
-    K.add('s', part(new THREE.ConeGeometry(0.1, 0.45, 4), { x: Math.cos(a) * r, y: 0.88 - (k === 8 ? -0.05 : 0.08), z: Math.sin(a) * r, rx: rz, rz: -rx, color: 0xd8dce8 }));
-  }
-  K.add('s', cyl(0.56, 0.48, 0.22, seg(12, 8), { y: 0.42, color: 0x2a2c38 }));
-  body.geometry.dispose();
-  body.geometry = K.build().s;
-  return g;
-}
+// The regular enemies live in enemy-models.js (their views in enemy-view.js).
+export { droneModel, walkerModel, spikerModel, guardModel, turretModel, COATS } from './enemy-models.js';
 
 // ARACHNE-9: the spider-mech boss. A low armoured hull, an eye cluster and laser emitter up front,
 // a twin-barrel turret on its back, eight two-segment legs posed every frame by the renderer
@@ -262,45 +209,6 @@ export function bossModel(M) {
   const arcs = new THREE.LineSegments(ag, M.arc);
   arcs.name = 'arcs'; arcs.frustumCulled = false; arcs.userData = { max: ARCS, segs: SEGS, t: 0 };
   body.add(arcs);
-  return g;
-}
-
-export function guardModel(M, variant = 0) {
-  const g = new THREE.Group();
-  const K = new Kit();
-  const coat = COATS[variant % COATS.length], skin = [0xe0b090, 0xb07a50, 0x8a5a3a, 0xf0c8a8][variant % 4];
-  K.add('paint', box(0.16, 0.55, 0.18, { x: -0.11, y: 0.28, color: 0x22222a }), box(0.16, 0.55, 0.18, { x: 0.11, y: 0.28, color: 0x22222a }));
-  K.add('paint', box(0.2, 0.08, 0.3, { x: -0.11, y: 0.04, z: -0.05, color: 0x111111 }), box(0.2, 0.08, 0.3, { x: 0.11, y: 0.04, z: -0.05, color: 0x111111 }));
-  K.add('paint', cyl(0.27, 0.36, 1.0, seg(8, 6), { y: 0.95, color: coat })); // long coat
-  K.add('paint', box(0.56, 0.18, 0.32, { y: 1.42, color: coat })); // shoulders
-  K.add('paint', box(0.36, 0.1, 0.2, { y: 1.5, color: 0x22222a })); // collar
-  K.add('paint', box(0.24, 0.28, 0.26, { y: 1.66, color: skin }));
-  K.add('paint', box(0.27, 0.1, 0.29, { y: 1.83, color: 0x15151a })); // hair / cap
-  // arms forward holding the rifle
-  K.add('paint', box(0.13, 0.13, 0.5, { x: 0.27, y: 1.3, z: -0.22, rx: 0.15, color: coat }), box(0.13, 0.13, 0.46, { x: -0.18, y: 1.28, z: -0.3, ry: 0.5, rx: 0.15, color: coat }));
-  K.add('paint', box(0.08, 0.12, 0.85, { x: 0.12, y: 1.32, z: -0.55, color: 0x2a2c34 }), box(0.06, 0.16, 0.12, { x: 0.12, y: 1.22, z: -0.42, color: 0x2a2c34 }));
-  const k = K.build();
-  g.add(new THREE.Mesh(k.paint, M.paintFlat));
-  const visor = new THREE.Mesh(box(0.26, 0.06, 0.04, { color: 0x2be8ff }), M.glow);
-  visor.position.set(0, 1.7, -0.13); visor.name = 'eye'; g.add(visor);
-  // laser sight (scaled to the target distance by the renderer)
-  const sight = new THREE.Mesh(box(0.03, 0.03, 1, { z: 0.5, color: 0xff2a3a }), M.glow); // +Z long: the renderer lookAt()s the target
-  sight.position.set(0.12, 1.36, -0.95); sight.name = 'sight'; sight.visible = false; g.add(sight);
-  return g;
-}
-
-// Gun turret: an armoured pedestal, a swivel head with twin barrels and a red sensor (faces -Z),
-// and a laser sight like the guard's (shown while it aims).
-export function turretModel(M) {
-  const g = new THREE.Group();
-  const K = new Kit();
-  K.add('p', cyl(0.62, 0.78, 0.5, 8, { y: 0.25, color: 0x3a3e4a }), cyl(0.5, 0.56, 0.22, 8, { y: 0.6, color: 0xffcc1a }), cyl(0.44, 0.5, 0.06, 8, { y: 0.73, color: 0x15151a }));
-  K.add('p', box(0.9, 0.5, 0.9, { y: 1.0, color: 0x5a606e }), box(0.96, 0.12, 0.96, { y: 1.28, color: 0x2a2e38 }), box(0.7, 0.2, 0.5, { y: 1.42, z: 0.12, color: 0x5a606e }));
-  for (const sx of [-1, 1]) K.add('p', cyl(0.07, 0.08, 0.9, 6, { x: sx * 0.2, y: 1.0, z: -0.85, rx: Math.PI / 2, color: 0x15151a }), cyl(0.1, 0.1, 0.14, 6, { x: sx * 0.2, y: 1.0, z: -1.25, rx: Math.PI / 2, color: 0x8a909c }));
-  g.add(new THREE.Mesh(K.build().p, M.paintFlat));
-  const eye = new THREE.Mesh(box(0.3, 0.12, 0.05, { y: 1.18, z: -0.46, color: 0xff2a3a }), M.glow); eye.name = 'eye'; g.add(eye);
-  const sight = new THREE.Mesh(box(0.03, 0.03, 1, { z: 0.5, color: 0xff2a3a }), M.glow);
-  sight.position.set(0, 1.1, -0.6); sight.name = 'sight'; sight.visible = false; g.add(sight);
   return g;
 }
 

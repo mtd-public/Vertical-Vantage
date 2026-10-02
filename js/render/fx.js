@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { ringTex, glowTex } from './textures.js';
 import { seg } from './retro.js';
+import { EnemyFX } from './fx-enemy.js';
 
 const _o = new THREE.Object3D(), _c = new THREE.Color(), HOT = new THREE.Color(0xfff0a0), COOL = new THREE.Color(0xff4020);
 const SHOT_COL = { blaster: 0x7ff6ff, spread: 0xffa04a, rapid: 0x9fff6a, rocket: 0xff5a3a };
@@ -24,13 +25,8 @@ export class FX {
     this.shots = new THREE.InstancedMesh(shotGeo, new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false }), 96);
     this.shots.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(96 * 3), 3);
     this.shots.frustumCulled = false; this.shots.count = 0;
-    const boltGeo = new THREE.OctahedronGeometry(0.32, 0);
-    this.bolts = new THREE.InstancedMesh(boltGeo, new THREE.MeshBasicMaterial({ color: 0xff3a8a, fog: false }), 64);
-    this.bolts.frustumCulled = false; this.bolts.count = 0;
-    const halo = new THREE.MeshBasicMaterial({ map: glowTex(), color: 0xff3a8a, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
-    this.boltHalo = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.6, 1.6), halo, 64);
-    this.boltHalo.frustumCulled = false; this.boltHalo.count = 0;
-    scene.add(this.shots, this.bolts, this.boltHalo);
+    this.enemy = new EnemyFX(scene, this); // enemy bolts, sprites, sights and debris (fx-enemy.js)
+    scene.add(this.shots);
     // bits
     this.N = 260;
     this.bits = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshBasicMaterial({ color: 0xffffff }), this.N);
@@ -227,17 +223,7 @@ export class FX {
     this.shots.count = n;
     this.shots.instanceMatrix.needsUpdate = true;
     if (this.shots.instanceColor) this.shots.instanceColor.needsUpdate = true;
-    n = 0;
-    for (const b of w.bolts) {
-      if (n >= 64) break;
-      _o.position.set(b.x, b.y, b.z); _o.rotation.set(t * 7, t * 9, 0); _o.scale.setScalar(1); _o.updateMatrix();
-      this.bolts.setMatrixAt(n, _o.matrix);
-      _o.quaternion.copy(camera.quaternion); _o.updateMatrix();
-      this.boltHalo.setMatrixAt(n, _o.matrix);
-      n++;
-    }
-    this.bolts.count = this.boltHalo.count = n;
-    this.bolts.instanceMatrix.needsUpdate = true; this.boltHalo.instanceMatrix.needsUpdate = true;
+    this.enemy.update(dt, w, camera, t);
     // bits
     for (let i = 0; i < this.N; i++) {
       const b = this.bitData[i];

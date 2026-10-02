@@ -19,6 +19,7 @@ import { cloudSeaTex } from './textures.js';
 import { BOSS_VIEWS } from './bosses.js';
 import { buildBackdrop } from './backdrops.js';
 import { box, Kit } from './geo.js';
+import { makeEnemyModel, poseEnemy } from './enemy-view.js';
 
 const DEG = Math.PI / 180;
 const _v = new THREE.Vector3(), _c = new THREE.Color();
@@ -241,32 +242,12 @@ export class GameRenderer {
     lg.scale.y += (1 - squash - lg.scale.y) * Math.min(1, dt * 20);
     lg.visible = !P.dead;
 
-    // enemies
+    // enemies (regular ones: enemy-view.js; bosses: their pack's view)
     if (L.enemies.size !== w.enemies.length) for (const e of w.enemies) if (!L.enemies.has(e)) this.addEnemy(e); // spawned mid-fight
+    this.fx.enemy.begin(cam, this);
     for (const [e, g] of L.enemies) {
       if (e.type === 'boss') { this.updateBoss(e, g, dt, t, P); continue; }
-      if (e.dead) { g.visible = false; continue; }
-      g.visible = true;
-      g.position.set(e.x, e.y, e.z);
-      g.rotation.y = e.yaw;
-      const flash = e.flash > 0;
-      if (flash !== !!g.userData.flashing) setFlash(g, flash, this.M.flash);
-      const eye = g.getObjectByName('eye');
-      if (e.type === 'drone') {
-        g.getObjectByName('rotors').rotation.y = t * 25;
-        eye.scale.setScalar(e.state === 'tele' ? 1.5 + Math.sin(t * 40) * 0.3 : 1);
-      } else if (e.type === 'walker' || e.type === 'spiker') {
-        for (let i = 0; i < 4; i++) g.getObjectByName('leg' + i).rotation.x = Math.sin(e.t * 12 + i * 1.6) * 0.35;
-      } else if (e.type === 'guard' || e.type === 'turret') {
-        const sight = g.getObjectByName('sight');
-        sight.visible = e.state === 'aim' && Math.sin(t * 30) > -0.6;
-        if (sight.visible) {
-          sight.lookAt(e.aimX, e.aimY, e.aimZ);
-          sight.scale.z = Math.hypot(e.aimX - e.x, e.aimY - e.y - 1.36, e.aimZ - e.z);
-        }
-      } else if (e.type === 'server') {
-        eye.visible = Math.sin(t * 8 + e.id) > -0.3;
-      }
+      poseEnemy(this, e, g, dt, t, w);
     }
     // pickups, drives
     for (const [o, g] of L.pickups) {
@@ -425,7 +406,7 @@ export class GameRenderer {
         L.beam.visible = false; L.beam.frustumCulled = false;
         L.root.add(L.beam);
       }
-    } else g = e.type === 'drone' ? MD.droneModel(M) : e.type === 'walker' ? MD.walkerModel(M) : e.type === 'spiker' ? MD.spikerModel(M) : e.type === 'guard' ? MD.guardModel(M, e.id) : e.type === 'turret' ? MD.turretModel(M) : MD.serverModel(M);
+    } else g = makeEnemyModel(this, e);
     L.root.add(g); L.enemies.set(e, g);
   }
 
@@ -515,10 +496,10 @@ export class GameRenderer {
           break;
         }
         case 'impact': fx.burst(e.x, e.y, e.z, e.kind === 'bolt' ? 5 : 6, e.kind === 'bolt' ? 0xff3a8a : 0xbff8ff, 5, 0.09, 0.35, 10); break;
-        case 'hit': fx.burst(e.x, e.y, e.z, 8, 0xffb040, 6, 0.1, 0.4); break;
-        case 'kill': fx.boom(e.x, e.y, e.z, e.kind === 'boss' ? 7 : e.kind === 'guard' ? 2.2 : 2.6); fx.burst(e.x, e.y, e.z, 16, e.kind === 'walker' ? 0xff8a1a : e.kind === 'guard' ? 0x3a3a44 : e.kind === 'boss' ? 0xe0313a : 0xe8ecf4, 8, 0.22, 1.2, 14); break;
+        case 'hit': if (e.kind === 'boss') fx.burst(e.x, e.y, e.z, 8, 0xffb040, 6, 0.1, 0.4); else fx.enemy.hit(e, w); break;
+        case 'kill': if (e.kind === 'boss') { fx.boom(e.x, e.y, e.z, 7); fx.burst(e.x, e.y, e.z, 16, 0xe0313a, 8, 0.22, 1.2, 14); } else fx.enemy.kill(e, w, this.level); break;
         case 'serverDown': fx.boom(e.x, e.y, e.z, 3, 0x7bff4a); fx.burst(e.x, e.y, e.z, 24, 0x2bff7a, 10, 0.16, 1, 12); break;
-        case 'explode': fx.boom(e.x, e.y, e.z, e.r); break;
+        case 'explode': fx.boom(e.x, e.y, e.z, e.r); fx.enemy.blast(e.x, e.y, e.z, e.r); break;
         case 'stomp': fx.burst(e.x, e.y, e.z, 12, 0xffffff, 7, 0.14, 0.5); fx.shake = Math.max(fx.shake, 0.18); break;
         case 'jump':
           this.jumpT = 0; this.jumpStage = e.stage; this.jumpKick = [0.45, 0.7, 1][e.stage] || 0.5;
@@ -532,7 +513,7 @@ export class GameRenderer {
         case 'exitOpen': if (w?.exit) fx.burst(w.exit.x, w.exit.y + 4, w.exit.z, 40, 0x2bffd8, 14, 0.25, 1.4, 4); break;
         case 'zap': fx.burst(e.x, e.y, e.z, 10, 0xff2a3a, 7, 0.1, 0.4); break;
         case 'portal': fx.burst(e.x, e.y, e.z, 30, 0xff2bd6, 10, 0.18, 0.8, 0); break;
-        case 'enemyFire': fx.burst(e.x, e.y, e.z, 3, 0xff3a8a, 2, 0.12, 0.2, 0); break;
+        case 'enemyFire': fx.burst(e.x, e.y, e.z, 3, 0xff3a8a, 2, 0.12, 0.2, 0); if (e.from === 'drone') fx.enemy.muzzle(e.x, e.y, e.z); break;
         case 'bossSlam': fx.shockwave(e.x, e.y + 0.05, e.z, e.r); fx.burst(e.x, e.y + 0.3, e.z, 26, 0xc8c4bc, 9, 0.3, 0.9, 10); fx.shake = Math.max(fx.shake, 0.6); break;
         case 'bossLeap': fx.burst(e.x, e.y - 1.6, e.z, 18, 0xc8c4bc, 6, 0.25, 0.6, 8); fx.shake = Math.max(fx.shake, 0.25); break;
         case 'bossDying': fx.shake = Math.max(fx.shake, 0.5); break;

@@ -68,7 +68,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'fortress-hull', name: 'HULL BREACH', sub: 'AIR FORTRESS · UNDER THE PORT WING · 18:50 · SUNSET', theme: 'fortressDusk', song: 'sprint',
+  id: 'fortress-hull', name: 'HULL BREACH', sub: 'AIR FORTRESS · UNDER THE PORT WING · 02:30 · FLAK', theme: 'fortressHull', song: 'sprint',
   seed: 7002, par: 300, killY: -10, cloudY: -110,
   start: { x: -66, y: CAT, z: 2, yaw: -Math.PI / 2 },
   plats, lasers,
@@ -79,7 +79,7 @@ export default {
   ],
   exit: { x: 6, y: TOP, z: -32, yaw: -Math.PI / 2 }, // on the wing top, facing the flank you climb
   portal: { x: 11, y: 8.4, z: 14 }, // the deep pod under junction 2
-  bonusStyle: { theme: 'fortressBonus', music: 'serverRush', weapon: 'spread', tag: 'Ω-2' },
+  bonusStyle: { theme: 'fortressBonus2', music: 'serverRush', weapon: 'spread', tag: 'Ω-2' },
   enemies: [
     { type: 'turret', x: -27, y: CAT, z: 3 },
     { type: 'turret', x: -17, y: 14.5, z: -40 },
@@ -118,5 +118,20 @@ export default {
     { kind: 'fortress-cumulus', x: 560, y: -130, z: -200, s: 1.6 },
     { kind: 'fortress-cumulus', x: 420, y: -130, z: 380, s: 1.2 },
     { kind: 'fortress-cumulus', x: -300, y: -130, z: 700, s: 1.5 },
+    // the night: searchlights off the leading edge and raking the clouds from the belly, tracers, flak, the city below
+    { kind: 'fortress-searchlights', x: 20, y: 28.2, z: -128, aim: -1.7, pitch: 0.35, sweep: 0.6, n: 2, hang: 1 },
+    { kind: 'fortress-searchlights', x: 20, y: 28.2, z: 30, aim: -1.4, pitch: 0.45, sweep: 0.6, n: 2, phase: 2.5, hang: 1 },
+    { kind: 'fortress-searchlights', x: -86, y: 28.2, z: -20, hang: 1, aim: 1.9, pitch: -0.45, sweep: 0.7, n: 2, phase: 1, len: 300 },
+    { kind: 'fortress-searchlights', x: -40, y: 28.2, z: -150, hang: 1, aim: 0.4, pitch: -0.35, sweep: 0.7, n: 2, phase: 3.5, len: 300 },
+    { kind: 'fortress-tracers', x: 30, y: 33, z: -79, aim: -1.6, pitch: 0.45, phase: 0.4 },
+    { kind: 'fortress-tracers', x: -96, y: 28, z: -110, aim: 2.3, pitch: 0.1, phase: 2, col: 0xff5a3a },
+    { kind: 'fortress-tracers', x: -30, y: 52, z: -150, aim: 0.4, pitch: 0.8, phase: 3.3 },
+    { kind: 'fortress-flak', x: 320, y: 40, z: -60, w: 200, h: 140, d: 420 },
+    { kind: 'fortress-flak', x: -40, y: 20, z: 340, w: 380, h: 120, d: 180, phase: 0.6 },
+    { kind: 'fortress-flak', x: 160, y: 110, z: -380, w: 360, h: 100, d: 200, phase: 1.3 },
+    { kind: 'fortress-citygap', x: 330, y: -109, z: -100, r: 130, coast: 3.5 },
+    { kind: 'fortress-citygap', x: 250, y: -109, z: 280, r: 95 },
+    { kind: 'fortress-citygap', x: -220, y: -109, z: 360, r: 110, coast: 1.2 },
+    { kind: 'fortress-citygap', x: 100, y: -109, z: -440, r: 110 },
   ],
 };

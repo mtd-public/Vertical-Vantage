@@ -5,37 +5,50 @@ import { STYLES } from './fortress-styles.js';
 import { BACKDROPS } from './fortress-backdrops.js';
 import { BOSS_VIEW } from './fortress-boss.js';
 
-// 12 km up: a thin deep-blue sky, a bright horizon, and the cloud sea far below (level.cloudY).
+// 12 km up, at night: a night assault over a moonlit sea of cloud (level.cloudY), the city's lights
+// glittering through the gaps, searchlights sweeping, flak and tracers, the carrier lit up like a
+// city block. Each stage gets its own colour of night; the bonus arenas are power skies at night.
+const NIGHT = { night: 1, water: null, rain: 0, stars: 1, beams: 1, pyramids: 0, arc: [0, 4], cityCol: '#06060e', windows: 0.7 };
 const themes = {
-  fortressDay: { // FLIGHT DECK: blazing high-altitude morning
-    skyTop: '#0f3796', skyBot: '#cfe6ff', sun: '#fff6dc', sunDir: [0.55, 0.3, -0.78], night: 0,
-    fog: [150, 560], hemi: ['#eef5ff', '#8a96b0', 1.65], key: ['#fff0d8', 2.3],
-    cloud: '#ffffff', cloudShade: '#d4e0f2', city: 0, arc: [0, 4], cityCol: '#93a9c8', windows: 0, neon: 0.6,
-    water: null, rain: 0, stars: 0, beams: 0, pyramids: 0, cloudSea: '#f2f6ff', haze: 0.5,
+  fortressDeck: { ...NIGHT, // FLIGHT DECK: moonlight, an electric-blue horizon, the coast's lights to the north-east
+    skyTop: '#02041a', skyBot: '#21356f', sun: '#e8f0ff', sunDir: [-0.55, 0.42, -0.72],
+    fog: [110, 560], hemi: ['#8c9cf0', '#2a1c48', 1.9], key: ['#b4c6ff', 1.25],
+    cloud: '#5a6cb0', cloudShade: '#26306a', city: 0.04, cityH: 0.05, arc: [-1.1, 0.9], neon: 1.4,
+    cloudSea: '#8292e0', haze: 0.3,
   },
-  fortressDusk: { // HULL BREACH: sunset under the wing, the belly lit warm from the clouds below
-    skyTop: '#2a1a66', skyBot: '#ff9a62', sun: '#ffd08a', sunDir: [0.85, 0.16, 0.35], night: 0.2,
-    fog: [120, 480], hemi: ['#ffd8c0', '#b86e6a', 1.55], key: ['#ffb070', 1.9],
-    cloud: '#ffc8a8', cloudShade: '#c46e80', city: 0, arc: [0, 4], cityCol: '#6a5a90', windows: 0.3, neon: 0.95,
-    water: null, rain: 0, stars: 0.15, beams: 0, pyramids: 0, cloudSea: '#f6a882', haze: 0.45,
+  fortressHull: { ...NIGHT, // HULL BREACH: under the burning wing, the horizon red with fire and flak
+    skyTop: '#090320', skyBot: '#51204e', sun: '#ffe8f0', sunDir: [0.7, 0.35, 0.55],
+    fog: [100, 520], hemi: ['#a890e0', '#3a1a30', 1.8], key: ['#ffb0a0', 0.9],
+    cloud: '#7a4a8a', cloudShade: '#3a1c48', city: 0.04, cityH: 0.05, arc: [0.6, 0.8], neon: 1.4,
+    cloudSea: '#a682c4', haze: 0.3,
   },
-  fortressNight: { // BOMB BAY: night, hangar lamps, the moonlit cloud sea through the open doors
-    skyTop: '#03061a', skyBot: '#1a2650', sun: '#dfe8ff', sunDir: [-0.35, 0.55, -0.6], night: 1,
-    fog: [50, 330], hemi: ['#8a96d8', '#2a2038', 1.5], key: ['#b4c4ff', 0.8],
-    cloud: '#3a4672', cloudShade: '#1e2648', city: 0, arc: [0, 4], cityCol: '#1a1026', windows: 0.6, neon: 1.25,
-    water: null, rain: 0, stars: 0.9, beams: 0.7, pyramids: 0, cloudSea: '#7484cc', haze: 0.35,
+  fortressBay: { ...NIGHT, // BOMB BAY: inside under sodium and cyan lamps; the teal night through the doors
+    skyTop: '#01040f', skyBot: '#163a5c', sun: '#e4f4ff', sunDir: [-0.35, 0.55, -0.6],
+    fog: [60, 360], hemi: ['#9aa8e0', '#3a3048', 1.9], key: ['#ffd8a8', 1.0],
+    cloud: '#3a5a86', cloudShade: '#1a2a4c', city: 0.04, cityH: 0.05, arc: [1.6, 1.0], neon: 1.4,
+    cloudSea: '#6e92d0', haze: 0.3, beams: 0.8,
   },
-  fortressBoss: { // COMMAND BRIDGE: the edge of space at noon, stars in a black-blue zenith
-    skyTop: '#040a2e', skyBot: '#8ab8ff', sun: '#ffffff', sunDir: [0.42, 0.5, -0.75], night: 0.15,
-    fog: [160, 620], hemi: ['#e4ecff', '#6a6a8e', 1.6], key: ['#fff4e0', 2.2],
-    cloud: '#f4f0ff', cloudShade: '#b8b8e0', city: 0, arc: [0, 4], cityCol: '#6a7aa0', windows: 0, neon: 0.85,
-    water: null, rain: 0, stars: 0.6, beams: 0, pyramids: 0, cloudSea: '#e8eeff', haze: 0.45,
+  fortressBoss: { ...NIGHT, // COMMAND BRIDGE: the top of the tower at 04:10, a violet night, a huge moon
+    skyTop: '#04021a', skyBot: '#3c1f72', sun: '#f4eeff', sunDir: [0.42, 0.3, -0.85],
+    fog: [140, 620], hemi: ['#a49cf4', '#2a1a40', 1.9], key: ['#c8c0ff', 1.2],
+    cloud: '#6a4aa8', cloudShade: '#2c1e5a', city: 0.04, cityH: 0.05, arc: [2.6, 1.0], neon: 1.4,
+    cloudSea: '#8e86dc', haze: 0.32,
   },
-  fortressBonus: { // the SERVER CORE bonus arenas: a power sky over the clouds
-    skyTop: '#3a1a9a', skyBot: '#ffb4e8', sun: '#fff0ff', sunDir: [0.4, 0.4, -0.7], night: 0.2, power: 1,
-    fog: [80, 320], hemi: ['#ffe8ff', '#6a4a9a', 1.7], key: ['#ffe6f8', 2.0],
-    cloud: '#ffe8ff', cloudShade: '#d8a0e8', city: 0, arc: [0, 4], cityCol: '#6a5a90', windows: 0, neon: 1,
-    water: null, rain: 0, stars: 0.3, beams: 0, pyramids: 0, cloudSea: '#f4d0ff',
+  // the SERVER CORE bonus arenas: night power skies over the clouds (cyan, magenta, violet)
+  fortressBonus: { ...NIGHT, power: 0.22,
+    skyTop: '#040a2a', skyBot: '#1e5a8a', sun: '#e8fcff', sunDir: [0.4, 0.4, -0.7],
+    fog: [80, 320], hemi: ['#a0c0ff', '#1a1838', 1.8], key: ['#c0e8ff', 1.2],
+    cloud: '#2a4478', cloudShade: '#141e46', city: 0, neon: 1.4, stars: 1, beams: 0.8, cloudSea: '#5a76c0',
+  },
+  fortressBonus2: { ...NIGHT, power: 0.22,
+    skyTop: '#12041e', skyBot: '#6a1e62', sun: '#ffe8f8', sunDir: [0.4, 0.4, -0.7],
+    fog: [80, 320], hemi: ['#e0a8f0', '#2a1030', 1.8], key: ['#ffc0e8', 1.1],
+    cloud: '#5a2a6a', cloudShade: '#2a1238', city: 0, neon: 1.4, stars: 1, beams: 0.8, cloudSea: '#9a6ab8',
+  },
+  fortressBonus3: { ...NIGHT, power: 0.22,
+    skyTop: '#06021e', skyBot: '#3a2280', sun: '#f0e8ff', sunDir: [0.4, 0.4, -0.7],
+    fog: [80, 320], hemi: ['#b8a8ff', '#1e1438', 1.8], key: ['#d8c8ff', 1.1],
+    cloud: '#44328a', cloudShade: '#1e1446', city: 0, neon: 1.4, stars: 1, beams: 0.8, cloudSea: '#7a6ad0',
   },
 };
 

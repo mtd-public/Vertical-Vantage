@@ -71,7 +71,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'fortress-bay', name: 'BOMB BAY', sub: 'AIR FORTRESS · ORDNANCE HANGAR · 23:30 · NIGHT', theme: 'fortressNight', song: 'netdive',
+  id: 'fortress-bay', name: 'BOMB BAY', sub: 'AIR FORTRESS · ORDNANCE HANGAR · 03:20 · RED ALERT', theme: 'fortressBay', song: 'netdive',
   seed: 7003, par: 300, killY: -20, cloudY: -100,
   start: { x: 0, y: 0, z: 6, yaw: 0 },
   plats, lasers,
@@ -82,7 +82,7 @@ export default {
   ],
   exit: { x: 0, y: 6, z: -162, yaw: 0 },
   portal: { x: -12.5, y: -6.6, z: -78 },
-  bonusStyle: { theme: 'fortressBonus', music: 'serverRush', weapon: 'rocket', tag: 'Ω-3' },
+  bonusStyle: { theme: 'fortressBonus3', music: 'serverRush', weapon: 'rocket', tag: 'Ω-3' },
   enemies: [
     { type: 'guard', x: -8, y: 0, z: -30 },
     { type: 'guard', x: -22, y: 0, z: -98 },
@@ -114,5 +114,16 @@ export default {
     { kind: 'fortress-escorts', x: -300, y: 40, z: 520, yaw: 2.6, s: 1.1 },
     { kind: 'fortress-carrier', x: 520, y: -30, z: 560, yaw: -2.4, s: 1.2, haze: 0.4 },
     { kind: 'fortress-cumulus', x: 260, y: -150, z: 600, s: 1.4 },
+    // the night: light falling from the hangar lamps, searchlights under the hull raking the clouds,
+    // the city through a gap right under the doors, flak and tracers past the open ramp
+    { kind: 'fortress-cones', x: 0, y: 25.2, z: 0, h: 25, r: 5.5, at: [[-24, -130], [24, -130], [-24, -98], [24, -98], [-24, -66], [24, -66], [-12, -34], [12, -34], [0, -18, 0xd8ecff], [-12, -146, 0xd8ecff], [12, -146, 0xd8ecff], [0, -162, 0xd8ecff]] },
+    { kind: 'fortress-searchlights', x: -19, y: -4.6, z: -60, aim: 0.6, pitch: -0.6, sweep: 0.6, n: 2, len: 280, hang: 1 },
+    { kind: 'fortress-searchlights', x: 19, y: -4.6, z: -112, aim: -2.4, pitch: -0.55, sweep: 0.6, n: 2, len: 280, phase: 2, hang: 1 },
+    { kind: 'fortress-citygap', x: 10, y: -99, z: -90, r: 95, coast: 2, dot: 0.55 },
+    { kind: 'fortress-citygap', x: -160, y: -99, z: 240, r: 110 },
+    { kind: 'fortress-citygap', x: 220, y: -99, z: 420, r: 100, coast: 4 },
+    { kind: 'fortress-flak', x: 40, y: 30, z: 420, w: 420, h: 120, d: 200 },
+    { kind: 'fortress-tracers', x: -36, y: -4, z: 20, aim: 2.6, pitch: 0.35, phase: 1.2 },
+    { kind: 'fortress-tracers', x: 36, y: -4, z: 10, aim: -2.7, pitch: 0.5, phase: 2.8, col: 0xff5a3a },
   ],
 };

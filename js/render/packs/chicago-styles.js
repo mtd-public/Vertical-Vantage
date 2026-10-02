@@ -91,8 +91,8 @@ const GLYPH = {
 // A word in neon tube letters lying in a plane facing ry (its reading axis u turned to (cos ry, 0,
 // -sin ry)), centred at (x, y, z): letters o.h tall, stacked down (o.vertical) or along u.
 function neonWord(K, word, o) {
-  const h = o.h, w = h * 0.58, t = o.t ?? h * 0.085, n = word.length, step = o.vertical ? h * 1.28 : w * 1.45;
-  const cu = Math.cos(o.ry), su = Math.sin(o.ry), key = o.key || 'glow';
+  const h = o.h, w = h * 0.58, t = o.t ?? h * 0.15, n = word.length, step = o.vertical ? h * 1.28 : w * 1.45;
+  const cu = Math.cos(o.ry), su = Math.sin(o.ry), key = o.key || 'glow', hx = -Math.sin(o.ry) * 0.05, hz = -Math.cos(o.ry) * 0.05, halo = dim(o.color, 0.3);
   for (let i = 0; i < n; i++) {
     const segs = GLYPH[word[i]];
     if (!segs) continue;
@@ -101,6 +101,7 @@ function neonWord(K, word, o) {
       const [u0, v0, u1, v1] = SEGS[s], du = (u1 - u0) * w, dv = (v1 - v0) * h / 2;
       const L = Math.sqrt(du * du + dv * dv), uc = lu + (u0 + u1) / 2 * w, vc = lv + (v0 + v1) / 2 * h / 2;
       K.add(key, box(L + t * 0.5, t, o.depth ?? 0.08, { x: o.x + uc * cu, y: o.y + vc, z: o.z - uc * su, ry: o.ry, rz: Math.atan2(dv, du), color: o.color }));
+      if (o.halo !== false) K.add(key, box(L + t * 1.6, t * 2.4, 0.03, { x: o.x + uc * cu + hx, y: o.y + vc, z: o.z - uc * su + hz, ry: o.ry, rz: Math.atan2(dv, du), color: halo }));
     }
   }
 }
@@ -201,7 +202,7 @@ function lDeck(K, p, th) {
   const down = p.h + 1.5;
   for (let z = -d / 2 + 4, k = 0; z < d / 2 - 2; z += 12, k++) {
     K.add('flat', box(w + 0.4, 0.8, 0.6, { y: -1.3, z, color: STEEL }));
-    K.add('glow', box(1.2, 0.12, 0.4, { x: -1.6, y: -1.76, z, color: SODIUM }), box(1.2, 0.12, 0.4, { x: 1.6, y: -1.76, z, color: SODIUM }));
+    for (const lx of [-1.6, 1.6]) { K.add('flat', box(0.7, 0.22, 0.4, { x: lx, y: -1.81, z, color: 0x22252a })); K.add('glow', box(0.5, 0.04, 0.26, { x: lx, y: -1.93, z, color: SODIUM })); }
     for (const sx of [-1, 1]) {
       K.add('flat', box(0.55, down, 0.55, { x: sx * (hw - 0.6), y: -1.2 - down / 2, z, color: STEEL }));
       K.add('flat', box(0.18, 2.2, 0.18, { x: sx * (hw - 1.4), y: -2.2, z, rz: sx * 0.6, color: STEEL }));
@@ -287,6 +288,7 @@ function chiBrick(K, p, th, rng) {
   K.add('flat', box(w, thick, d, { y: -thick / 2, color: c }));
   K.add('flat', box(w + 0.6, 0.45, d + 0.6, { y: -0.4, color: 0x3a2a24 }), box(w + 0.3, 0.2, d + 0.3, { y: -0.75, color: 0xd8ccb0 })); // cornice
   K.add('flat', box(w - 0.4, 0.12, d - 0.4, { y: -0.05, color: 0x4a4440 })); // tar roof
+  for (const f of faces(w, d)) K.add('glow', fbox(f, 0, -0.06, 0.03, f.width + 0.1, 0.1, 0.08, { color: dim(pick(NEONS, p, 11), 0.75) })); // its edge, lit
   windows(K, p, th, rng, { y0: -2.2, fh: 3.4, sp: 2.5, ww: 1.1, wh: 1.7, glass: 0x26303c, frame: 0xe4dcc8, foot: 3.6, lit: 0.55 });
   // the ground floor: a shop front, an awning and a neon word over it on one face
   const f = faces(w, d)[(p.tint >= 0 ? p.tint : 0) % 4], gy = -thick + 1.6, neon = pick(NEONS, p, 3);
@@ -303,6 +305,14 @@ function chiBrick(K, p, th, rng) {
     const g = faces(w, d)[((p.tint >= 0 ? p.tint : 0) + 2) % 4];
     blade(K, g, g.width / 2 - 1.0, -1.8, pick(BLADES, p, 1), pick(NEONS, p, 5), 1.0);
   }
+  // a holo advert on the blank side wall (the old painted ads, relit)
+  const side = faces(w, d)[((p.tint >= 0 ? p.tint : 0) + 3) % 4];
+  if (thick > 11 && side.width >= 7.5) {
+    const aw = Math.min(side.width - 1.6, 9), ah = aw / 2, y = -2.2 - ah / 2;
+    K.add('flat', fbox(side, 0, y, 0.12, aw + 0.5, ah + 0.5, 0.24, { color: 0x14121a }));
+    K.add('ads', atlasQuad(aw, ah, adUV(Math.floor(rng() * 64)), { x: side.nx * (side.half + 0.26) + side.tx * 0, y, z: side.nz * (side.half + 0.26), ry: side.ry }));
+    K.add('glow', fbox(side, 0, y - ah / 2 - 0.3, 0.26, aw + 0.5, 0.1, 0.06, { color: pick(NEONS, p, 7) }), fbox(side, 0, y + ah / 2 + 0.3, 0.26, aw + 0.5, 0.1, 0.06, { color: pick(NEONS, p, 7) }));
+  }
   // a fire escape on the face opposite (Chicago walk-ups wear them on the alley side)
   const g = faces(w, d)[((p.tint >= 0 ? p.tint : 0) + 1) % 4];
   if (g.width >= 7) for (let y = -3.4, k = 0; y > -thick + 4; y -= 3.3, k++) {
@@ -318,8 +328,9 @@ function chiStone(K, p, th, rng) {
   const { w, d, thick } = p, c = STONE[(p.tint >= 0 ? p.tint : 0) % STONE.length];
   K.add('flat', box(w, thick, d, { y: -thick / 2, color: c }));
   K.add('flat', box(w + 0.8, 0.6, d + 0.8, { y: -0.5, color: 0x8a8274 }), box(w + 0.2, 0.3, d + 0.2, { y: -1.1, color: 0xa8a090 })); // cornice
-  K.add('glow', box(w + 0.84, 0.1, d + 0.84, { y: -0.82, color: dim(0xfff0d0, 0.85) })); // the crown's light line
+  K.add('glow', box(w + 0.84, 0.12, d + 0.84, { y: -0.82, color: pick([0xfff0d0, 0x2be8ff, 0xff2bd6, 0xfff0d0], p, 9) })); // the crown's light line
   K.add('flat', box(w - 0.4, 0.12, d - 0.4, { y: -0.05, color: 0x5a5650 }));
+  for (const f of faces(w, d)) K.add('glow', fbox(f, 0, -0.06, 0.03, f.width + 0.1, 0.1, 0.08, { color: dim(0xfff0d0, 0.6) })); // the roof edge, lit
   // Chicago windows: wide glass bands between stone piers, a spandrel per floor
   for (const f of faces(w, d)) {
     const n = Math.max(1, Math.round(f.width / 4.2)), bay = f.width / n;
@@ -334,7 +345,7 @@ function chiStone(K, p, th, rng) {
   }
   if (thick > 12) { // the theatre blade and its marquee on the face toward the street (local +z)
     const f = faces(w, d)[1], word = pick(THEATRES, p), col = word === 'CHICAGO' ? 0xff3a2a : pick(NEONS, p, 2);
-    const h = Math.min(1.5, (thick - 6) / (word.length * 1.28 + 0.6));
+    const h = Math.min(2.0, (thick - 3.5) / (word.length * 1.28 + 0.6));
     blade(K, f, f.width / 2 - 1.6, -1.6, word, col, h);
     marquee(K, f, 0, -thick + 4.0, Math.min(f.width - 2, 10), col);
   }
@@ -358,7 +369,7 @@ function chiWaterTower(K, p, th) {
 function chiDeco(K, p, th, rng) {
   const { w, d, thick } = p;
   K.add('flat', box(w, thick, d, { y: -thick / 2, color: DECO }));
-  K.add('glow', box(w + 0.3, 0.5, d + 0.3, { y: -0.25, color: dim(GOLD, 0.9) }));
+  K.add('glow', wash(box(w + 0.3, 0.5, d + 0.3, { y: -0.25, color: GOLD }), (y) => 0.55 + (y + 0.5) * 0.5));
   K.add('flat', box(w + 0.1, 0.25, d + 0.1, { y: -0.8, color: 0x13261c }));
   const fl = (y) => 0.25 + 0.7 * Math.exp((-thick - y) / 4.5) + 0.25 * Math.exp(y / 3); // floods at the foot of the tier
   for (const f of faces(w, d)) {
@@ -371,7 +382,7 @@ function chiDeco(K, p, th, rng) {
       const lit = night(th) && rng() < 0.5;
       K.add(lit ? 'glow' : 'flat', fquad(f, -f.width / 2 + (k + 0.5) * bay, y, 0.04, bay - 0.6, 2.1, lit ? 0xffe0a0 : 0x0e1a14));
     }
-    for (const s of [-1, 1]) K.add('glow', part(new THREE.ConeGeometry(0.35, 1.2, 4), { x: f.nx * (f.half - 0.2) + f.tx * s * (f.width / 2 - 0.2), y: 0.6, z: f.nz * (f.half - 0.2) + f.tz * s * (f.width / 2 - 0.2), color: dim(GOLD, 1.15) })); // corner finials
+    for (const s of [-1, 1]) K.add('flat', part(new THREE.ConeGeometry(0.35, 1.2, 4), { x: f.nx * (f.half - 0.2) + f.tx * s * (f.width / 2 - 0.2), y: 0.6, z: f.nz * (f.half - 0.2) + f.tz * s * (f.width / 2 - 0.2), color: GOLD })); // corner finials
   }
   if (p.tint > 0) for (const f of faces(w + 5, d + 5)) for (let a = -f.width / 2 + 2; a < f.width / 2 - 1; a += 3.5) { // uplights on the setback below, aimed at this tier
     K.add('flat', fbox(f, a, -thick + 0.65, -0.6, 0.5, 0.3, 0.5, { color: 0x15151a }));
@@ -385,14 +396,14 @@ function chiDeco(K, p, th, rng) {
 function chiDecoCrown(K, p, th) {
   const { w, d, thick } = p;
   K.add('flat', box(w, thick, d, { y: -thick / 2, color: 0x2c5a40 }));
-  const fl = (y) => 0.3 + 0.75 * Math.exp((-thick - y) / 3.5);
+  const fl = (y) => 0.22 + 0.6 * Math.exp((-thick - y) / 3.5);
   for (const f of faces(w, d)) {
     for (let k = -2; k <= 2; k++) K.add('glow', wash(fbox(f, k * (f.width / 5), -thick / 2, 0.15, 0.4, thick - 0.6, 0.3, { color: GOLD }), fl)); // gold fluting, floodlit
     K.add(night(th) ? 'glow' : 'flat', fbox(f, 0, -thick + 1.4, 0.1, f.width - 1, 0.6, 0.1, { color: 0xffd060 }));
   }
-  K.add('glow', box(w + 0.4, 0.4, d + 0.4, { y: -0.2, color: dim(GOLD, 0.95) }));
+  K.add('glow', wash(box(w + 0.4, 0.4, d + 0.4, { y: -0.2, color: GOLD }), (y) => 0.55 + (y + 0.4) * 0.6));
   for (const [sx, sz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
-    K.add('glow', part(new THREE.ConeGeometry(0.4, 2.6, 4), { x: sx * (w / 2 - 0.3), y: 1.3, z: sz * (d / 2 - 0.3), color: dim(GOLD, 1.2) }));
+    K.add('flat', part(new THREE.ConeGeometry(0.4, 2.6, 4), { x: sx * (w / 2 - 0.3), y: 1.3, z: sz * (d / 2 - 0.3), color: GOLD }));
     K.add('glow', box(0.2, 0.2, 0.2, { x: sx * (w / 2 - 0.3), y: 2.75, z: sz * (d / 2 - 0.3), color: 0xff2a2a }));
   }
   for (const f of faces(w + 3, d + 3)) for (let a = -f.width / 2 + 1.5; a < f.width / 2 - 1; a += 3) { // uplights on the setback below
@@ -525,16 +536,40 @@ function chiSailboat(K, p) {
 // lines on the volleyball net, the foam line catching the moon.
 function chiSand(K, p, th, rng) {
   const { w, d, thick } = p;
-  K.add('flat', box(w, thick, d, { y: -thick / 2, color: 0xe6d29a }));
+  K.add('flat', box(w, thick, d, { y: -thick / 2, color: night(th) ? 0xa47e52 : 0xe6d29a }));
   K.add('glow', box(w + 0.6, 0.1, d + 0.6, { y: -p.h + 0.06, color: dim(0xc8d8ff, 0.55) })); // the foam line in the moonlight
   for (let k = 0; k < 14; k++) { // towels and dunes
     const x = (rng() - 0.5) * (w - 6), z = (rng() - 0.5) * (d - 6);
     if (rng() < 0.6) K.add('flat', box(1.0, 0.04, 1.9, { x, y: 0.02, z, ry: rng() * 3, color: [0xff5a2b, 0x2be8ff, 0xffd23a, 0xff2bd6, 0x7bff4a][k % 5] }));
-    else K.add('flat', part(new THREE.SphereGeometry(1, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), { x, y: -0.05, z, sx: 2 + rng() * 2, sy: 0.25, sz: 1.5 + rng() * 2, color: 0xd8c488 }));
+    else K.add('flat', part(new THREE.SphereGeometry(1, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), { x, y: -0.05, z, sx: 2 + rng() * 2, sy: 0.25, sz: 1.5 + rng() * 2, color: night(th) ? 0x988664 : 0xd8c488 }));
   }
   for (const sx of [-1, 1]) K.add('flat', cyl(0.08, 0.08, 2.4, 6, { x: -12 + sx * 4, y: 1.2, z: 12, color: 0xe8e8e8 }));
   K.add('flat', box(8, 0.9, 0.04, { x: -12, y: 1.9, z: 12, color: 0xf0f0f0 })); // volleyball net
   K.add('glow', box(8, 0.06, 0.06, { x: -12, y: 2.36, z: 12, color: 0x2be8ff }));
+  for (const [x, z, sw, sd] of [[-12, 3.2, 8.2, 0.1], [-12, 20.8, 8.2, 0.1], [-16, 12, 0.1, 17.6], [-8, 12, 0.1, 17.6]]) K.add('glow', box(sw, 0.04, sd, { x, y: 0.02, z, color: dim(0x2be8ff, 0.8) })); // the court's LED lines
+  if (night(th)) { // a bonfire on the sand, stones round it, logs to sit on
+    const bx = 6, bz = 2;
+    for (let k = 0; k < 9; k++) { const a = (k / 9) * Math.PI * 2; K.add('flat', box(0.4, 0.3, 0.4, { x: bx + Math.cos(a) * 1.1, y: 0.15, z: bz + Math.sin(a) * 1.1, ry: a, color: 0x4a4440 })); }
+    for (let k = 0; k < 4; k++) { const a = (k / 4) * Math.PI * 2 + 0.4; K.add('flat', cyl(0.12, 0.14, 1.7, 5, { x: bx + Math.cos(a) * 0.38, y: 0.65, z: bz + Math.sin(a) * 0.38, rz: Math.cos(a) * 0.45, rx: -Math.sin(a) * 0.45, color: 0x3a2618 })); } // the log tepee
+    for (let k = 0; k < 7; k++) { // tongues of flame, a hot core, embers
+      const a = k * 2.4, r = k ? 0.25 + (k % 3) * 0.08 : 0, h = 0.6 + ((k * 37) % 7) * 0.12;
+      K.add('glow', part(new THREE.ConeGeometry(0.16 + (k % 2) * 0.08, h, 3), { x: bx + Math.cos(a) * r, y: 0.25 + h / 2, z: bz + Math.sin(a) * r, rz: Math.cos(a) * r * 0.5, rx: -Math.sin(a) * r * 0.5, color: [0xff4a12, 0xff7a1a, 0xffb02b, 0xff5a14][k % 4] }));
+    }
+    K.add('glow', part(new THREE.OctahedronGeometry(0.28, 0), { x: bx, y: 0.45, z: bz, color: 0xfff0b0 }));
+    for (let k = 0; k < 6; k++) K.add('glow', box(0.07, 0.07, 0.07, { x: bx + Math.cos(k * 1.9) * 0.4, y: 1.6 + k * 0.32, z: bz + Math.sin(k * 1.9) * 0.4, color: 0xffa040 }));
+    for (const [a, r] of [[0.3, 2.6], [2.2, 2.8], [4.1, 2.5]]) K.add('flat', cyl(0.25, 0.25, 1.8, 6, { x: bx + Math.cos(a) * r, y: 0.25, z: bz + Math.sin(a) * r, rz: Math.PI / 2, ry: -a + Math.PI / 2, color: 0x5a3a24 }));
+    K.add('glow', part(new THREE.CircleGeometry(0.95, 9), { rx: -Math.PI / 2, x: bx, y: 0.03, z: bz, color: 0x8a3a10 })); // the embers' bed
+  }
+  if (night(th)) { // the moon's path on the lake, out from the shore toward it (east-north-east)
+    const ux = 0.92, uz = -0.38, wl = -p.h + 0.07;
+    for (let t = 2, k = 0; t < 220; t += 2.5 + t * 0.03, k++) {
+      const spread = 1.5 + t * 0.09, n = 1 + Math.floor(rng() * 3);
+      for (let j = 0; j < n; j++) {
+        const off = (rng() - 0.5) * spread * 2, len = 0.8 + rng() * (1 + t * 0.04);
+        K.add('glow', box(0.25 + t * 0.006, 0.03, len, { x: w / 2 + 1 + ux * t - uz * off, y: wl, z: d * 0.1 + uz * t + ux * off, ry: Math.atan2(ux, uz) + Math.PI / 2, color: dim(0xd8e4ff, 0.75 * (1 - t / 300) * (0.6 + rng() * 0.4)) }));
+      }
+    }
+  }
   for (const f of faces(w, d)) for (let a = -f.width / 2 + 2; a < f.width / 2 - 1; a += 5) { // path lights round the edge
     K.add('flat', box(0.14, 0.6, 0.14, { x: f.nx * (f.half - 0.8) + f.tx * a, y: 0.3, z: f.nz * (f.half - 0.8) + f.tz * a, color: 0x2a2a2a }));
     K.add('glow', box(0.2, 0.14, 0.2, { x: f.nx * (f.half - 0.8) + f.tx * a, y: 0.66, z: f.nz * (f.half - 0.8) + f.tz * a, color: 0xffc870 }));
@@ -705,7 +740,7 @@ function chiHeadTower(K, p) {
 function chiShed(K, p, th) {
   const { w, d, thick } = p;
   K.add('flat', box(w, thick, d, { y: -thick / 2, color: 0xe8e8ec }));
-  K.add(night(th) ? 'glow' : 'glass', box(w - 1, thick - 1.4, d + 0.06, { y: -thick / 2 - 0.2, color: 0x5a8ab0 }));
+  K.add(night(th) ? 'glow' : 'glass', box(w - 1, thick - 1.4, d + 0.06, { y: -thick / 2 - 0.2, color: 0x2a4462 }));
   for (let x = -w / 2 + 2; x < w / 2; x += 4) K.add('flat', box(0.3, thick, d + 0.1, { x, y: -thick / 2, color: 0xf0f0f4 }));
   const ban = [0xff5a2b, 0x2be8ff, 0xffd23a, 0xff2bd6];
   for (let x = -w / 2 + 4, k = 0; x < w / 2; x += 8, k++) K.add('glow', box(1.2, 2.4, 0.06, { x, y: -1.6, z: (p.tint === 1 ? -1 : 1) * (d / 2 + 0.1), color: ban[k % 4] }));
@@ -781,7 +816,7 @@ function chiBuoy(K, p) {
 }
 function chiBreakwater(K, p, th, rng) {
   const { w, d, thick } = p;
-  K.add('flat', box(w, thick, d, { y: -thick / 2, color: 0xa8a49a }));
+  K.add('flat', box(w, thick, d, { y: -thick / 2, color: night(th) ? 0x77736c : 0xa8a49a }));
   for (let z = -d / 2; z < d / 2; z += 2.2) for (const sx of [-1, 1]) K.add('flat', ball(1.0 + rng() * 0.5, { x: sx * (w / 2 + 0.6), y: -p.h + 0.3, z, ry: rng() * 3, color: [0x6a6660, 0x7a766e, 0x5a5650][Math.floor(rng() * 3)] }));
   for (let z = -d / 2 + 4; z < d / 2; z += 10) K.add('flat', cyl(0.25, 0.3, 0.7, 6, { x: w / 2 - 0.6, y: 0.35, z, color: 0x2a2a2a })); // bollards
   for (let z = -d / 2 + 2; z < d / 2; z += 6) for (const sx of [-1, 1]) K.add('glow', box(0.16, 0.16, 0.16, { x: sx * (w / 2 - 0.25), y: 0.12, z, color: 0xffc870 })); // edge markers

@@ -7,7 +7,7 @@ import { BACKDROPS } from './chicago-backdrops.js';
 import { taurusModel, taurusUpdate } from './chicago-taurus.js';
 
 const themes = {
-  chiLoop: { // the drowned Loop at one in the morning: rain, a magenta-amber smog lit from below,
+  chiLoop: { // the drowned Loop on a wet night: rain, a magenta-amber smog lit from below,
     // every window on, searchlights raking the cloud; the canals black and full of neon
     skyTop: '#0a0516', skyBot: '#5a2444', sun: '#ffe0c8', sunDir: [0.3, 0.55, -0.75], night: 1,
     fog: [40, 250], hemi: ['#b48cd0', '#1c1018', 1.55], key: ['#ffb07a', 0.8],
@@ -17,7 +17,7 @@ const themes = {
   chiLake: { // a clear summer night on Lake Michigan: the moon over the water, stars, the city a
     // wall of lights to the west, the pier and its wheel lit up
     skyTop: '#020720', skyBot: '#22407a', sun: '#eef2ff', sunDir: [0.72, 0.28, -0.3], night: 1,
-    fog: [60, 340], hemi: ['#7090e0', '#0e1830', 1.55], key: ['#c0d0ff', 1.0],
+    fog: [60, 340], hemi: ['#6a88d8', '#0e1830', 1.4], key: ['#c0d0ff', 1.0],
     cloud: '#2a3c70', cloudShade: '#121c3c', city: 1, arc: [Math.PI, 1.5], cityCol: '#080c1c', windows: 1, neon: 1.3,
     water: '#0c1c46', rain: 0, stars: 0.85, beams: 0.7, cover: 0.08, cityH: 1.5, pyramids: 0, haze: 0.32,
   },

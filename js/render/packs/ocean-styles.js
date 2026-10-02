@@ -416,12 +416,13 @@ export const STYLES = {
         const o = -f.width / 2 + 1.2 + k * 2.4, c = [GREEN, CYAN, GREEN, AMBER, GREEN][(k + (y < -3 ? 2 : 0)) % 5];
         K.add('glow', fbox(H, f, o, y, 0.33, 0.9, 0.12, 0.06, { color: c }));
       }
-      // rack blinkenlights: a grid of tiny LEDs in every bay between the fins
+      // rack blinkenlights: a grid of LEDs in every bay between the fins, a dim rack face behind
       if (f.width > 8) for (let k = 0; k < n - 1; k++) {
         const o = -f.width / 2 + 1.2 + k * 1.2;
-        for (let y = -1.4; y > -T + 1.2; y -= 0.45) {
-          if (Math.abs(y + 2.2) < 0.2 || Math.abs(y + 4.0) < 0.2 || rng() < 0.35) continue;
-          K.add('glow', fquad(H, f, o + (rng() - 0.5) * 0.5, y, 0.03, 0.12, 0.08, LEDS[Math.floor(rng() * LEDS.length)]));
+        K.add('glow', fquad(H, f, o, -T / 2 - 0.3, 0.02, 0.9, T - 2.2, '#0e1622'));
+        for (let y = -1.3; y > -T + 1.2; y -= 0.34) {
+          if (Math.abs(y + 2.2) < 0.15 || Math.abs(y + 4.0) < 0.15 || rng() < 0.4) continue;
+          K.add('glow', fquad(H, f, o + (rng() - 0.5) * 0.45, y, 0.03, 0.22, 0.11, LEDS[Math.floor(rng() * LEDS.length)]));
         }
       }
       K.add('neon', fbox(H, f, 0, -0.45, 0.12, f.width + 0.4, 0.18, 0.14, { color: neon }));

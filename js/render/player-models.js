@@ -317,7 +317,8 @@ export function cannonModel(M) {
   // ---- the ammo screen on the forearm, in a housing tilted up toward the eye (a 40 × 20 LCD: about
   // one texel per pixel at 240 lines, so it stays legible)
   const cv = document.createElement('canvas'); cv.width = 40; cv.height = 20;
-  const tex = new THREE.CanvasTexture(cv); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.colorSpace = THREE.SRGBColorSpace;
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.generateMipmaps = false;
+  tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.LinearFilter; // (linear when minified: no dropped columns)
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.08), new THREE.MeshBasicMaterial({ map: tex, fog: false }));
   screen.position.set(-0.035, 0.19, 0.46); screen.rotation.set(-0.42, -0.36, 0.02); // faces the eye
   g.add(screen);

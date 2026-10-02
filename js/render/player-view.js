@@ -190,9 +190,9 @@ export class PlayerView {
     const shake = this.held === 'rapid' ? (Math.random() - 0.5) * this.recoil * 0.08 * motion : 0;
     const idle = Math.sin(t * 1.3) * 0.004 * motion; // a slow breathing drift
     const Q = this.pose;
-    c.position.set((port ? Q.xp : Q.x) + this.swayX, Q.y + bob * 0.5 - low + (P.ground ? 0 : 0.02) + this.swayY - sdip * 0.06 + idle, Q.z + Math.min(0.12, rk * 0.07) * (0.4 + 0.6 * motion));
+    c.position.set((port ? Q.xp : Q.x) + this.swayX, Q.y + bob * 0.5 - low + (P.ground ? 0 : 0.02) + this.swayY - sdip * 0.06 + idle, Q.z + Math.min(0.1, rk * 0.06) * (0.4 + 0.6 * motion));
     c.scale.setScalar(Q.s);
-    c.rotation.set(Q.pitch + Math.min(0.3, rk * 0.2) * (0.4 + 0.6 * motion) + low * 0.6 - sdip * 0.25, Q.yaw - this.swayX * 2, Q.roll + this.swayX * 3 + shake + sdip * 0.5);
+    c.rotation.set(Q.pitch + Math.min(0.22, rk * 0.15) * (0.4 + 0.6 * motion) + low * 0.6 - sdip * 0.25, Q.yaw - this.swayX * 2, Q.roll + this.swayX * 3 + shake + sdip * 0.5);
     c.visible = R.showCannon && !P.dead;
     // petals: closed at the middle of a swap, open to the weapon's spread, kicked by each shot
     const f = this.swapT > 0.5 ? (this.swapT - 0.5) * 2 : 1 - this.swapT * 2;

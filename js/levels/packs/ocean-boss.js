@@ -40,7 +40,7 @@ P(disc(0, 0, 1.5, -3, { thick: 0.5, style: 'oc-brine' }));
 const [px1, pz1] = at(Math.PI / 4, 19.5), [px3, pz3] = at((3 * Math.PI) / 4, 19.5), [px5, pz5] = at((5 * Math.PI) / 4, 19.5), [px7, pz7] = at((7 * Math.PI) / 4, 19.5);
 
 export default {
-  id: 'ocean-boss', name: 'BRINE POOL', sub: 'DESAL PLANT 7 · 23:30 · BOSS', theme: 'oceanBrine', song: 'krakenOS',
+  id: 'ocean-boss', name: 'BRINE POOL', sub: 'DESAL PLANT 7 · 04:10 · BOSS', theme: 'oceanBrine', song: 'krakenOS',
   seed: 1044, par: 220, killY: -0.6, water: 0, objective: 'boss', bossName: 'KRAKEN-OS',
   arena: A,
   start: { x: 0, y: FLOOR, z: 20, yaw: 0 },
@@ -73,5 +73,6 @@ export default {
     { kind: 'oc-windfarm', x: 520, y: 0, z: 120, yaw: away(520, 120, 0, 0), n: 12 },
     { kind: 'oc-ship', x: -420, y: 0, z: 260, yaw: 1.2 },
     { kind: 'oc-rig', x: 300, y: 0, z: 420, yaw: -0.5 },
+    { kind: 'oc-haven', x: -420, y: 0, z: -760, yaw: away(-420, -760, 0, 0), n: 14, w: 440, s: 0.7 },
   ],
 };

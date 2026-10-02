@@ -79,7 +79,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'ocean-coldaisle', name: 'COLD AISLE', sub: 'SERVER BARGES · 19:40 · SUNSET', theme: 'oceanSunset', song: 'netdive',
+  id: 'ocean-coldaisle', name: 'COLD AISLE', sub: 'SERVER BARGES · 23:50 · CLEAR', theme: 'oceanNight', song: 'netdive',
   seed: 1022, par: 300, killY: -0.6, water: 0,
   start: { x: 0, y: 2.2, z: 6, yaw: 0 },
   plats, lasers,
@@ -90,7 +90,7 @@ export default {
   ],
   exit: { x: 0, y: 30, z: -150, yaw: 0 },
   portal: { x: -20, y: 3.0, z: -66 },
-  bonusStyle: { theme: 'oceanBonusDusk', music: 'serverRush', weapon: 'rapid', tag: 'COLD AISLE' },
+  bonusStyle: { theme: 'oceanBonusViolet', music: 'serverRush', weapon: 'rapid', tag: 'COLD AISLE' },
   enemies: [
     { type: 'guard', x: 2, y: HULL, z: -20 },
     { type: 'turret', x: -4, y: 10, z: -36 },
@@ -122,6 +122,7 @@ export default {
     { kind: 'oc-ship', x: 420, y: 0, z: -360, yaw: 0.3, s: 1.3 },
     { kind: 'oc-plant', x: 480, y: 0, z: 160, yaw: -0.8 },
     { kind: 'oc-spire', x: -60, y: 0, z: -800, s: 0.75 },
+    { kind: 'oc-haven', x: 110, y: 0, z: -700, yaw: away(110, -700, 0, -70), n: 14, w: 440 },
     { kind: 'oc-rig', x: -420, y: 0, z: 380, yaw: 0.4 },
   ],
 };

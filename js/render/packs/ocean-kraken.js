@@ -62,6 +62,16 @@ export function krakenModel(M) {
   for (let k = 0; k < 12; k++) { const a = (k / 12) * Math.PI * 2; L.add('l', box(0.26, 0.26, 0.26, { x: Math.cos(a) * 2.82, y: 0.1, z: Math.sin(a) * 2.82, color: 0xff2a2a })); }
   L.add('l', box(0.3, 0.3, 0.3, { x: 0.9, y: 3.4, z: 0.9, color: 0xff2a2a }));
   const lights = new THREE.Mesh(L.build().l, M.glow); lights.name = 'lights'; head.add(lights);
+  // LED seams (always on, so its silhouette reads against the night): a cyan line round the dome's
+  // rim above the red collar, LED studs up the seams between the armour ridges, a ring round the eye
+  const S = new Kit();
+  S.add('s', part(new THREE.TorusGeometry(2.74, 0.06, 3, 18), { rx: Math.PI / 2, y: 0.2, color: 0x2be8ff }));
+  for (let k = 0; k < 6; k++) {
+    const a = (k / 6) * Math.PI * 2;
+    for (const el of [0.45, 0.8, 1.12]) { const r = 2.72, x = Math.cos(el) * Math.cos(a) * r, y = Math.sin(el) * r * 0.82, z = Math.cos(el) * Math.sin(a) * r; S.add('s', box(0.14, 0.14, 0.14, { x, y, z, color: 0x2bffd0 })); }
+  }
+  S.add('s', part(new THREE.TorusGeometry(1.36, 0.05, 3, 16), { y: 0.3, z: -3.06, color: 0x2be8ff }));
+  const seams = new THREE.Mesh(S.build().s, M.glow); seams.name = 'seams'; head.add(seams);
   const V = new Kit();
   for (const x of [-0.85, 0, 0.85]) V.add('v', cyl(0.2, 0.2, 0.05, 8, { x, y: -1.25, z: -3.22, rx: Math.PI / 2, color: 0x7ff6ff }));
   const vents = new THREE.Mesh(V.build().v, M.glow); vents.name = 'vents'; head.add(vents);

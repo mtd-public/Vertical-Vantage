@@ -120,7 +120,7 @@ export default {
     { kind: 'fortress-searchlights', x: -12, y: -14, z: -60, aim: 0.6, pitch: -0.6, sweep: 0.6, n: 2, len: 280 },
     { kind: 'fortress-searchlights', x: 12, y: -14, z: -112, aim: -2.4, pitch: -0.55, sweep: 0.6, n: 2, len: 280, phase: 2 },
     { kind: 'fortress-searchlights', x: 0, y: -16, z: 30, aim: Math.PI, pitch: 0.25, sweep: 0.7, n: 2, gap: 16, phase: 1 },
-    { kind: 'fortress-citygap', x: 10, y: -99, z: -90, r: 95, coast: 2 },
+    { kind: 'fortress-citygap', x: 10, y: -99, z: -90, r: 95, coast: 2, dot: 0.55 },
     { kind: 'fortress-citygap', x: -160, y: -99, z: 240, r: 110 },
     { kind: 'fortress-citygap', x: 220, y: -99, z: 420, r: 100, coast: 4 },
     { kind: 'fortress-flak', x: 40, y: 30, z: 420, w: 420, h: 120, d: 200 },

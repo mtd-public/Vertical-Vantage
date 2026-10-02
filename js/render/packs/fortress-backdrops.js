@@ -125,7 +125,7 @@ function tracers(o, th, B, M) {
 function flak(o, th, B) {
   const g = new THREE.Group(), n = o.n ?? 22, W = o.w ?? 320, H = o.h ?? 90, D = o.d ?? 320, rng = B.rng;
   const S = new B.Kit(), salvos = [new B.Kit(), new B.Kit(), new B.Kit(), new B.Kit(), new B.Kit()];
-  const smoke = B.c('#4a4660', 0.55), smoke2 = B.c('#5a5470', 0.5);
+  const smoke = B.c('#7a7090', 0.45), smoke2 = B.c('#8a84a0', 0.4);
   for (let i = 0; i < n; i++) {
     const x = (rng() - 0.5) * W, y = (rng() - 0.5) * H, z = (rng() - 0.5) * D, r = 3 + rng() * 3;
     S.add('solid', B.ball(r * (0.7 + rng() * 0.4), { x: x + (rng() - 0.5) * r, y: y + (rng() - 0.5) * r * 0.6, z: z + (rng() - 0.5) * r, color: rng() < 0.5 ? smoke : smoke2 }, 0));
@@ -143,26 +143,35 @@ function flak(o, th, B) {
 // dark ragged hole, its rim lit by the city, streets and highways glittering inside. o.r its size,
 // o.coast: the sea fills one side (a coastline).
 function citygap(o, th, B) {
-  const K = new B.Kit(), r = o.r ?? 110, rng = B.rng, n = 16, rim = [];
+  const K = new B.Kit(), r = o.r ?? 110, rng = B.rng, n = 16, rim = [], q = o.dot ?? 1; // q: light size (1 far … 0.5 seen from right above)
   for (let i = 0; i < n; i++) rim.push(r * (0.72 + rng() * 0.38));
-  const shape = (k, dy = 0) => { const s = new THREE.Shape(); for (let i = 0; i <= n; i++) { const a = (i / n) * Math.PI * 2, rr = rim[i % n] * k; if (i) s.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else s.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); } return new THREE.ShapeGeometry(s); };
+  const shape = (k) => { const s = new THREE.Shape(); for (let i = 0; i <= n; i++) { const a = (i / n) * Math.PI * 2, rr = rim[i % n] * k; if (i) s.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else s.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); } return new THREE.ShapeGeometry(s); };
+  const flat = (w, d, x, y, z, col, rz = 0) => K.add('glow', B.part(new THREE.PlaneGeometry(w, d), { rx: -Math.PI / 2, rz, x, y, z, color: col }));
   K.add('glow', B.part(shape(1.12), { rx: -Math.PI / 2, y: 0, color: B.c(th.cloudSea || '#8090d0', 0.05) }));
   K.add('glow', B.part(shape(1.0), { rx: -Math.PI / 2, y: 0.3, color: B.c('#3a3448', -0.1) }));
   K.add('glow', B.part(shape(0.9), { rx: -Math.PI / 2, y: 0.6, color: B.c('#06070e', -0.2) }));
   const inner = Math.min(...rim) * 0.82, coast = o.coast ?? 0, cols = ['#ffb050', '#ffb050', '#ffc878', '#fff0d0', '#7ae8ff', '#ff6a5a'];
   const sea = (x, z) => coast && x * Math.cos(coast) + z * Math.sin(coast) > inner * 0.25 + Math.sin(z * 0.05) * 10;
+  const inside = (x, z, m = 1) => x * x + z * z < inner * inner * m && !sea(x, z);
   K.add('glow', B.part(shape(0.7), { rx: -Math.PI / 2, y: 0.7, color: B.c('#1e1428', -0.2) })); // the city's glow on the haze
-  for (let x = -inner; x <= inner; x += 9) for (let z = -inner; z <= inner; z += 9) {
-    if (x * x + z * z > inner * inner || sea(x, z) || rng() > 0.55) continue;
-    const s = 3 + rng() * 4;
-    K.add('glow', B.part(new THREE.PlaneGeometry(s, s), { rx: -Math.PI / 2, x: x + (rng() - 0.5) * 4, y: 0.9, z: z + (rng() - 0.5) * 4, color: B.c(cols[Math.floor(rng() * cols.length)], -0.3) }));
+  // the street grid: lines of amber and white light between blocks, a few dark gaps
+  const block = 16 * Math.max(0.6, q), sw = 1.0 * q + 0.4;
+  for (let g = -inner; g <= inner; g += block) for (let t = -inner; t < inner; t += block) {
+    const c = B.c(rng() < 0.7 ? '#ffa848' : '#fff0d0', -0.3);
+    if (rng() < 0.85 && inside(g, t + block / 2)) flat(sw, block, g, 0.8, t + block / 2, c);
+    if (rng() < 0.85 && inside(t + block / 2, g)) flat(block, sw, t + block / 2, 0.8, g, c);
   }
-  for (let k = 0; k < 3; k++) { // highways: chains of amber light
+  // lit buildings inside the blocks
+  for (let x = -inner + block / 2; x <= inner; x += block) for (let z = -inner + block / 2; z <= inner; z += block) {
+    if (!inside(x, z)) continue;
+    for (let k = 0; k < 3; k++) if (rng() < 0.6) { const s = (2 + rng() * 3) * q; flat(s, s, x + (rng() - 0.5) * block * 0.6, 0.9, z + (rng() - 0.5) * block * 0.6, B.c(cols[Math.floor(rng() * cols.length)], -0.3)); }
+  }
+  for (let k = 0; k < 3; k++) { // highways: chains of brighter light across the grid
     const a = rng() * Math.PI, ca = Math.cos(a), sa = Math.sin(a), off = (rng() - 0.5) * inner * 0.6;
-    for (let t = -inner; t <= inner; t += 6) {
+    for (let t = -inner; t <= inner; t += 6 * q + 1) {
       const x = ca * t - sa * off, z = sa * t + ca * off;
-      if (x * x + z * z > inner * inner || sea(x, z)) continue;
-      K.add('glow', B.part(new THREE.PlaneGeometry(5, 2.6), { rx: -Math.PI / 2, rz: -a, x, y: 1, z, color: B.c(k ? '#ffa040' : '#ff5a4a', -0.3) }));
+      if (!inside(x, z)) continue;
+      flat(5 * q, 2.6 * q, x, 1, z, B.c(k ? '#ffa040' : '#ff5a4a', -0.3), -a);
     }
   }
   return B.mesh(K);
@@ -248,7 +257,7 @@ function carrier(o, th, B) {
 }
 // A towering cumulus rising out of the cloud sea, moonlit on top (theme cloud colours).
 function cumulus(o, th, B) {
-  const K = new B.Kit(), lo = new THREE.Color(th.cloudShade || '#c8d0e0'), hi = new THREE.Color(th.cloudSea || th.cloud || '#ffffff'), c = new THREE.Color();
+  const K = new B.Kit(), lo = new THREE.Color(th.cloudShade || '#c8d0e0'), hi = new THREE.Color(th.cloudSea || th.cloud || '#ffffff').lerp(new THREE.Color('#ffffff'), 0.25), c = new THREE.Color();
   const rng = B.rng;
   for (let i = 0; i < 26; i++) {
     const k = i / 26, y = k * 150, spread = 70 * (1 - k * 0.6), r = 26 + rng() * 22 - k * 10;

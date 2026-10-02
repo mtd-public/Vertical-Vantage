@@ -94,7 +94,7 @@ export default {
     { kind: 'fortress-tracers', x: -26, y: -44, z: -150, aim: 0.9, pitch: 0.8, phase: 0.5 },
     { kind: 'fortress-tracers', x: 30, y: -44, z: 100, aim: -2.4, pitch: 0.75, phase: 2.2, col: 0xff5a3a },
     { kind: 'fortress-tracers', x: 30, y: -44, z: -60, aim: -1.2, pitch: 0.6, phase: 4 },
-    { kind: 'fortress-flak', x: 60, y: 60, z: -380, w: 460, h: 140, d: 200 },
+    { kind: 'fortress-flak', x: -280, y: 60, z: -340, w: 300, h: 140, d: 260 },
     { kind: 'fortress-flak', x: -360, y: 30, z: 120, w: 200, h: 120, d: 420, phase: 0.7 },
     { kind: 'fortress-citygap', x: -330, y: -159, z: -280, r: 140, coast: 0.8 },
     { kind: 'fortress-citygap', x: 360, y: -159, z: -160, r: 110 },

@@ -115,6 +115,24 @@ function flood(K, x, y, z, ax, az, col = C.lamp, s = 1) {
   F(K, part(aim(new THREE.BoxGeometry(1.3 * s, 0.9 * s, 0.6 * s), 0), { x, y, z, color: C.dark }));
   G(K, part(aim(new THREE.BoxGeometry(1.1 * s, 0.7 * s, 0.08), 0.32 * s), { x, y, z, color: col }));
 }
+// A warning beacon (static: lit lens, bright core) on a bracket at (x, y, z).
+function beacon(K, x, y, z, col = C.amber) {
+  F(K, box(0.5, 0.2, 0.5, { x, y: y - 0.25, z, color: C.dark }));
+  G(K, cyl(0.22, 0.22, 0.34, 6, { x, y, z, color: col }), cyl(0.1, 0.1, 0.36, 5, { x, y, z, color: 0xfff0d0 }));
+}
+// Neon numerals (seven-segment, like the fleet's hull numbers): str of digits, h tall, centred at
+// (x, y, z) on a face looking out along ry, a dark backing plate behind them.
+const SEG7 = ['abcdef', 'bc', 'abged', 'abgcd', 'fgbc', 'afgcd', 'afgedc', 'abc', 'abcdefg', 'abcdfg'];
+function digits(K, str, x, y, z, h, ry, col = C.cyan) {
+  const c = Math.cos(ry), s = Math.sin(ry), dw = h * 0.55, gap = h * 0.25, t = h * 0.12, n = str.length, W = n * dw + (n - 1) * gap;
+  const at = (lx, ly, out) => ({ x: x + lx * c + out * s, y: y + ly, z: z - lx * s + out * c, ry });
+  F(K, box(W + h * 0.4, h * 1.3, 0.1, { ...at(0, 0, -0.04), color: 0x0c0e14 }));
+  [...str].forEach((ch, i) => {
+    const cx = -W / 2 + dw / 2 + i * (dw + gap), on = SEG7[+ch] || '';
+    const segs = { a: [0, h / 2, dw, t], d: [0, -h / 2, dw, t], g: [0, 0, dw, t], b: [dw / 2, h / 4, t, h / 2], c: [dw / 2, -h / 4, t, h / 2], e: [-dw / 2, -h / 4, t, h / 2], f: [-dw / 2, h / 4, t, h / 2] };
+    for (const k of on) { const [sx, sy, ww, hh] = segs[k]; G(K, box(ww, hh, 0.06, { ...at(cx + sx, sy, 0.04), color: col })); }
+  });
+}
 // A deck crewman in a coloured jersey, waving two light wands (green: shooter, orange: director…).
 function crew(K, x, z, ry, vest, wand, base = 0, pose = 0) {
   const c = Math.cos(ry), s = Math.sin(ry), at = (lx, lz) => [x + lx * c + lz * s, z - lx * s + lz * c];
@@ -159,7 +177,7 @@ const localLamps = (p, list) => list.filter((L) => Math.abs(L.x - p.x) < p.w / 2
 // The deck crew (world x, z, facing, jersey, wands): shooters by the catapults, directors by the
 // VTOLs, ordnance by the guns, the landing signal officer at the stern.
 const CREW = [
-  [1.5, -150, Math.PI, 0xffcc1a, C.green, 1], [10.5, -146, Math.PI * 0.9, 0xffcc1a, C.green, 0],
+  [1.5, -153, Math.PI, 0xffcc1a, C.green, 1], [10.5, -146, Math.PI * 0.9, 0xffcc1a, C.green, 0],
   [12, -42, -1.3, 0xffcc1a, 0xff8a2a, 1], [10, -60, -1.6, 0x3a6aff, 0xff8a2a, 0], [-7, -86, 1.4, 0xffcc1a, 0xff8a2a, 1],
   [-21, -105, 0.5, 0xe0313a, 0xff3a3a, 0], [-21, 34, 0.8, 0xe8ecf0, 0xff3a3a, 1], [-7, -170, 2.6, 0x3aa84a, C.green, 1],
 ];
@@ -375,7 +393,7 @@ function island(K, p) {
     }
     G(K, box(w + 0.1, 0.45, d + 0.1, { y: -6.2, color: C.violet }));
     G(K, box(w + 0.1, 0.12, d + 0.1, { y: -1.2, color: C.cyan }));
-    F(K, box(0.1, 2.8, 4.4, { x: -w / 2 - 0.05, y: -8.2, z: 9, color: C.white }), box(0.12, 2.2, 1.1, { x: -w / 2 - 0.08, y: -8.2, z: 7.9, color: C.dark }), box(0.12, 2.2, 1.1, { x: -w / 2 - 0.08, y: -8.2, z: 10.1, color: C.dark }));
+    digits(K, '07', -w / 2 - 0.08, -8.2, 9.5, 2.4, -Math.PI / 2, C.cyan); // the hull number in neon
     // floods on the west lip, aimed down at the deck
     for (const z of [-11, -2, 8]) flood(K, -w / 2 - 0.4, -0.5, z, -1, 0, C.lamp, 1.2);
     // the holo targeting display on the west face: a frame of cyan, a radar sweep, target boxes
@@ -396,6 +414,7 @@ function island(K, p) {
     if (t === 1) for (const z of [-7, 3]) flood(K, -w / 2 - 0.3, -0.4, z, -0.9, 0.2, C.lamp, 1);
   }
   stripes(K, -w / 2, -d / 2 + 0.3, w / 2, -d / 2 + 0.3, 0, 0.35, 1.5); stripes(K, -w / 2, d / 2 - 0.3, w / 2, d / 2 - 0.3, 0, 0.35, 1.5);
+  for (const [sx, sz] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) beacon(K, sx * (w / 2 + 0.3), -0.9, sz * (d / 2 + 0.3), t === 2 ? C.navRed : C.amber);
   if (H > 12) for (let y = -12; y > -H + 2; y -= 4) F(K, box(w + 0.08, 0.15, d + 0.08, { y, color: 0x4d5560 })); // plating bands down to the deck
 }
 // A holographic display (glow): a frame, a radar scope with a sweep and rings, target boxes, a bar
@@ -608,6 +627,10 @@ function wing(K, p) {
   lights(K, hw - 0.6, -hd + 2, hw - 0.6, hd - 2, 0.08, 5, C.navRed, 0.34, C.amber);
   // plate seams across the top, flush hatches lit round their edges, antenna posts with beacons
   for (let z = -hd + 12; z < hd; z += 12) F(K, box(w, 0.03, 0.14, { y: 0.015, z, color: 0x4a515c }));
+  for (let z = -hd + 24; z < hd; z += 24) for (let x = -hw + 2; x < hw - 1; x += 4) G(K, box(0.3, 0.05, 0.3, { x, y: 0.025, z: z + 0.4, color: (x / 4) % 2 ? C.ice : C.cyan })); // LED rows along the seams
+  // the fleet's chevron and a landing ring painted in light round the exit (world 6, −32)
+  for (const s2 of [-1, 1]) G(K, box(14, 0.05, 1.2, { x: lx(-14) - 4, y: 0.03, z: lz(-32) + s2 * 4, ry: s2 * 0.6, color: C.violet }));
+  G(K, part(new THREE.RingGeometry(5.2, 5.6, seg(32, 16)), { rx: -Math.PI / 2, x: lx(6), y: 0.03, z: lz(-32), color: C.cyan }));
   for (let x = -hw + 12; x < hw - 34; x += 24) F(K, box(0.14, 0.03, d, { x, y: 0.015, color: 0x4a515c }));
   for (const [x, z] of [[-30, -120], [-60, -40], [-20, 20], [-80, 10], [-4, -150], [-70, -140]]) {
     F(K, box(5, 0.05, 5, { x: lx(x), y: 0.025, z: lz(z), color: 0x3a3f48 }));
@@ -715,6 +738,10 @@ function dome(K, p) {
 }
 function spine(K, p) {
   F(K, box(p.w, p.thick, p.d, { y: -p.thick / 2, color: 0x5a6270 }));
+  for (const sx of [-1, 1]) {
+    G(K, box(0.08, 0.14, p.d, { x: sx * (p.w / 2 + 0.04), y: -p.thick + 0.3, color: C.cyan }));
+    for (let z = -p.d / 2 + 2; z < p.d / 2; z += 3) G(K, box(0.08, 0.5, 1.2, { x: sx * (p.w / 2 + 0.04), y: -p.thick / 2, z, color: ((z * 3) | 0) % 5 ? C.port : 0x8ad8ff }));
+  }
   for (let z = -p.d / 2 + 8; z < p.d / 2; z += 16) F(K, box(0.4, 5, 5, { y: 2.5, z, rz: 0, color: 0x4b525e }), box(0.42, 0.6, 5.1, { y: 4.7, z, color: C.violet }));
   for (let z = -p.d / 2 + 8; z < p.d / 2; z += 16) G(K, box(0.44, 0.3, 5.12, { y: 4.7, z, color: C.violet }));
   trim(K, p.w, p.d, C.violet, { y: -0.2, h: 0.12 });
@@ -798,7 +825,7 @@ function baywall(K, p) {
     F(K, box(nx ? 1.2 : 0.8, 0.5, nx ? 0.8 : 1.2, at(k, -22.6, 0.7, { color: C.dark })));
     G(K, cyl(0.45, 0.45, 0.8, 8, at(k, -22.0, 1.0, { color: C.navRed })), cyl(0.2, 0.2, 0.82, 6, at(k, -22.0, 1.0, { color: 0xffc0c0 })));
   }
-  if (t === 2) holo(K, 0, -16.5, face + 0.25, 18, 6.5, 0); // the bay's big board over the launch gallery
+  if (t === 2) { holo(K, 0, -16.5, face + 0.25, 18, 6.5, 0); digits(K, '03', -16, -16.5, face + 0.25, 4, 0, C.amber); digits(K, '07', 16, -16.5, face + 0.25, 4, 0, C.violet); } // the bay's big board over the launch gallery
   else for (const kz of [-54, 30]) holo(K, face + nx * 0.25, -19, kz, 10, 4, nx > 0 ? Math.PI / 2 : -Math.PI / 2);
 }
 function bayceiling(K, p) {

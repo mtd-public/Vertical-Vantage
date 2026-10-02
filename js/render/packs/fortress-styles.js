@@ -5,7 +5,7 @@
 // The fortress fights at night: walkable tops carry PS1-style baked light (vertex colours brighter
 // than their paint, pools under the lamps) and lit edge trims, so every landing reads in the dark.
 import * as THREE from 'three';
-import { box, cyl, part, meterBox } from '../geo.js';
+import { box, cyl, part } from '../geo.js';
 import { seg } from '../retro.js';
 import { mulberry32 } from '../../sim/util.js';
 
@@ -18,7 +18,6 @@ export const C = {
 };
 const F = (K, ...g) => K.add('flat', ...g);
 const G = (K, ...g) => K.add('glow', ...g);
-const N = (K, ...g) => K.add('neon', ...g);
 
 // ------------------------------------------------------------------ night lighting helpers
 // A walkable top plate (the riveted 'deck' texture, metre UVs at `tile` m) with baked light: each

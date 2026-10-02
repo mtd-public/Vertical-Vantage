@@ -87,7 +87,7 @@ function radar(o, th, B, M) {
 
 // ------------------------------------------------------------------ the night war (light and fire)
 // Searchlights on an emplacement at (x, y, z): o.n beams o.gap apart, o.len long, sweeping ±o.sweep
-// round o.yaw (0 = north), raised o.pitch, out of step. o.col tints them.
+// round o.aim (0 = north), raised o.pitch, out of step. o.col tints them; o.hang mounts them upside down.
 function searchlights(o, th, B, M) {
   const g = new THREE.Group(), n = o.n ?? 2, len = o.len ?? 240, gap = o.gap ?? 6, mat = lightMat();
   const geo = beamGeo(len, o.r ?? 7, o.col ?? 0xb0c4ff, o.k ?? 0.13), L = new Kit(), beams = [];
@@ -96,7 +96,7 @@ function searchlights(o, th, B, M) {
     pv.rotation.order = 'YXZ'; pv.position.x = x;
     pv.add(new THREE.Mesh(geo, mat)); g.add(pv); beams.push(pv);
     L.add('glow', box(1.6, 1.6, 0.4, { x, color: 0xffffff }));
-    L.add('p', cyl(1.1, 1.3, 1.6, 8, { x, y: -1.4, color: 0x2a2e36 }));
+    L.add('p', cyl(1.1, 1.3, 1.6, 8, { x, y: o.hang ? 1.2 : -1.4, color: 0x2a2e36 })); // its mount (o.hang: slung under something)
   }
   meshes(L, M, g);
   const yaw = o.aim ?? 0, sw = o.sweep ?? 0.6, pitch = o.pitch ?? 0.5, sp = o.speed ?? 0.25, ph = o.phase ?? 0;

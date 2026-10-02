@@ -138,11 +138,11 @@ export default {
     { kind: 'fortress-cumulus', x: 700, y: -170, z: 120, s: 1.4 }, // towering cloud far off
     { kind: 'fortress-cumulus', x: -650, y: -170, z: -650, s: 1.8 },
     { kind: 'fortress-cumulus', x: 200, y: -170, z: 800, s: 1.1 },
-    // the night: searchlights under the deck edges, AA tracers climbing, flak, the city through the clouds
-    { kind: 'fortress-searchlights', x: -20, y: -12, z: -36, aim: 1.7, pitch: 0.75, sweep: 0.45, n: 2 },
-    { kind: 'fortress-searchlights', x: 20, y: -12, z: -132, aim: -1.6, pitch: 0.8, sweep: 0.5, n: 2, phase: 2 },
-    { kind: 'fortress-searchlights', x: 0, y: -10, z: -190, aim: 0.1, pitch: 0.6, sweep: 0.5, n: 2, phase: 4, gap: 10 },
-    { kind: 'fortress-searchlights', x: 0, y: -14, z: 42, aim: Math.PI, pitch: 0.7, sweep: 0.5, n: 2, phase: 1, gap: 14 },
+    // the night: searchlights on the wings and the hull's bow and stern, AA tracers climbing, flak, the city through the clouds
+    { kind: 'fortress-searchlights', x: -70, y: -53.6, z: -40, aim: 1.7, pitch: 0.75, sweep: 0.45, n: 2 },
+    { kind: 'fortress-searchlights', x: 70, y: -53.6, z: -128, aim: -1.6, pitch: 0.8, sweep: 0.5, n: 2, phase: 2 },
+    { kind: 'fortress-searchlights', x: 0, y: -20, z: -189.5, aim: 0.1, pitch: 0.6, sweep: 0.5, n: 2, phase: 4, gap: 10 },
+    { kind: 'fortress-searchlights', x: 0, y: -20, z: 41.5, aim: Math.PI, pitch: 0.7, sweep: 0.5, n: 2, phase: 1, gap: 14 },
     { kind: 'fortress-tracers', x: -27, y: -6, z: -120, aim: 1.2, pitch: 0.55, phase: 0 },
     { kind: 'fortress-tracers', x: 27, y: -6, z: -60, aim: -1.3, pitch: 0.7, phase: 1.7, col: 0xff5a3a },
     { kind: 'fortress-tracers', x: -27, y: -6, z: -10, aim: 1.9, pitch: 0.6, phase: 3.1 },

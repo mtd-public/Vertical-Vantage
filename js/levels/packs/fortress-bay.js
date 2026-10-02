@@ -117,9 +117,8 @@ export default {
     // the night: light falling from the hangar lamps, searchlights under the hull raking the clouds,
     // the city through a gap right under the doors, flak and tracers past the open ramp
     { kind: 'fortress-cones', x: 0, y: 25.2, z: 0, h: 25, r: 5.5, at: [[-24, -130], [24, -130], [-24, -98], [24, -98], [-24, -66], [24, -66], [-12, -34], [12, -34], [0, -18, 0xd8ecff], [-12, -146, 0xd8ecff], [12, -146, 0xd8ecff], [0, -162, 0xd8ecff]] },
-    { kind: 'fortress-searchlights', x: -12, y: -14, z: -60, aim: 0.6, pitch: -0.6, sweep: 0.6, n: 2, len: 280 },
-    { kind: 'fortress-searchlights', x: 12, y: -14, z: -112, aim: -2.4, pitch: -0.55, sweep: 0.6, n: 2, len: 280, phase: 2 },
-    { kind: 'fortress-searchlights', x: 0, y: -16, z: 30, aim: Math.PI, pitch: 0.25, sweep: 0.7, n: 2, gap: 16, phase: 1 },
+    { kind: 'fortress-searchlights', x: -19, y: -4.6, z: -60, aim: 0.6, pitch: -0.6, sweep: 0.6, n: 2, len: 280, hang: 1 },
+    { kind: 'fortress-searchlights', x: 19, y: -4.6, z: -112, aim: -2.4, pitch: -0.55, sweep: 0.6, n: 2, len: 280, phase: 2, hang: 1 },
     { kind: 'fortress-citygap', x: 10, y: -99, z: -90, r: 95, coast: 2, dot: 0.55 },
     { kind: 'fortress-citygap', x: -160, y: -99, z: 240, r: 110 },
     { kind: 'fortress-citygap', x: 220, y: -99, z: 420, r: 100, coast: 4 },

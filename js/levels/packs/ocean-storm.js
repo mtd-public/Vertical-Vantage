@@ -105,7 +105,7 @@ export default {
   ],
   exit: { x: 0, y: 78, z: -170, yaw: 0 },
   portal: { x: MX, y: 49.9, z: MZ },
-  bonusStyle: { theme: 'oceanBonusNight', music: 'serverRush', weapon: 'rocket', tag: 'SURGE' },
+  bonusStyle: { theme: 'oceanBonusStorm', music: 'serverRush', weapon: 'rocket', tag: 'SURGE' },
   enemies: [
     { type: 'drone', x: 0, y: 9, z: -14 },
     { type: 'turret', x: -21, y: TP, z: -40 },
@@ -138,5 +138,7 @@ export default {
     { kind: 'oc-plant', x: 360, y: 0, z: -520, yaw: 0.4 },
     { kind: 'oc-ship', x: -300, y: 0, z: 360, yaw: 0.9, s: 1.1 },
     { kind: 'oc-rig', x: 40, y: 0, z: 520, yaw: 0.1 },
+    { kind: 'oc-haven', x: -60, y: 0, z: -720, yaw: away(-60, -720, 0, -90), n: 16, w: 480 },
+    { kind: 'oc-spire', x: 90, y: 0, z: -820, s: 0.9 },
   ],
 };

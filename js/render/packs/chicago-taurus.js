@@ -14,10 +14,10 @@ const build = (fill) => { const K = new Kit(); fill(K); return K.build(); };
 
 // 7-segment digits for the flank stencil
 const SEGS = { 3: 'abcdg', 1: 'bc', 2: 'abdeg' };
-function digit(K, ch, x, y, z, right, s = 1) { // right: unit z-direction of "reading right" on this flank
+function digit(K, ch, x, y, z, right, s = 1, key = 'p', color = C.white) { // right: unit z-direction of "reading right" on this flank
   const w = 0.5 * s, h = 0.9 * s, t = 0.09 * s;
   const at = { a: [0, h / 2, w, t], b: [w / 2, h / 4, t, h / 2], c: [w / 2, -h / 4, t, h / 2], d: [0, -h / 2, w, t], e: [-w / 2, -h / 4, t, h / 2], f: [-w / 2, h / 4, t, h / 2], g: [0, 0, w, t] };
-  for (const k of SEGS[ch]) { const [u, v, sw, sh] = at[k]; K.add('p', box(0.04, sh, sw, { x, y: y + v, z: z + u * right, color: C.white })); }
+  for (const k of SEGS[ch]) { const [u, v, sw, sh] = at[k]; K.add(key, box(0.04, sh, sw, { x, y: y + v, z: z + u * right, color })); }
 }
 
 export function taurusModel(M) {
@@ -40,9 +40,6 @@ export function taurusModel(M) {
       P(box(0.08, 0.8, 2.4, { x: sx * 1.27, y: Y(2.55), z: Z(1.15), color: C.redDk })); // flank plate
       for (const z of [-0.2, 0.6, 1.4, 2.2]) P(box(0.1, 0.1, 0.1, { x: sx * 1.3, y: Y(3.25), z: Z(z), color: C.chrome })); // rivets
       P(cyl(0.16, 0.2, 0.9, 6, { x: sx * 0.75, y: Y(3.55), z: Z(2.6), rx: -0.7, color: C.gun })); // exhausts
-      // "312" on each flank
-      const right = sx > 0 ? -1 : 1, x = sx * 1.32;
-      ['3', '1', '2'].forEach((ch, i) => digit(K, ch, x, Y(2.65), Z(1.15) + (i - 1) * 0.72 * right, right));
     }
     P(box(2.0, 1.0, 0.9, { y: Y(2.9), z: Z(-2.35), color: C.gun })); // the neck yoke
     // the tail: a segmented cable and a plug
@@ -50,8 +47,11 @@ export function taurusModel(M) {
     P(box(0.4, 0.4, 0.4, { y: Y(1.9), z: Z(4.0), color: C.red }));
   });
   body.add(mesh(T.p, M.paintFlat));
-  const L = build((K) => { // running lights and exhaust glow
+  const L = build((K) => { // running lights and exhaust glow, the flank "312" in neon, gold trim lights
     for (const sx of [-1, 1]) {
+      const right = sx > 0 ? -1 : 1, x = sx * 1.32;
+      ['3', '1', '2'].forEach((ch, i) => digit(K, ch, x, Y(2.65), Z(1.15) + (i - 1) * 0.72 * right, right, 1, 'g', 0xfff0f0));
+      K.add('g', box(1.06, 0.05, 2.36, { x: sx * 1.62, y: Y(3.17), z: Z(-1.15), rz: -sx * 0.32, color: 0xffc23a })); // the pauldron's trim, lit
       K.add('g', box(0.06, 0.12, 1.8, { x: sx * 1.33, y: Y(2.05), z: Z(0.6), color: 0xff7a1a }));
       K.add('g', cyl(0.12, 0.12, 0.05, 6, { x: sx * 0.75, y: Y(3.9), z: Z(2.95), rx: -0.7, color: 0xff6a1a }));
     }

@@ -36,7 +36,7 @@ P(rect(0, 0, 8, 6, 13, { thick: 3.5, style: 'chiJumbo' }));
 P(crate(-21, 15, 2.4, 0), crate(-21, 15, 4.8, 3), crate(22, -16, 2.4, 1), crate(24.4, -16, 2.4, 5), crate(5, 19, 2.4, 2));
 
 export default {
-  id: 'chicago-boss', name: 'BULL PEN', sub: 'NEO CHICAGO · 19:12 · BOSS', theme: 'chiArena', song: 'chiBullRush',
+  id: 'chicago-boss', name: 'BULL PEN', sub: 'NEO CHICAGO · 00:30 · BOSS', theme: 'chiArena', song: 'chiBullRush',
   seed: 2004, par: 220, killY: -10, objective: 'boss', bossName: 'TAURUS-312',
   arena: A,
   start: { x: 0, y: 0, z: 20, yaw: 0 },

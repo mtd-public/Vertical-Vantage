@@ -83,7 +83,7 @@ const lasers = [
 ];
 
 export default {
-  id: 'ocean-intake', name: 'INTAKE', sub: 'DESAL PLANT 7 · 06:10 · CALM', theme: 'oceanDawn', song: 'tidalBreak',
+  id: 'ocean-intake', name: 'INTAKE', sub: 'DESAL PLANT 7 · 21:10 · BLUE HOUR', theme: 'oceanBlueHour', song: 'tidalBreak',
   seed: 1011, par: 270, killY: -0.6, water: 0,
   start: { x: 0, y: 2.2, z: 9, yaw: 0 },
   plats, lasers,
@@ -94,7 +94,7 @@ export default {
   ],
   exit: { x: 0, y: 45.5, z: -160, yaw: 0 },
   portal: { x: -52, y: 4.0, z: -6 },
-  bonusStyle: { theme: 'oceanBonus', music: 'serverRush', weapon: 'spread', tag: 'INTAKE' },
+  bonusStyle: { theme: 'oceanBonusNight', music: 'serverRush', weapon: 'spread', tag: 'INTAKE' },
   enemies: [
     { type: 'guard', x: -12, y: QUAY, z: -26 },
     { type: 'walker', x: 14, y: QUAY, z: -27 },
@@ -125,6 +125,7 @@ export default {
     { kind: 'oc-ship', x: -380, y: 0, z: 240, yaw: 1.1, s: 1.2 },
     { kind: 'oc-plant', x: -520, y: 0, z: -420, yaw: 0.6 },
     { kind: 'oc-spire', x: 120, y: 0, z: -800, s: 0.75 },
+    { kind: 'oc-haven', x: -70, y: 0, z: -690, yaw: away(-70, -690, 0, -80), n: 14, w: 460 },
     { kind: 'oc-ship', x: 420, y: 0, z: 320, yaw: -0.4, s: 0.9 },
   ],
 };

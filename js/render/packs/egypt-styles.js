@@ -247,7 +247,7 @@ export const STYLES = {
   // ================================================================ CAIRO
   'eg-street'(K, p, th, rng, H) {
     const g = H.meterBox(p.w, p.thick, p.d, 8, { faces: ['py', 'px', 'nx', 'pz', 'nz'], color: p.tint === 1 ? 0xc8a47a : 0xb89a78 });
-    g.translate(0, -p.thick / 2, 0); K.add('concrete', g);
+    g.translate(0, -p.thick / 2 + (p.h === 0 ? 0.03 : 0), 0); K.add('concrete', g); // (a street at the river's level sits a hair above the water plane: no z-fighting)
   },
   'eg-corniche'(K, p, th, rng, H) {
     const river = p.tint === 1 ? 1 : -1; // which long side faces the Nile (local x)

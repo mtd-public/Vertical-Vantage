@@ -20,12 +20,12 @@ import { BOSS_VIEWS } from './bosses.js';
 import { buildBackdrop } from './backdrops.js';
 import { box, Kit } from './geo.js';
 import { makeEnemyModel, poseEnemy } from './enemy-view.js';
+import { PlayerView } from './player-view.js';
 
 const DEG = Math.PI / 180;
 const _v = new THREE.Vector3(), _c = new THREE.Color();
 const _up = new THREE.Vector3(), _fw = new THREE.Vector3(), _bk = new THREE.Vector3(), _rt = new THREE.Vector3(), _ft = new THREE.Vector3(), _kn = new THREE.Vector3(), _d = new THREE.Vector3();
 const _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _Y = new THREE.Vector3(0, 1, 0);
-const _white = new THREE.Color(0xffffff), _hot = new THREE.Color();
 // Stretch a unit box between a and b (in the parent's frame), thickness th.
 // A unit segment stretched a → b with a stable roll: local y along the segment, local x across the
 // leg's plane (so a knee hub's axle lines up), local z on the outer side of the bend (rams sit there).
@@ -43,7 +43,6 @@ function limb(mesh, a, b, tx, tz) {
   mesh.quaternion.setFromRotationMatrix(_sm);
   mesh.scale.set(tx, len, tz);
 }
-const WEAPON_COL = { blaster: 0x2be8ff, spread: 0xff7a2b, rapid: 0x9fff6a, rocket: 0xff3b5c };
 
 export class GameRenderer {
   constructor(canvas) {
@@ -61,24 +60,14 @@ export class GameRenderer {
     this.sky = new Sky(this.scene);
     this.M = makeMaterials();
     this.fx = new FX(this.scene);
-    this.legs = MD.legsModel(this.M);
-    this.scene.add(this.legs);
-    this.hipL = this.legs.getObjectByName('hipL'); this.hipR = this.legs.getObjectByName('hipR');
-    for (const h of [this.hipL, this.hipR]) { h.userData.knee = h.getObjectByName('knee'); h.userData.foot = h.getObjectByName('foot'); h.userData.jet = h.getObjectByName('jet'); }
-    this.jumpT = 9; this.jumpStage = 0; this.jetT = 0; this.jumpKick = 0; this.rollK = 0; this.baseFov = 75; // jump / fall feedback
-    // viewmodel pass
-    this.vmScene = new THREE.Scene();
-    this.vmCam = new THREE.PerspectiveCamera(55, 1, 0.01, 10);
-    this.vmScene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.2));
-    const vmSun = new THREE.DirectionalLight(0xffffff, 1.6); vmSun.position.set(-1, 2, 1); this.vmScene.add(vmSun);
-    this.cannon = MD.cannonModel(this.M);
-    this.vmScene.add(this.cannon);
-    this.recoil = 0; this.flashT = 0; this.showCannon = true;
+    // you: the legs (in the world) and the arm cannon's own pass, its scene, camera and lights (player-view.js)
+    this.pv = new PlayerView(this);
+    this.legs = this.pv.legs; this.cannon = this.pv.cannon; this.vmScene = this.pv.scene; this.vmCam = this.pv.cam;
+    this.jumpKick = 0; this.rollK = 0; this.baseFov = 75; // jump / fall feedback
+    this.showCannon = true;
     this._land = {}; this._path = []; this.landing = null; this.voidAhead = false; this.dropH = 0; // the landing look-ahead (HUD reads these)
     this.hfov = 96; this.motion = 1; this.flashK = 1; this.beamsK = 1; this.size = [1, 1]; // Options: FOV, reduced motion / flash, quality
     this.glow = new Glow(r); this.glowLevels = 2; // neon glow on night themes (post.js); Low quality turns it off
-    this.kick = 1; this.swapT = 0; this.held = 'blaster'; this.shown = ''; this.spinV = 0;
-    this.swayX = 0; this.swayY = 0; this.lastYaw = 0; this.lastPitch = 0;
     this.level = null;
     this.aspect = 1;
     this.lastHp = T.HP_MAX;
@@ -168,6 +157,7 @@ export class GameRenderer {
     M.signs.color.setScalar(Math.min(1, 0.55 + th.neon * 0.45));
     M.ads.color.setScalar(th.night ? 1 : 0.9);
     this.fx.setRain(!!th.rain, this.scene);
+    this.pv.setTheme(th);
     this.lastHp = w.player.hp;
   }
 
@@ -199,48 +189,9 @@ export class GameRenderer {
     L.view.update(t);
     if (L.water) L.water.material.map.offset.set(t * 0.012, t * 0.02);
 
-    // legs. Ground: run cycle (feet kept flat), squash on landing. Takeoff: a quick push-off with the
-    // toes pointed; an air jump kicks both legs down as the heel jets fire. Rising: a springy tuck
-    // (deeper on the 2nd and 3rd jump) that folds back, clear of the view. Falling: they dangle and
-    // splay a little (wider when falling fast), reach for the deck in the last 1.6 m, and point
-    // straight down while you bounce off something's head.
-    const lg = this.legs;
+    // your legs, posed from the jump / fall state, and the heel jets (player-view.js)
     const below = P.ground ? null : groundBelow(w.plats, x, z, y - 0.01);
-    lg.position.set(x, y + bob * 0.3, z);
-    lg.rotation.y = yaw;
-    const fwd = -(P.vx * Math.sin(yaw) + P.vz * Math.cos(yaw)); // forward speed
-    this.jumpT += dt; this.jetT = Math.max(0, this.jetT - dt * 4);
-    const fall = Math.max(0, Math.min(1, (-P.vy - 6) / 18)); // 0 … 1 as the fall gets fast
-    let hl, hr, kl, kr, ftL, ftR, spread = 0.03, squash = 0;
-    if (P.ground) {
-      const s = Math.sin(P.stride * 2.4) * 0.7 * Math.min(1, sp / T.RUN);
-      hl = s; hr = -s; kl = -Math.max(0, -s) * 1.2 - 0.05; kr = -Math.max(0, s) * 1.2 - 0.05;
-      if (P.landT < 0.25) { const k = 1 - P.landT / 0.25; hl += 0.6 * k; hr += 0.6 * k; kl -= 1.0 * k; kr -= 1.0 * k; squash = 0.12 * k; }
-      ftL = -(hl + kl); ftR = -(hr + kr); // feet flat on the deck
-    } else if (P.lockT > 0) { hl = hr = -0.05; kl = kr = 0; ftL = ftR = -0.8; spread = 0.02; } // stomp
-    else if (this.jumpT < (this.jumpStage ? 0.14 : 0.08)) { // push-off / air kick
-      hl = hr = this.jumpStage ? -0.15 : 0; kl = kr = 0; ftL = ftR = -0.6; spread = 0.06;
-    } else if (P.vy > 0) {
-      const k = [1, 1, 1.18, 1.35][Math.min(3, P.jumps)];
-      hl = 0.55 * k; hr = 0.42 * k; kl = -1.25 * k; kr = -1.05 * k; ftL = ftR = -0.35; spread = 0.08;
-    } else if (below && y - (below.h + below.oy) < 1.6) { hl = 0.12; hr = 0.06; kl = -0.18; kr = -0.12; ftL = ftR = -0.02; spread = 0.06; } // about to land
-    else {
-      const sw = Math.sin(t * 3.2 + fall * t * 6) * (0.07 + fall * 0.05), trail = Math.max(-0.3, Math.min(0.3, -fwd * 0.03));
-      hl = 0.22 + sw + trail; hr = 0.1 - sw + trail; kl = -0.38 - sw; kr = -0.22 + sw; ftL = ftR = -0.45 + fall * 0.2; spread = 0.08 + fall * 0.14;
-    }
-    const ease = Math.min(1, dt * 16);
-    for (const [hip, h, k, f, sx] of [[this.hipL, hl, kl, ftL, -1], [this.hipR, hr, kr, ftR, 1]]) {
-      hip.rotation.x += (h - hip.rotation.x) * ease;
-      hip.rotation.z += (sx * spread - hip.rotation.z) * ease;
-      const knee = hip.userData.knee, foot = hip.userData.foot;
-      knee.rotation.x += (k - knee.rotation.x) * ease;
-      foot.rotation.x += (f - foot.rotation.x) * ease;
-      const jet = hip.userData.jet;
-      jet.visible = this.jetT > 0.02;
-      if (jet.visible) jet.scale.set(0.8 + this.jetT * 0.5, 0.35 + this.jetT * (1.1 + Math.random() * 0.35), 0.8 + this.jetT * 0.5);
-    }
-    lg.scale.y += (1 - squash - lg.scale.y) * Math.min(1, dt * 20);
-    lg.visible = !P.dead;
+    this.pv.updateLegs(P, x, y, z, yaw, below, bob, sp, dt, t);
 
     // enemies (regular ones: enemy-view.js; bosses: their pack's view)
     if (L.enemies.size !== w.enemies.length) for (const e of w.enemies) if (!L.enemies.has(e)) this.addEnemy(e); // spawned mid-fight
@@ -323,56 +274,8 @@ export class GameRenderer {
     if (L.clouds) L.clouds.material.map.offset.set(t * 0.004, t * 0.009);
     this.fx.update(dt, w, cam, t);
 
-    // arm cannon: bob, sway, per-weapon recoil, the petals (close on a swap, re-open in the new
-    // colour, kick on each shot), heat fins, the ammo screen; drops away when you look at your feet
-    const c = this.cannon, MZ = c.userData.mz;
-    if (P.weapon !== this.held) { this.held = P.weapon; this.swapT = 1; }
-    this.swapT = Math.max(0, this.swapT - dt * 3.2);
-    const show = this.swapT > 0.5 ? this.shown || this.held : this.held; // the new weapon appears as the petals reopen
-    if (show !== this.shown) { for (const k in MZ) MZ[k].group.visible = k === show; this.shown = show; }
-    this.recoil = Math.max(0, this.recoil - dt * (this.kick > 1.5 ? 5 : 9));
-    this.flashT = Math.max(0, this.flashT - dt);
-    this.heat = Math.max(0, (this.heat || 0) - dt * 0.55);
-    this.spinV *= Math.exp(-dt * 2.5);
-    const spin = MZ.rapid.group.getObjectByName('spin'); spin.rotation.z += this.spinV * dt;
-    // sway: the gun lags your look and leans with strafing
-    let dyw = yaw - this.lastYaw; dyw -= Math.round(dyw / (Math.PI * 2)) * Math.PI * 2;
-    const dpt = pitch - this.lastPitch; this.lastYaw = yaw; this.lastPitch = pitch;
-    const side = P.vx * Math.cos(yaw) - P.vz * Math.sin(yaw), idt = 1 / Math.max(dt, 1 / 240);
-    const tx = Math.max(-0.05, Math.min(0.05, -dyw * idt * 0.006 - side * 0.0035)), ty = Math.max(-0.04, Math.min(0.04, -dpt * idt * 0.006));
-    this.swayX += (tx * this.motion - this.swayX) * Math.min(1, dt * 10); this.swayY += (ty * this.motion - this.swayY) * Math.min(1, dt * 10);
-    const low = pitch < -0.45 ? (-0.45 - pitch) * 0.35 : 0;
-    const port = this.aspect < 1, rk = this.recoil * this.kick, sdip = Math.sin(this.swapT * Math.PI);
-    c.position.set((port ? 0.22 : 0.33) + this.swayX, -0.31 + bob * 0.5 - low + (P.ground ? 0 : 0.02) + this.swayY - sdip * 0.06, -0.95 + rk * 0.06);
-    c.scale.setScalar(0.62);
-    c.rotation.set(rk * 0.3 + low * 0.6 - sdip * 0.25, 0.1 - this.swayX * 2, this.swayX * 3 + (this.held === 'rapid' ? (Math.random() - 0.5) * this.recoil * 0.08 : 0) + sdip * 0.5);
-    c.visible = this.showCannon && !P.dead;
-    // petals: closed at the middle of a swap, open to the weapon's spread, kicked by each shot
-    const f = this.swapT > 0.5 ? (this.swapT - 0.5) * 2 : 1 - this.swapT * 2;
-    const open = (MD.CANNON_OPEN[show] ?? 0.1) * f + rk * 0.07;
-    c.userData.petals.forEach((pg, k) => { pg.rotation.x += (open + (show === 'rapid' ? Math.sin(this.spinV * 0.2 + k) * 0.01 * this.spinV / 30 : 0) - pg.rotation.x) * Math.min(1, dt * 24); });
-    // core: the shown weapon's colour, flaring white on a shot
-    const wcol = WEAPON_COL[show] || 0xffffff;
-    this.M.vmGlow.color.set(wcol).lerp(_white, Math.min(1, this.flashT * 10));
-    this.M.vmHeat.color.set(0x3a3e48).lerp(_hot.set(0xff6a1a), Math.min(1, this.heat)).lerp(_white, Math.max(0, this.heat - 1) * 0.5);
-    // ammo screen (redrawn only when it changes)
-    const ammo = P.weapon === 'blaster' ? '∞' : String(P.ammo[P.weapon] ?? 0).padStart(3, '0'), key = show + ammo;
-    const scr = c.userData.screen;
-    if (scr.key !== key) {
-      scr.key = key;
-      const x = scr.cv.getContext('2d');
-      x.fillStyle = '#05070c'; x.fillRect(0, 0, 64, 32);
-      x.fillStyle = '#' + new THREE.Color(wcol).getHexString(); x.fillRect(0, 0, 64, 2); x.fillRect(0, 30, 64, 2);
-      x.font = 'bold 9px monospace'; x.textBaseline = 'top'; x.fillText(({ blaster: 'BLSTR', spread: 'SPRD', rapid: 'PULSE', rocket: 'RCKT' })[show] || '', 3, 4);
-      x.font = 'bold 15px monospace'; x.fillText(ammo, 3, 14);
-      scr.tex.needsUpdate = true;
-    }
-    const fl = c.getObjectByName('flash');
-    fl.position.z = (MZ[this.shown]?.tip ?? -0.47) - 0.05;
-    fl.visible = this.flashT > 0;
-    fl.rotation.z = Math.random() * 6;
-    fl.scale.setScalar((this.held === 'rocket' ? 1.6 : this.held === 'spread' ? 1.35 : this.held === 'rapid' ? 0.75 : 1) * (this.flashK < 1 ? 0.55 : 1));
-    this.M.vmFlash.color.set(WEAPON_COL[P.weapon] || 0xffffff);
+    // the arm cannon (player-view.js)
+    this.pv.updateCannon(w, P, yaw, pitch, bob, dt, t);
   }
 
   // Bosses: each kind's view (render/bosses.js) poses its model; the laser beam and danger zones
@@ -488,22 +391,16 @@ export class GameRenderer {
     const fx = this.fx;
     for (const e of events) {
       switch (e.type) {
-        case 'fire': {
-          const k = { blaster: 1, spread: 1.5, rapid: 0.45, rocket: 2.2 }[e.weapon] ?? 1;
-          this.kick = k; this.recoil = 1; this.flashT = e.weapon === 'rocket' ? 0.08 : 0.05;
-          this.heat = Math.min(1.6, (this.heat || 0) + ({ blaster: 0.07, spread: 0.22, rapid: 0.045, rocket: 0.4 }[e.weapon] ?? 0.07));
-          if (e.weapon === 'rapid') this.spinV = Math.min(60, this.spinV + 18);
-          break;
-        }
-        case 'impact': fx.burst(e.x, e.y, e.z, e.kind === 'bolt' ? 5 : 6, e.kind === 'bolt' ? 0xff3a8a : 0xbff8ff, 5, 0.09, 0.35, 10); break;
+        case 'fire': this.pv.fire(e); fx.pfx.fire(e); break;
+        case 'impact': if (fx.pfx.impact(e)) break; fx.burst(e.x, e.y, e.z, e.kind === 'bolt' ? 5 : 6, e.kind === 'bolt' ? 0xff3a8a : 0xbff8ff, 5, 0.09, 0.35, 10); break;
         case 'hit': if (e.kind === 'boss') fx.burst(e.x, e.y, e.z, 8, 0xffb040, 6, 0.1, 0.4); else fx.enemy.hit(e, w); break;
         case 'kill': if (e.kind === 'boss') { fx.boom(e.x, e.y, e.z, 7); fx.burst(e.x, e.y, e.z, 16, 0xe0313a, 8, 0.22, 1.2, 14); } else fx.enemy.kill(e, w, this.level); break;
         case 'serverDown': fx.boom(e.x, e.y, e.z, 3, 0x7bff4a); fx.burst(e.x, e.y, e.z, 24, 0x2bff7a, 10, 0.16, 1, 12); break;
         case 'explode': fx.boom(e.x, e.y, e.z, e.r); fx.enemy.blast(e.x, e.y, e.z, e.r); break;
         case 'stomp': fx.burst(e.x, e.y, e.z, 12, 0xffffff, 7, 0.14, 0.5); fx.shake = Math.max(fx.shake, 0.18); break;
         case 'jump':
-          this.jumpT = 0; this.jumpStage = e.stage; this.jumpKick = [0.45, 0.7, 1][e.stage] || 0.5;
-          if (e.stage > 0) { this.jetT = 1; this.rollK = e.stage === 2 ? 1 : 0; }
+          this.jumpKick = [0.45, 0.7, 1][e.stage] || 0.5; this.pv.jump(e);
+          if (e.stage > 0) { this.rollK = e.stage === 2 ? 1 : 0; fx.pfx.jumpRing(e.x, e.y, e.z, e.stage); }
           if (e.stage > 0) fx.burst(e.x, e.y, e.z, 10 + e.stage * 4, e.stage === 2 ? 0xffd23a : 0x7ff6ff, 5 + e.stage * 2, 0.12, 0.45, 2); break;
         case 'land': if (e.impact > 11) fx.shockwave(e.x, e.y + 0.06, e.z, 0.5 + Math.min(0.9, e.impact * 0.035), 0.4 * this.flashK);
           fx.burst(e.x, e.y + 0.1, e.z, Math.min(16, 4 + e.impact * 0.6), 0xd8dce8, 3 + e.impact * 0.15, 0.14, 0.4, 4); fx.shake = Math.max(fx.shake, Math.min(0.2, e.impact * 0.008)); break;

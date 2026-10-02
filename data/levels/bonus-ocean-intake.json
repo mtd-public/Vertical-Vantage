@@ -3,7 +3,7 @@
  "id": "bonus-ocean-intake",
  "name": "SERVER CORE INTAKE",
  "sub": "BONUS · DESTROY EVERY SERVER",
- "theme": "oceanBonus",
+ "theme": "oceanBonusNight",
  "music": "serverRush",
  "seed": 548,
  "par": null,

@@ -3,7 +3,7 @@
  "id": "bonus-shanghai-lanterns",
  "name": "SERVER CORE LANTERN",
  "sub": "BONUS · DESTROY EVERY SERVER",
- "theme": "bonusNight",
+ "theme": "shanghaiBonusRed",
  "music": "neonHard",
  "seed": 1214,
  "par": null,
